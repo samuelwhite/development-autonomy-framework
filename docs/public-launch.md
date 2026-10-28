@@ -38,7 +38,7 @@ demonstration, source-package rebuild demonstration and a strict dependency audi
 Audits reported no known vulnerabilities at run time; this is not a security
 certification or a guarantee against future advisories.
 
-## Verified repository safeguards
+## Verified repository safeguards at launch
 
 - Protected `main`, including administrators: independent approval, stale-review
   dismissal, last-push approval and resolved conversations; no force pushes or deletion.
@@ -50,6 +50,26 @@ certification or a guarantee against future advisories.
   credential persistence disabled and no publishing or deployment workflow steps.
 
 See [Issue #1](https://github.com/samuelwhite/development-autonomy-framework/issues/1)
-for staging closure. No formal GitHub Release, version tag or package registry release
-is available. The product remains an offline Developer Preview with synthetic data
+for staging closure. At that launch, no formal GitHub Release, version tag or package
+registry release was available. The product remains an offline Developer Preview with synthetic data
 only; green offline CI does not establish support for live execution or deployment.
+
+## Subsequent solo-maintainer policy — 2026-10-28
+
+After the public source launch, the owner adopted a solo-maintainer governance policy.
+Mandatory independent GitHub approval was removed by changing the required approval
+count from one to zero and disabling the separate last-push approval requirement.
+Pull requests remain mandatory. The four strict, up-to-date checks bound to GitHub
+Actions, administrator enforcement, stale-review dismissal, conversation resolution
+and force-push/deletion restrictions remain in place. All other security controls
+were preserved, including private reporting, runner isolation, read-only workflow
+defaults and the pinned-action allowlist.
+
+[PR #3](https://github.com/samuelwhite/development-autonomy-framework/pull/3) then
+merged through the protected PR workflow. Merge commit
+`6cd7734dad17cb9dd0ef3c51bc6f34447d1983df` has the same source tree
+(`683a759eae67c7f6501cc1ae7634436a71e6e56e`) as reviewed head
+`88da1d783a44704bd1df55d1bbf81a5277451096`.
+[Post-merge run 40733710781](https://github.com/samuelwhite/development-autonomy-framework/actions/runs/40733710781)
+passed all four required jobs on that exact merge commit, with 145 tests per job.
+The policy change and later validation do not alter the historical launch evidence above.
