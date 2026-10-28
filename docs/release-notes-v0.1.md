@@ -2,8 +2,9 @@
 
 **Public source preview · package version `0.1.0.dev1` · offline only**
 
-These notes describe the source available in this repository. No formal GitHub
-Release, version tag or package registry release is available.
+These notes describe the source available in this repository. Published release
+records are listed on [GitHub Releases](https://github.com/samuelwhite/development-autonomy-framework/releases).
+No package registry release is available.
 
 DAF (Development Autonomy Framework) explores the control layer around AI development:
 explicit plans, retained evidence, recovery and clear stopping boundaries. This first

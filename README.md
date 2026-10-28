@@ -83,9 +83,10 @@ smoke tests, and dependency audits. The badge tracks `main`; the linked evidence
 records the exact validated commit. macOS is not in that matrix.
 
 The [v0.1 source notes](docs/release-notes-v0.1.md) describe the available preview.
-Package metadata is `0.1.0.dev1`; no GitHub Release, version tag or package registry
-release is available. Offline CI does not establish production readiness or support
-for live autonomous execution.
+Package metadata is `0.1.0.dev1`. See [GitHub Releases](https://github.com/samuelwhite/development-autonomy-framework/releases)
+for published release records. No package registry release is available; use the
+source installation above. Offline CI does not establish production readiness or
+support for live autonomous execution.
 
 ## Explore and contribute
 

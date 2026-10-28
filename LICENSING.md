@@ -18,6 +18,7 @@ are the full LICENSE file and [Apache's published text](https://www.apache.org/l
 
 The reviewed source is public after independent disclosure clearance;
 the [launch record](docs/public-launch.md) identifies the preserved source and CI results.
-Package metadata is `0.1.0.dev1`. No formal GitHub Release, version tag or package
-registry release is available. Licensing does not change the preview's
+Package metadata is `0.1.0.dev1`; [GitHub Releases](https://github.com/samuelwhite/development-autonomy-framework/releases)
+lists published release records. No package registry release is available.
+Licensing does not change the preview's
 [offline capability boundaries](docs/capabilities.md).

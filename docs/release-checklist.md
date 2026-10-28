@@ -1,8 +1,9 @@
 # Developer Preview release checklist
 
 DAF v0.1 is an **offline Developer Preview**. The source is public and the initial
-four-job hosted validation matrix passed. Package metadata is `0.1.0.dev1`; no
-formal GitHub Release, version tag or package registry release is available.
+four-job hosted validation matrix passed. Package metadata is `0.1.0.dev1`.
+Published release records belong on [GitHub Releases](https://github.com/samuelwhite/development-autonomy-framework/releases).
+No package registry release is available; installation uses repository source.
 
 ## Completed public source launch — 2026-10-28
 
@@ -21,6 +22,15 @@ formal GitHub Release, version tag or package registry release is available.
 The [launch record](public-launch.md) gives the exact source, tree and job evidence.
 These dated results apply to the recorded commit, not automatically to later revisions.
 
+## Current solo-maintainer policy — 2026-10-28
+
+After the source launch, the owner removed mandatory independent GitHub reviewer
+approval. Pull requests remain mandatory. All four up-to-date GitHub Actions checks,
+administrator enforcement, resolved conversations, stale-review dismissal and the
+force-push/deletion restrictions remain in place. All other security controls are
+unchanged. The [dated policy change](public-launch.md#subsequent-solo-maintainer-policy--2026-10-28)
+records the distinction from the launch-time controls above.
+
 ## Checks for subsequent changes
 
 - Verify the exact source revision, content manifest and any built distribution bytes.
@@ -30,9 +40,10 @@ These dated results apply to the recorded commit, not automatically to later rev
   and dependency audits. Confirm all four required hosted jobs for the relevant revision.
 - Check documentation links, source installation and the synthetic demonstration.
   Describe available capabilities and validation results accurately.
-- Integrate through the protected PR process with an eligible independent reviewer.
-  Preserve required checks, review rules, private reporting, runner isolation and the
-  pinned-action allowlist. Do not add access or weaken protection to satisfy a check.
+- Integrate through the protected PR process. Independent GitHub approval is not
+  mandatory. Preserve all four required checks, administrator enforcement, conversation
+  resolution, force-push/deletion restrictions, private reporting, runner isolation
+  and the pinned-action allowlist. Do not add access or bypass protection to satisfy a check.
 
 Passing these checks does not establish support for live autonomous execution.
 The [capability boundaries](capabilities.md) apply regardless of repository or
