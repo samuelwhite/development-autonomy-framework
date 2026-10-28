@@ -89,8 +89,16 @@ def test_cli_requires_public_network_opt_in(monkeypatch, tmp_path, capsys):
 
     monkeypatch.setattr(sidecar, "get_public_github_json", no_network)
     args = [
-        "--repository", REPO, "--commit", COMMIT, "--path", SOURCE,
-        "--milestone", "F1", "--output-dir", str(tmp_path),
+        "--repository",
+        REPO,
+        "--commit",
+        COMMIT,
+        "--path",
+        SOURCE,
+        "--milestone",
+        "F1",
+        "--output-dir",
+        str(tmp_path),
     ]
     assert sidecar.main(args) == 2
     assert json.loads(capsys.readouterr().out)["reason"] == "explicit_public_read_required"
@@ -116,8 +124,17 @@ def test_cli_repeat_is_idempotent(monkeypatch, tmp_path, capsys):
 
     monkeypatch.setattr(sidecar, "get_public_github_json", read)
     args = [
-        "--repository", REPO, "--commit", COMMIT, "--path", SOURCE,
-        "--milestone", "F1", "--output-dir", str(tmp_path), "--public-read",
+        "--repository",
+        REPO,
+        "--commit",
+        COMMIT,
+        "--path",
+        SOURCE,
+        "--milestone",
+        "F1",
+        "--output-dir",
+        str(tmp_path),
+        "--public-read",
     ]
     assert sidecar.main(args) == 0
     first = json.loads(capsys.readouterr().out)
