@@ -17,22 +17,30 @@ identity/signing isolation and recovery have been reviewed together.
 
 ## Public CI boundary
 
-The proposed workflow runs on GitHub-hosted Windows and Linux only. It has
+The `preview-quality` workflow targets standard GitHub-hosted Windows and Linux
+with Python 3.12 and 3.13. It supports controlled manual validation as well as
+push/pull-request checks. It has
 `contents: read`, pinned actions, no persisted checkout credentials, no secrets,
 no privileged pull-request trigger, no publishing step and no private-service access.
 Never register a self-hosted runner for this repository or grant it access through
 an organization runner group. Repository/organization settings must enforce that
 boundary: a workflow file alone cannot prevent a future configuration change.
 
-GitHub private vulnerability reporting is available for public repositories.
-Before publication, confirm a private maintainer reporting channel; enable GitHub's
-private reporting when publication is explicitly approved and verify it before
-announcing the release. Private staging must use a confirmed private maintainer
-channel. Do not assume a private repository has a public reporting form. These
-are release blockers until configured by the owner.
-Do not put credentials, private transcripts, source code or personal infrastructure
+After the public repository's security controls are verified, use **Security →
+Advisories → Report a vulnerability** for sensitive findings. Private vulnerability
+reporting must be enabled and verified as part of the approved visibility transition,
+before Actions is enabled or the project is announced. If the private reporting
+option is absent, keep the report private; do not use a public Issue as a substitute.
+
+During private staging, owner-only private Issues are the approved internal tracking
+channel. The temporary private-staging exceptions for branch protection and GitHub
+private vulnerability reporting expire at public visibility. Disable Actions before
+the transition; configure and verify both controls before enabling the approved
+workflow. See the [publication checklist](docs/release-checklist.md).
+Do not put credentials, private transcripts, private source material or personal infrastructure
 details in a public issue. Until a private channel is configured, keep sensitive
-reports private rather than guessing an address.
+reports private rather than guessing an address. Public source availability does
+not itself establish a formal release or a completed hosted validation matrix.
 
 Security-sensitive changes need focused adversarial tests and explicit review.
 Do not weaken immutable history, budget reservations or stop/recovery invariants
