@@ -1,40 +1,44 @@
 # DAF — Development Autonomy Framework
 
-**v0.1 Developer Preview · offline only**
+[![preview-quality CI](https://github.com/samuelwhite/development-autonomy-framework/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/samuelwhite/development-autonomy-framework/actions/workflows/ci.yml)
 
-AI development needs more than generated code. It needs a durable account of what
-was requested, what was attempted, what was checked, what it consumed and where
-work must stop. DAF explores that control layer with small, inspectable Python
-components and deterministic demonstrations.
+**v0.1 Developer Preview · offline only · Apache-2.0**
 
-This preview runs **synthetic development only**. It does not connect to a model,
-authenticate an owner, approve execution, edit a product repository, merge code,
-send notifications or deploy. Its fixture budgets are not proof of provider
-spending limits. See [capabilities and limitations](docs/capabilities.md).
+DAF explores how to make AI development work inspectable and recoverable. It turns
+explicit plans into tracked milestones, retains failed attempts and acceptance
+evidence, and records where work must stop.
 
-**Preview status:** Apache-2.0 licensed source for evaluation. Repository visibility,
-hosted validation and a formal v0.1 release announcement are separate milestones.
-The soft launch makes reviewed source available for inspection; it does not claim
-green hosted CI, production readiness or a formal release. Check the repository's
-Actions results for the exact commit being evaluated. See the
-[publication checklist](docs/release-checklist.md) and [licensing](LICENSING.md).
+This preview lets developers examine those control mechanisms through small Python
+components and deterministic, synthetic demonstrations. It makes **no model calls**
+and needs no API key, server or Node.js.
 
-## Quick start
+![Synthetic Mission Control showing three accepted milestones, four retained attempts, 400 fixture tokens and zero real provider requests](docs/mission-control-synthetic.png)
 
-Python 3.12 or newer; no server, Node.js, API key or runtime package download is
-needed to run directly from the unpacked source directory.
+*A static, read-only snapshot of synthetic data. The OFFLINE / SYNTHETIC label
+applies to every scenario and metric. [Screenshot provenance](docs/screenshot.md).*
+
+## Try it in a minute
+
+Install **Python 3.12 or newer** and Git, then:
 
 ```text
-cd src
+git clone https://github.com/samuelwhite/development-autonomy-framework.git
+cd development-autonomy-framework/src
 python -m daf demo --output ../demo-output
+cd ..
 ```
 
-Open `demo-output/index.html` in your browser. It is a self-contained, read-only
-Mission Control snapshot. The accompanying JSON and SQLite journals let you
-inspect the underlying results. Pick a **new** output directory each time: DAF
-refuses to overwrite or reopen an existing demo directory.
+Open `demo-output/index.html` in your browser. Alternatively, download and unpack
+the repository source ZIP, open a terminal in its `src/` directory, and run
+`python -m daf demo --output ../demo-output`.
 
-For an installed command, from the candidate root:
+The demonstration runs offline once you have the source and Python. It creates
+synthetic JSON and SQLite evidence, then exits. Use a **new output directory**
+each time; DAF refuses to overwrite or reopen an existing demo directory.
+
+### Install the command locally
+
+From the repository root:
 
 ```text
 python -m venv .venv
@@ -45,33 +49,46 @@ Activate with `.venv\Scripts\Activate.ps1` on Windows PowerShell, or
 
 ```text
 python -m pip install .
-daf-preview demo --output demo-output
+daf-preview demo --output installed-demo-output
 ```
 
-Installation downloads the pinned build backend, not a model client. The installed
-runtime uses the standard library only. To avoid downloads entirely, use the
-source quick start or an already built wheel with `pip install --no-index`.
+Open `installed-demo-output/index.html`. Installation downloads the pinned build
+backend; the installed runtime uses only Python's standard library. Use the source
+walkthrough above to avoid package downloads. There is no package registry release;
+install from this repository, not by guessing a package name.
 
-## What the demonstration proves
+## What you can inspect
 
-- Three dependent milestones progress using separate simulated developer and
-  validator outputs. A failed attempt stays failed after a successful correction.
-- Restarted fixture connections reconcile existing jobs without duplicating them.
-- A scope exception remains blocked; a committed stop admits no new job.
-- A two-segment experiment reserves fixture tokens and currency atomically,
-  checkpoints bounded context and refuses a third segment that exceeds its budget.
-- The dashboard distinguishes fixture acceptance, unavailable planning/CI evidence,
-  merging and deployment. No status is inferred from an absent record.
+- **Progression and correction:** three dependent milestones, four retained attempts,
+  and separate simulated developer and validator results.
+- **Recovery:** reopened fixture connections reconcile existing jobs without duplicate
+  simulated dispatch.
+- **Scope and stop boundaries:** an unresolved scope exception stays blocked; a stop
+  committed before admission permits no new job.
+- **Bounded continuation:** two segments reserve fixture tokens and currency, checkpoint
+  context, and refuse a third segment at the budget boundary.
 
-These are automated offline tests of the implementation, not evidence of real
-provider reliability or operating-system isolation.
+The [walkthrough](docs/demo.md) explains each scenario. Fixture budgets do not prove
+provider spending limits, remote cancellation or operating-system isolation. This
+preview cannot authenticate an owner, approve live execution, edit a product
+repository, merge code, send notifications or deploy. See the full
+[capabilities and limitations](docs/capabilities.md).
+
+## Validation and release status
+
+The source is public. All four hosted CI jobs passed on the
+[verified launch commit](docs/public-launch.md): Ubuntu and Windows, each with Python
+3.12 and 3.13, with **145 tests per job**, lint/format checks, wheel and source-package
+smoke tests, and dependency audits. The badge tracks `main`; the linked evidence
+records the exact validated commit. macOS is not in that matrix.
+
+Formal v0.1 release notes and introduction copy are
+[drafts for Product review](docs/portfolio.md). No GitHub Release, version tag or package
+publication has been made. Offline CI does not establish production readiness or
+support for live autonomous execution.
 
 ## Explore and contribute
 
-[Demo walkthrough](docs/demo.md) · [Architecture](docs/architecture.md) ·
-[Security](SECURITY.md) · [Roadmap](docs/roadmap.md) ·
-[Contributing](CONTRIBUTING.md) · [Release checklist](docs/release-checklist.md)
-
-The intended repository is `development-autonomy-framework`; the package name is
-`daf-developer-preview`. No package registry release is available from this candidate.
-Do not install an unrelated package from a public index by guessing its name.
+[Architecture](docs/architecture.md) · [Security](SECURITY.md) ·
+[Roadmap](docs/roadmap.md) · [Contributing](CONTRIBUTING.md) ·
+[Release checklist](docs/release-checklist.md) · [Licensing](LICENSING.md)

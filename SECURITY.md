@@ -26,21 +26,21 @@ Never register a self-hosted runner for this repository or grant it access throu
 an organization runner group. Repository/organization settings must enforce that
 boundary: a workflow file alone cannot prevent a future configuration change.
 
-After the public repository's security controls are verified, use **Security →
-Advisories → Report a vulnerability** for sensitive findings. Private vulnerability
-reporting must be enabled and verified as part of the approved visibility transition,
-before Actions is enabled or the project is announced. If the private reporting
-option is absent, keep the report private; do not use a public Issue as a substitute.
+Private vulnerability reporting is enabled. Use **Security → Advisories →
+Report a vulnerability**, or [report privately through GitHub](https://github.com/samuelwhite/development-autonomy-framework/security/advisories/new),
+for sensitive findings. If that option is absent, keep the report private; do not
+use a public Issue or guess a contact address.
 
-During private staging, owner-only private Issues are the approved internal tracking
-channel. The temporary private-staging exceptions for branch protection and GitHub
-private vulnerability reporting expire at public visibility. Disable Actions before
-the transition; configure and verify both controls before enabling the approved
-workflow. See the [publication checklist](docs/release-checklist.md).
-Do not put credentials, private transcripts, private source material or personal infrastructure
-details in a public issue. Until a private channel is configured, keep sensitive
-reports private rather than guessing an address. Public source availability does
-not itself establish a formal release or a completed hosted validation matrix.
+Public branch protection and private reporting were verified before the approved
+workflow was enabled. The four required matrix checks are bound to GitHub Actions;
+protection applies to administrators and requires independent PR review. Staging
+exceptions have expired. Preserve these controls and the pinned-action allowlist;
+do not bypass them to integrate changes. See the [launch evidence](docs/public-launch.md)
+and [release checklist](docs/release-checklist.md).
+
+Do not put credentials, private transcripts, private source material or personal
+infrastructure details in public Issues. The successful offline matrix is evidence
+for its recorded commit, not a security certification or approval for live execution.
 
 Security-sensitive changes need focused adversarial tests and explicit review.
 Do not weaken immutable history, budget reservations or stop/recovery invariants

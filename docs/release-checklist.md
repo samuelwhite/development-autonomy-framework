@@ -1,54 +1,46 @@
-# Repository soft launch and release checklist
+# Developer Preview release checklist
 
-DAF v0.1 is an **offline Developer Preview**. Public repository visibility, hosted
-validation and a formal release announcement are separate decisions. This checklist
-defines the gates; it does not claim they have already passed. Record exact commits,
-artifact hashes and results in the review record, not inferred from repository visibility.
+DAF v0.1 is an **offline Developer Preview**. The public source launch and initial
+hosted validation are complete. Formal release and announcement remain pending
+Product review and separate owner approval.
 
-Ownership is confirmed: **Copyright 2026 Samuel James White**, personally owned,
-with authority to license and redistribute the reviewed source under **Apache-2.0**.
-The third-party inventory covers separately installed development tools; no external
-runtime dependency, tool environment or private execution history is distributed.
+## Completed public source launch — 2026-10-28
 
-## Before changing visibility
+- [x] Independently review the exact source, history and disclosure inventory.
+- [x] Confirm Samuel James White's ownership and redistribution authority under
+  Apache-2.0; preserve LICENSE, NOTICE and third-party provenance checks.
+- [x] Integrate reviewed source without rewriting history and verify anonymous access
+  to all 47 approved files.
+- [x] Establish administrator-enforced branch protection, independent PR review,
+  conversation resolution and four strict checks bound to GitHub Actions.
+- [x] Enable and verify private vulnerability reporting; retire staging exceptions.
+- [x] Verify no self-hosted runners or repository secrets, read-only workflow tokens,
+  no persisted checkout credentials and the two approved SHA-pinned actions.
+- [x] Run the standard-hosted Ubuntu/Windows × Python 3.12/3.13 matrix successfully.
 
-- Review all tracked files, every Git-history commit, Issues and their edits/comments,
-  pull requests, releases/tags, repository metadata and any other public-facing content.
-- Verify redistribution rights, notices and the intentional copyright attribution.
-  Confirm no credentials, private infrastructure, operational records or imported
-  private repository history are present. Review exact distribution bytes again
-  after any source change.
-- Complete all available local tests, package smoke tests and dependency/security
-  checks; record hosted tests accurately as pending if they have not run.
-- Obtain independent clearance of the exact final commit and disclosure inventory.
-  The owner's conditional soft-launch authority takes effect only after that clearance.
-  If a disclosure check fails, stop while the repository is still private.
+The [launch record](public-launch.md) gives exact source, tree and job evidence.
+These are dated results; check the current proposal's own CI before integrating it.
 
-## Approved visibility transition and hosted validation
+## Product review — proposed materials
 
-1. Verify the exact cleared commit and keep Actions disabled throughout the transition.
-2. Change visibility only for this standalone repository under the owner's authorisation.
-3. Configure public branch protection and private vulnerability reporting. Verify
-   both, owner/admin access, absence of self-hosted runners and private secrets,
-   read-only workflow permissions and the approved pinned-action restrictions.
-   Private-staging exceptions do not carry over. If any control fails, keep Actions
-   disabled and stop; do not announce the project.
-4. Enable only the approved `preview-quality` workflow on standard GitHub-hosted
-   runners. No paid services, larger runners, artifact publication or deployment.
-5. Manually dispatch the reviewed ref after the workflow is on the default branch.
-   Verify the actual checkout commit and all four matrix jobs: Ubuntu and Windows,
-   each on Python 3.12 and 3.13. Require tests, wheel/source builds, installed-wheel
-   demonstration, source-archive rebuild demonstration and dependency audit to pass.
-   Update any branch-protection check names to the verified job identities.
-6. Record findings and outstanding limitations. A public repository can still have
-   pending or failed validation; never describe that as green CI or production support.
+- [ ] Review the README, synthetic screenshot, installation and demonstration flow.
+- [ ] Review [repository description, topics and LinkedIn draft](portfolio.md).
+- [ ] Approve the [v0.1 release-note draft](release-notes-v0.1.md), including offline
+  limitations and unchanged `0.1.0.dev1` package version.
+- [ ] Review the documentation diff, regenerated manifest and exact branch validation.
+  Keep runtime, tests, dependencies, workflow permissions and licence notices unchanged
+  in this presentation change.
+- [ ] Integrate through the protected PR process with an eligible independent reviewer.
+  Do not add access or weaken protection just to satisfy this step.
 
-## Formal v0.1 announcement — separate decision
+## Future publication — separate authority required
 
-Green hosted CI and public visibility do not authorise a version tag, formal GitHub
-Release, package registry upload, external announcement, deployment or live workers.
-The owner must separately approve the formal v0.1 announcement. Live autonomous
-execution remains unsupported by this preview regardless of publication status.
+No Release, version tag, registry upload, deployment or external announcement is
+authorised by this checklist or by passing CI. After Product review, the owner must
+separately approve any such action and its exact content, version and source commit.
+Do not execute these steps as part of presentation preparation.
 
-Private engineering evidence may contain operational details. Keep it outside the
-public repository; publish only the approved disclosure-safe review and CI summaries.
+Before later publication, recheck source and distribution bytes, disclosure inventory,
+ownership/notices, dependency advisories, safeguards and CI results. Live autonomous
+execution remains unsupported. Private engineering evidence stays outside the public
+repository; only disclosure-safe summaries and synthetic assets belong here.

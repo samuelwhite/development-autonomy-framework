@@ -17,9 +17,9 @@ and identify modifications as required by its terms. The authoritative terms
 are the full LICENSE file and [Apache's published text](https://www.apache.org/licenses/LICENSE-2.0).
 
 Public source availability and a formal v0.1 release announcement are separate
-decisions. The owner has authorised a repository soft launch only after independent
-disclosure clearance. The soft-launch authorisation covers repository visibility
-only. Maintainer actions to create formal releases, publish packages, announce the
+decisions. The reviewed source is now public after independent disclosure clearance;
+the [launch record](docs/public-launch.md) identifies the preserved source and CI results.
+Maintainer actions to create formal releases, publish packages, announce the
 project, activate live execution, deploy services or disclose private development
 history remain separate owner decisions. See the
 [publication checklist](docs/release-checklist.md).
