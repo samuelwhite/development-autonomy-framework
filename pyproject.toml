@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "daf-developer-preview"
+version = "0.1.0.dev1"
+description = "Offline development orchestration, durable recovery and bounded execution experiments"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+
+[project.scripts]
+daf-preview = "daf.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/daf"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "docs", "scripts", "README.md", "SECURITY.md", "CONTRIBUTING.md", "LICENSE", "NOTICE", "LICENSING.md", "THIRD_PARTY.md", "CHANGELOG.md", "pyproject.toml", "requirements-dev.txt"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S"]
+ignore = ["S101", "S603", "S607"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["daf"]

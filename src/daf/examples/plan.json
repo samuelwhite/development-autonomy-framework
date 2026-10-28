@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "project": "synthetic-framework-example",
+  "repository": "example/synthetic-project",
+  "plan_id": "daf-01-fixture",
+  "version": 1,
+  "supersedes": null,
+  "baseline_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "scope": [
+    "Demonstrate autonomous development using deterministic fixtures only."
+  ],
+  "deliverables": [
+    "Three synthetic milestones, correction, restart recovery, and exception evidence."
+  ],
+  "boundaries": {
+    "code_prefixes": [
+      "src/",
+      "tests/unit/"
+    ],
+    "protected_prefixes": [
+      "plans/"
+    ],
+    "infrastructure": [],
+    "deployment_targets": [],
+    "security_restrictions": [
+      "No network, production credentials, host changes, real project implementation, merge or deployment."
+    ]
+  },
+  "validation": {
+    "validator": "independent-fixture-validator-v1",
+    "required_checks": [
+      "tests",
+      "security"
+    ],
+    "workflow_path": ".github/workflows/quality.yml",
+    "workflow_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "protected_files": {
+      ".github/workflows/quality.yml": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "tests/acceptance.py": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  "budgets": {
+    "max_jobs": 6,
+    "max_cost_units": 60,
+    "cost_units_per_job": 10,
+    "max_tokens": 12000,
+    "tokens_per_job": 2000,
+    "max_elapsed_seconds": 600
+  },
+  "recovery": {
+    "max_attempts": 2,
+    "max_uncertain_polls": 3
+  },
+  "notifications": "durable-outbox",
+  "actions": {
+    "merge": false,
+    "deploy": false
+  },
+  "milestones": [
+    {
+      "id": "F1",
+      "depends_on": [],
+      "deliverable": "Synthetic index result",
+      "acceptance": {
+        "index": "The independent fixture confirms the index contract."
+      }
+    },
+    {
+      "id": "F2",
+      "depends_on": [
+        "F1"
+      ],
+      "deliverable": "Synthetic transformation result",
+      "acceptance": {
+        "transform": "The independent fixture confirms corrected transformation behavior."
+      }
+    },
+    {
+      "id": "F3",
+      "depends_on": [
+        "F2"
+      ],
+      "deliverable": "Synthetic completion report",
+      "acceptance": {
+        "report": "The independent fixture confirms the report contract."
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "plan_sha256": "66c3771348ee53fb646f9919da362e708547b386d6b63048ec912485350e53b5",
+  "authority": "synthetic-fixture-owner",
+  "record_ref": "fixture:DAF-01-authority-example-not-human-approval",
+  "approved_at": "2026-10-20",
+  "mode": "fixture"
+}

@@ -1,0 +1,12 @@
+{
+  "F1": [
+    "success"
+  ],
+  "F2": [
+    "test_failure",
+    "success"
+  ],
+  "F3": [
+    "scope_deviation"
+  ]
+}
