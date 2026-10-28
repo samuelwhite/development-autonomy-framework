@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "plan": {
+    "schema_version": 1,
+    "project": "daf-public-planning-example",
+    "repository": "samuelwhite/development-autonomy-framework",
+    "plan_id": "m1-public-example",
+    "version": 1,
+    "supersedes": null,
+    "baseline_revision": "038f1ef33f5233924d35dd773bfa8a25df494be6",
+    "scope": [
+      "Offline milestone import demonstration only; no actual development task is approved."
+    ],
+    "deliverables": [
+      "Two dependency-ordered synthetic proposal demonstrations."
+    ],
+    "boundaries": {
+      "code_prefixes": [
+        "src/daf/examples/"
+      ],
+      "protected_prefixes": [
+        ".github/"
+      ],
+      "infrastructure": [],
+      "deployment_targets": [],
+      "security_restrictions": [
+        "No Codex invocation, paid providers, credentials, deployment, merge or autonomous execution."
+      ]
+    },
+    "validation": {
+      "validator": "synthetic-planning-example",
+      "required_checks": [
+        "tests",
+        "security"
+      ],
+      "workflow_path": ".github/workflows/ci.yml",
+      "workflow_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "protected_files": {
+        ".github/workflows/ci.yml": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "src/daf/contract.py": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    },
+    "budgets": {
+      "max_jobs": 2,
+      "max_cost_units": 2,
+      "cost_units_per_job": 1,
+      "max_tokens": 200,
+      "tokens_per_job": 100,
+      "max_elapsed_seconds": 60
+    },
+    "recovery": {
+      "max_attempts": 1,
+      "max_uncertain_polls": 1
+    },
+    "notifications": "durable-outbox",
+    "actions": {
+      "merge": false,
+      "deploy": false
+    },
+    "milestones": [
+      {
+        "id": "F1",
+        "depends_on": [],
+        "deliverable": "Synthetic first proposal",
+        "acceptance": {
+          "tests": "Offline parser confirms a scoped proposal.",
+          "security": "No execution authority is granted."
+        }
+      },
+      {
+        "id": "F2",
+        "depends_on": [
+          "F1"
+        ],
+        "deliverable": "Synthetic dependent proposal",
+        "acceptance": {
+          "tests": "Dependency reference remains attached to proposal.",
+          "security": "No automatic progression is permitted."
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "milestone_id": "F1",
+      "instruction": "Synthetic offline demonstration for F1; do not execute.",
+      "allowed_paths": [
+        "src/daf/examples/planning/synthetic-f1.txt"
+      ],
+      "required_checks": [
+        {
+          "name": "tests",
+          "validator_id": "synthetic-check",
+          "source": "github_actions",
+          "workflow_path": ".github/workflows/ci.yml",
+          "workflow_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "artifact_name": null
+        },
+        {
+          "name": "security",
+          "validator_id": "synthetic-check",
+          "source": "github_actions",
+          "workflow_path": ".github/workflows/ci.yml",
+          "workflow_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "artifact_name": null
+        }
+      ]
+    },
+    {
+      "milestone_id": "F2",
+      "instruction": "Synthetic offline demonstration for F2; do not execute.",
+      "allowed_paths": [
+        "src/daf/examples/planning/synthetic-f2.txt"
+      ],
+      "required_checks": [
+        {
+          "name": "tests",
+          "validator_id": "synthetic-check",
+          "source": "github_actions",
+          "workflow_path": ".github/workflows/ci.yml",
+          "workflow_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "artifact_name": null
+        },
+        {
+          "name": "security",
+          "validator_id": "synthetic-check",
+          "source": "github_actions",
+          "workflow_path": ".github/workflows/ci.yml",
+          "workflow_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "artifact_name": null
+        }
+      ]
+    }
+  ]
+}
