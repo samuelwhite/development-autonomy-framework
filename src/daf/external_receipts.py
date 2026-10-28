@@ -10,7 +10,7 @@ import json
 import re
 from typing import Any
 
-from .contract import Refused, canonical, require
+from .contract import canonical, require
 
 _SHA40 = re.compile(r"[0-9a-f]{40}\Z")
 _SHA64 = re.compile(r"[0-9a-f]{64}\Z")
@@ -19,7 +19,7 @@ _URL = re.compile(r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/(?:pull|
 
 
 def _nonempty(value: Any, limit: int = 500) -> str:
-    require(isinstance(value, str) and bool(value.strip()) and len(value) <= limit, "invalid_receipt_field")
+    require(\n        isinstance(value, str) and bool(value.strip()) and len(value) <= limit,\n        "invalid_receipt_field",\n    )
     return value
 
 
