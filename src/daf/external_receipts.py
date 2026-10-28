@@ -19,7 +19,10 @@ _URL = re.compile(r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/(?:pull|
 
 
 def _nonempty(value: Any, limit: int = 500) -> str:
-    require(\n        isinstance(value, str) and bool(value.strip()) and len(value) <= limit,\n        "invalid_receipt_field",\n    )
+    require(
+        isinstance(value, str) and bool(value.strip()) and len(value) <= limit,
+        "invalid_receipt_field",
+    )
     return value
 
 
