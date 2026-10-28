@@ -562,3 +562,30 @@ def test_original_check_malformed_fields_raise_refused(field, value):
     receipt["checks"][0][field] = value
     with pytest.raises(Refused):
         validate_external_receipt(receipt)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "//server/share/input.json",
+        r"\\server\share\input.json",
+        r"\\.\pipe\input",
+        r"\\?\C:\input.json",
+    ],
+)
+def test_cli_refuses_network_and_device_paths_before_filesystem_access(monkeypatch, name):
+    def denied(*args, **kwargs):
+        pytest.fail("network/device path reached filesystem inspection")
+
+    monkeypatch.setattr(Path, "stat", denied)
+    monkeypatch.setattr(Path, "is_symlink", denied)
+    with pytest.raises(Refused, match="network_or_device_input_refused"):
+        read_document(Path(name))
+
+
+def test_cli_junction_guard_without_requiring_symlink_privilege(tmp_path, monkeypatch):
+    path = tmp_path / "input.json"
+    path.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(Path, "is_junction", lambda self: self == path)
+    with pytest.raises(Refused, match="linked_input_refused"):
+        read_document(path)

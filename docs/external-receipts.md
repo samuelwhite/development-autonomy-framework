@@ -106,6 +106,10 @@ semantics, prove job membership, or establish that the named runner was trusted.
 Run URLs alone are not immutable snapshots; retain the input JSON, attempt/job
 IDs and content digests. No remote response or artifact is fetched.
 
+Explicit UNC/network-share and device paths are refused before filesystem
+inspection. Use local storage: mapped network drives and remote mounts cannot be
+identified portably here and require external OS/network policy.
+
 JSON and artifact files are limited to 2 MiB each; at most 32 checks/artifacts and
 256 paths are accepted. Duplicate JSON keys, non-finite numbers, linked input
 files/directories and non-regular files are refused. Fixed refusal codes do not

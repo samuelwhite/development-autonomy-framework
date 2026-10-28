@@ -11,6 +11,8 @@ from .supervised_handoff import MAX_BYTES, SUPPLIED, prepare_task, reconcile_rec
 
 
 def read_bytes(path: Path) -> bytes:
+    # Refuse explicit UNC/device paths before even stat/lstat can contact a share.
+    require(not str(path).replace("\\", "/").startswith("//"), "network_or_device_input_refused")
     path = path.absolute()
     require(
         not any(p.is_symlink() or p.is_junction() for p in (path, *path.parents)),
