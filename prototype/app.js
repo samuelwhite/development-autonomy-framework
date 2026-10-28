@@ -6,117 +6,278 @@
   let storageAvailable = true;
   try { state = sim.restore(sessionStorage.getItem(key)); } catch { storageAvailable = false; }
   let timer;
-  let verificationError = false;
   const content = document.getElementById("content");
-  const steps = ["Welcome", "Choose your agent", "Connect", "Choose a project", "Set boundaries", "Verify connection", "Your first task", "Mission Control"];
+  const nav = document.getElementById("steps");
+  const openDetails = new Map();
+  const names = { overview: "Overview", results: "Results", activity: "Activity", settings: "Settings" };
+  const setupNames = ["Welcome", "Your assistant", "Your project", "How we work", "First task"];
+  const setupIndex = () => [0, 1, 1, 2, 3, 3, 4][state.step];
   const escape = value => String(value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const button = (label, action, type = "primary", disabled = false) => `<button class="${type}" data-action="${action}" ${disabled ? "disabled" : ""}>${label}</button>`;
-  const intro = (title, body) => `<p class="eyebrow">SETUP · ${state.step} OF 6</p><h1>${title}</h1><p class="lead">${body}</p>`;
-  const backNext = (disabled = false) => `<div class="actions">${button("← Back", "back", "text-button")} ${button("Continue →", "next", "primary", disabled)}</div>`;
+  const button = (label, action, type = "primary", disabled = false, attrs = "") =>
+    `<button class="${type}" data-action="${action}" data-focus="${action}" ${disabled ? "disabled" : ""} ${attrs}>${label}</button>`;
+  const intro = (title, body) => `<p class="eyebrow">GETTING STARTED · ${setupIndex()} OF 4</p><h1>${title}</h1><p class="lead">${body}</p>`;
+  const backNext = (disabled = false) => `<div class="actions">${button("← Back", "back", "text-button")}${button("Continue →", "next", "primary", disabled)}</div>`;
   const provider = () => sim.providers[state.provider];
-  const mode = () => state.mode === "review" ? "Review only" : "Supervised edits";
+  const permission = () => state.mode === "review" ? "Suggestions only" : "Ask before any changes";
+  const busy = () => [...sim.active, "uncertain"].includes(state.status);
+  const needsAttention = () => ["awaiting_approval", "uncertain", "failed", "limited"].includes(state.status);
+  const disclosure = (id, title, body) => `<details data-disclosure="${id}"><summary data-focus="disclosure-${id}">${title}</summary>${body}</details>`;
   function choice(field, value, title, body, extra = "") {
-    return `<label class="choice ${state[field] === value ? "selected" : ""}"><input type="radio" name="${field}" value="${value}" ${state[field] === value ? "checked" : ""}>${extra}<h2>${title}</h2><p>${body}</p></label>`;
+    return `<label class="choice ${state[field] === value ? "selected" : ""}">
+      <input type="radio" name="${field}" value="${value}" data-focus="${field}-${value}" ${state[field] === value ? "checked" : ""}>
+      ${extra}<h2>${title}</h2><p>${body}</p></label>`;
   }
   function welcome() {
-    return `<p class="eyebrow">LESS SETUP. MORE MAKING.</p><div class="hero"><div><h1>Your next task.<br><em>Under your control.</em></h1><p class="lead">Bring your AI development agent into a workspace with clear boundaries, visible progress and a stop button that’s always within reach.</p>${button("Let’s get set up →", "next")}<p class="subnote">About 3 minutes · No installation for this demo</p></div><div class="preview-card" aria-label="Illustrative Mission Control"><div class="mini-top"><strong>Mission Control</strong><span class="pill">SIMULATED</span></div><h2>A clearer getting-started guide</h2><p class="subnote">Fieldnotes / Sample project</p><div class="mini-row"><span class="check">✓</span> Boundaries set by you</div><div class="mini-row"><span class="check">✓</span> Every step visible</div><div class="mini-row"><span class="check">○</span> Waiting for your review</div><div class="mini-foot"><span>One task. One agent.</span><span>$0 real spend</span></div></div></div><div class="features"><div><div class="feature-number">01 / CONNECT</div><h3>Your choice of agent</h3><p>Try the Codex or Claude Code setup experience.</p></div><div><div class="feature-number">02 / SET LIMITS</div><h3>Start with less access</h3><p>Review first. Decide when a change is allowed.</p></div><div><div class="feature-number">03 / STAY IN CONTROL</div><h3>A clear next step</h3><p>See what happened, stop work and inspect recovery.</p></div></div>`;
+    return `<p class="eyebrow">A LITTLE HELP. A CLEAR WAY FORWARD.</p>
+      <div class="hero"><div><h1>Your next idea.<br><em>Within reach.</em></h1>
+      <p class="lead">DAF helps you improve a software project with an AI assistant. Choose what you want to achieve, decide what it can do, and see your progress in one place.</p>
+      ${button("Let’s get started →", "next")}<p class="subnote">Try an example in a few minutes. No account needed.</p></div>
+      <div class="preview-card" aria-label="Example of project progress"><div class="mini-top"><strong>Your project, at a glance</strong><span class="pill">EXAMPLE</span></div>
+      <h2>A friendlier first step</h2><p class="subnote">Helping someone get started with your project</p>
+      <div class="mini-row"><span class="check">✓</span> Understand the project</div>
+      <div class="mini-row"><span class="check">✓</span> Suggest an improvement</div>
+      <div class="mini-row"><span class="check">○</span> Your result, ready to review</div>
+      <div class="mini-foot"><span>You choose what’s allowed.</span><span>Stop at any time.</span></div></div></div>
+      <div class="features"><div><div class="feature-number">01 / CHOOSE</div><h3>Start with something small</h3><p>Pick an example project and a useful first task.</p></div>
+      <div><div class="feature-number">02 / DECIDE</div><h3>You stay in control</h3><p>Get suggestions, or ask to approve changes first.</p></div>
+      <div><div class="feature-number">03 / FOLLOW ALONG</div><h3>Know what happens next</h3><p>See progress, results and anything that needs you.</p></div></div>`;
   }
   function chooseProvider() {
-    return intro("Who would you like to work with?", "Choose one agent to get started. Both connections are simulated here.") +
-      `<div class="cards">${choice("provider", "codex", "OpenAI Codex", "Proposed connection: sign in through the provider’s browser flow. Account eligibility applies.", '<span class="symbol">◎</span><span class="pill">SIMULATED</span>')}${choice("provider", "claude", "Claude Code", "Proposed connection: Claude Agent SDK with an API account. Separately billed from a Claude subscription.", '<span class="symbol">✳</span><span class="pill">SIMULATED</span>')}</div><div class="future"><span>More agents and local models, potentially Ollama</span><span>Planned · unavailable in this prototype</span></div>` + backNext();
+    return intro("Choose your AI assistant", "Your assistant helps DAF understand a project and work on your task. Choose the one you’d like to try.") +
+      `<fieldset><legend class="sr-only">AI assistant</legend><div class="cards">
+      ${choice("provider", "codex", "OpenAI Codex", "OpenAI’s coding assistant. A future connection could use an eligible ChatGPT account or a separately billed developer account.", '<span class="symbol" aria-hidden="true">◎</span>')}
+      ${choice("provider", "claude", "Claude Code", "Anthropic’s coding assistant. DAF’s proposed connection needs a separately billed developer account; a Claude subscription alone would not cover it.", '<span class="symbol" aria-hidden="true">✳</span>')}
+      </div></fieldset><p class="subnote">Both can explain a project, suggest improvements and help prepare changes. This demo is free whichever you choose.</p>
+      ${!state.provider ? '<p class="selection-hint">Choose an assistant to continue.</p>' : ""}` + backNext(!state.provider);
   }
   function connect() {
     const codex = state.provider === "codex";
-    return intro(`Connect ${provider().name}`, "Try the guided connection. No sign-in page will open and no account will be accessed.") +
-      `<section class="panel"><ol class="connection-steps"><li><div>Find the provider<small>Simulated installation detected. A future app will check a supported version and help with installation.</small></div></li><li><div>${codex ? "Sign in with your provider" : "Connect an API account"}<small>${codex ? "The real flow would open the provider’s secure browser sign-in. DAF would receive status, never your password." : "A real integration would use an API key stored in the operating system’s credential store. This demo never asks for a key."}</small></div></li><li><div>Return to DAF<small>Review the connection and spending mode before starting a task.</small></div></li></ol>${state.connected ? '<div class="callout" role="status">✓ Simulated connection ready. No real authentication occurred.</div>' : button(codex ? "Simulate browser sign-in" : "Simulate API connection", "connect")}${!codex ? '<div class="callout warning">Claude subscription login is not offered for this third-party integration without Anthropic approval. API usage has separate billing.</div>' : '<p class="subnote">Future connection options depend on your account and the supported provider version.</p>'}</section>` + backNext(!state.connected);
+    return intro(`Let’s get ${provider().name} ready`, "This is where you’d connect your assistant to DAF. Today, you can try that step without signing in.") +
+      `<section class="panel connection-card"><span class="symbol" aria-hidden="true">${codex ? "◎" : "✳"}</span>
+      <h2>${codex ? "Your OpenAI account" : "Your Anthropic developer account"}</h2>
+      <p>${codex ? "With a real connection, OpenAI would guide you through sign-in in your browser. You’d then return here to choose a project." : "With a real connection, we’d guide you through linking your developer account. Its usage is billed separately from a Claude subscription."}</p>
+      <p><strong>For now, we’ll use a demo connection.</strong> There’s no account to link and nothing to pay.</p>
+      ${button("Try the demo connection →", "connect")}</section>
+      <div class="actions">${button("← Choose another assistant", "back", "text-button")}</div>`;
   }
   function projects() {
-    return intro("Where shall we start?", "Pick a sample project. No directories are opened or read; these are fictional workspaces.") + `<div class="cards">${choice("project", "Fieldnotes", "Fieldnotes", "A small notes app. Start by improving its getting-started guide.", '<span class="symbol">▤</span><span class="pill">SAMPLE PROJECT</span>')}${choice("project", "Little Library", "Little Library", "A book collection app. Review its sample README and suggest improvements.", '<span class="symbol">▥</span><span class="pill">SAMPLE PROJECT</span>')}</div><div class="callout">In the real app, “Choose folder” will open your system’s folder picker. DAF will show the exact location and prepare an isolated worktree before any edits.</div>` + backNext();
+    return intro("What would you like to explore?", "Try an example project to see how DAF helps. Everything here is made up for the demo.") +
+      `<h2 class="section-label">Try an example project</h2><fieldset><legend class="sr-only">Example project</legend><div class="cards">
+      ${choice("project", "Fieldnotes", "Fieldnotes", "Imagine a small app for saving notes and ideas. Help a new user understand how to create their first note.", '<span class="symbol" aria-hidden="true">▤</span><span class="pill">EXAMPLE NOTES APP</span>')}
+      ${choice("project", "Little Library", "Little Library", "Imagine an app for organising your books. Help someone add their first book and explore their collection.", '<span class="symbol" aria-hidden="true">▥</span><span class="pill">EXAMPLE BOOK APP</span>')}
+      </div></fieldset><div class="future-project"><div><h2>Use my own project</h2><p>In a future version, you’ll choose a project from your computer. This demo cannot open your files.</p></div><span class="pill muted">COMING LATER</span></div>` + backNext();
   }
   function boundaries() {
-    return intro("Small scope. Clear limits.", "Start with a review, or try approving a sample edit. These settings affect only the simulation.") +
-      `<div class="cards">${choice("mode", "review", "Review only", "Recommended. Read the sample README and suggest a change. No edit approval needed.")}${choice("mode", "edit", "Supervised edits", "Pause before the sample README edit. Approve once or deny; then inspect simulated checks.")}</div><div class="panel"><h2>Your task boundaries</h2><div class="permissions"><div>Project access <span>Selected sample only</span></div><div>File edits <span>${state.mode === "review" ? "Blocked" : "Ask each time"}</span></div><div>Shell & tool network <span>Blocked</span></div><div>Merge & deploy <span>Blocked</span></div><div>Concurrent tasks <span>1</span></div><div>Automatic retries <span>0</span></div></div><div class="form-row"><label class="field">Fixture token ceiling<select name="tokens"><option value="1000" ${state.tokens === 1000 ? "selected" : ""}>1,000 simulated tokens</option><option value="2000" ${state.tokens === 2000 ? "selected" : ""}>2,000 simulated tokens</option></select><small>A sample attempt reserves 800 tokens.</small></label><label class="field">Task time limit<select name="minutes"><option value="5" ${state.minutes === 5 ? "selected" : ""}>5 minutes</option><option value="10" ${state.minutes === 10 ? "selected" : ""}>10 minutes</option></select><small>The simulation stops at this limit, including while waiting for approval.</small></label></div><div class="callout"><strong>Real spending: $0 · Paid requests disabled</strong><br>A real connection must distinguish estimates, provider usage limits and enforceable caps. If a required hard cap cannot be guaranteed, the task must stay blocked.</div></div>` + backNext();
+    return intro("How would you like DAF to help?", "Start with suggestions, or try approving a change before it happens. You can stop the task at any time.") +
+      `<fieldset><legend class="sr-only">What DAF is allowed to do</legend><div class="cards permission-cards">
+      ${choice("mode", "review", "Just give me suggestions", "DAF can look at the example and recommend improvements, but cannot change anything. For example: suggest a clearer introduction.", '<span class="pill">A GOOD PLACE TO START</span>')}
+      ${choice("mode", "edit", "Make changes, but ask me first", "DAF can propose a change and show it to you. It must get your permission before applying it to the example.")}
+      </div></fieldset><div class="plain-limits"><div><strong>One small task</strong><span>Up to ${state.minutes} minutes. No automatic retries.</span></div><div><strong>Free to try</strong><span>$0 real spending. Paid requests are unavailable.</span></div></div>
+      <p class="subnote">DAF cannot access your other files, publish work or put a project live. A future real connection must explain its costs before you start.</p>
+      <div class="panel advanced">${disclosure("limits", "More about permissions and limits", `
+      <div class="form-row"><label class="field">Time limit<select name="minutes" data-focus="minutes"><option value="5" ${state.minutes === 5 ? "selected" : ""}>5 minutes</option><option value="10" ${state.minutes === 10 ? "selected" : ""}>10 minutes</option></select><small>Includes time spent waiting for your approval. A hidden or closed page cannot enforce a background timer.</small></label>
+      <label class="field">Demo workload limit<select name="tokens" data-focus="tokens"><option value="1000" ${state.tokens === 1000 ? "selected" : ""}>1,000 example tokens</option><option value="2000" ${state.tokens === 2000 ? "selected" : ""}>2,000 example tokens</option></select><small>Tokens are small pieces of text an AI works with. This task sets aside 800 simulated tokens, not money.</small></label></div>
+      <ul class="plain-list"><li>Only the chosen example project is in scope.</li><li>Shell commands and tool internet access are blocked.</li><li>Merging and deployment are blocked. One task, no automatic retries.</li><li>Real spending limits would need to be proven before paid work is allowed.</li></ul>`)}</div>
+      <div class="demo-options">${disclosure("setup-demo", "Explore a setup problem (optional demo)", `<label class="field">Try an automatic check that needs attention<select name="setupIssue" data-focus="setupIssue"><option value="none" ${state.setupIssue === "none" ? "selected" : ""}>Everything is ready</option><option value="connection" ${state.setupIssue === "connection" ? "selected" : ""}>Assistant connection unavailable</option><option value="permissions" ${state.setupIssue === "permissions" ? "selected" : ""}>Permission check fails</option><option value="limits" ${state.setupIssue === "limits" ? "selected" : ""}>Task limits cannot be confirmed</option></select></label>`)}</div>` + backNext();
   }
+  const checkProblems = {
+    connection: { title: "We couldn’t confirm the assistant connection", why: "DAF needs a working connection before it can start your task.", fix: "Reconnect the demo assistant, then we’ll check again.", button: "Fix this: reconnect the demo", help: "This example mimics an interrupted sign-in. A real connection would need you to finish sign-in with the provider. Retry checks the same connection; it does not skip this check." },
+    permissions: { title: "We couldn’t confirm the selected permissions", why: "DAF must know exactly what it is allowed to do before starting.", fix: "Switch to suggestions only and check again. This removes permission to make changes.", button: "Fix this: use suggestions only", help: "The demo is showing a permission mismatch. The fix chooses the safest option and runs the check again. If you need different permissions later, return to How we work and review them explicitly." },
+    limits: { title: "We couldn’t confirm the task limits", why: "DAF won’t start without a clear limit on how much work it can do.", fix: "Restore the recommended limits: five minutes and 1,000 example tokens. Then we’ll check again.", button: "Fix this: restore recommended limits", help: "This is a demo of an unreadable limit. Restoring the defaults does not enable paid requests or increase the allowance. Retry alone leaves the problem in place." }
+  };
   function verification() {
-    return intro("A quick check before you begin.", "This verifies the demo settings only. No provider endpoint or model is contacted.") +
-      `<div class="panel">${["Simulated provider connection", "Sample project scope", "Permissions and limits", "Stop and recovery fixture"].map(x => `<div class="verify-row"><span>${x}</span><span class="check">${state.verified ? "✓ Fixture passed" : "Not checked"}</span></div>`).join("")}<div class="compact">${button(state.verified ? "Verify again" : "Verify simulated connection", "verify")}${button("Try a failed check", "verify-fail", "secondary")}</div>${verificationError ? '<p role="alert" class="error">Simulated permission mismatch. Starting is blocked. Use “Verify simulated connection” to retry the fixture check.</p>' : ""}${state.verified ? '<p class="subnote" role="status">All fixture checks passed. This is not proof of a real connection or sandbox.</p>' : ""}</div>` + backNext(!state.verified);
+    if (state.checkStatus !== "failed") return intro("Getting everything ready…", "We’re checking the assistant, your permissions and the task limits. You don’t need to do anything.") +
+      `<div class="panel checking" aria-busy="true"><span class="checking-dot" aria-hidden="true"></span><h2>Checking your demo setup</h2><p>You’ll go straight to your first task when everything is ready.</p></div><div class="actions">${button("← Back", "back", "text-button")}</div>`;
+    const problem = checkProblems[state.checkError];
+    return intro("One thing needs your attention", "Your task hasn’t started. We’ll keep it on hold until this check passes.") +
+      `<section class="panel attention" role="alert"><p class="eyebrow">SETUP CHECK</p><h2>${problem.title}</h2>
+      <p>${problem.why}</p><p><strong>What to do:</strong> ${problem.fix}</p><div class="compact">${button(problem.button, "fix-check")}${button("Retry", "retry-check", "secondary")}</div>
+      ${disclosure("check-help", "Help with this check", `<p>${problem.help}</p>`)}</section><div class="actions">${button("← Review my settings", "back", "text-button")}</div>`;
+  }
+  function scenarioOptions() {
+    return `<label class="field">What should happen during this demo task?<select name="scenario" data-focus="scenario" ${state.status !== "ready" ? "disabled" : ""}>
+      <option value="normal" ${state.scenario === "normal" ? "selected" : ""}>Normal progress</option>
+      <option value="check-failure" ${state.scenario === "check-failure" ? "selected" : ""}>Result does not pass its check</option>
+      <option value="limit" ${state.scenario === "limit" ? "selected" : ""}>Next step would exceed the allowance</option>
+      <option value="connection-lost" ${state.scenario === "connection-lost" ? "selected" : ""}>Connection is lost</option></select></label>`;
   }
   function firstTask() {
-    return intro("Let’s give it a small task.", "Review the scope, then prepare your first supervised simulation.") + `<div class="panel"><label class="field" for="task">What would you like help with?</label><textarea id="task" maxlength="500">${escape(state.task)}</textarea><p class="subnote">Your text stays in this tab. The demo always plays the same README fixture; it does not interpret your request.</p><dl class="details-list"><div><dt>AGENT & PROJECT</dt><dd>${provider().name} · ${state.project} · Simulated</dd></div><div><dt>BOUNDARIES</dt><dd>${mode()} · ${state.tokens.toLocaleString()} fixture tokens · ${state.minutes} minutes · No retries</dd></div><div><dt>EXPECTED RESULT</dt><dd>${state.mode === "review" ? "A suggestion you can review. No files changed." : "A sample README diff, one approval and independent simulated checks."}</dd></div></dl></div><div class="actions">${button("← Back", "back", "text-button")}${button("Prepare my task →", "prepare")}</div><p id="task-error" class="error" role="alert"></p>`;
+    return intro("Start with a useful little task", "Choose a starting point. There’s no need to write instructions — we’ve prepared an example for you.") +
+      `<p class="ready-note"><span class="check">✓</span> Your demo connection, permissions and limits are ready.</p>
+      <fieldset><legend class="sr-only">Starter task</legend><div class="starter-tasks">
+      ${Object.entries(sim.tasks).map(([id, task]) => choice("taskKind", id, task.title, task.outcome)).join("")}</div></fieldset>
+      <div class="custom-task">${disclosure("custom-task", "Prefer to write your own task?", `${button("Use my own words", "custom", "secondary")}
+      <label class="field" for="customTask">Your task<textarea id="customTask" name="customTask" data-focus="customTask" maxlength="500" ${state.taskKind !== "custom" ? "disabled" : ""} placeholder="Tell DAF what you’d like help with…">${escape(state.customTask)}</textarea></label>
+      <p class="subnote">Your words stay in this tab. The demo will show a sample documentation task, not a response to your custom request.</p>`)}</div>
+      <section class="panel next-preview"><h2>Here’s what will happen</h2><p><strong>${provider().name}</strong> will work through the <strong>${state.project}</strong> example and prepare ${state.taskKind === "plan" ? "a short plan" : state.taskKind === "review" ? "three suggestions" : "a clearer introduction"}.</p>
+      <p>${sim.edits(state) ? "You’ll see the proposed change and choose whether to allow it. DAF then checks the result." : "You’ll get ideas to review. Nothing will be changed, and you won’t need to approve any edits."}</p>
+      <div class="summary-line"><span>${permission()}</span><span>Up to ${state.minutes} minutes</span><span>$0 real cost</span></div>
+      ${state.taskKind === "custom" ? '<p class="subnote">Selected: your own words, using the sample documentation demonstration.</p>' : ""}</section>
+      <div class="demo-options">${disclosure("task-demo", "Explore a task problem (optional demo)", scenarioOptions())}</div>
+      <div class="actions">${button("← Back", "back", "text-button")}${button("Start example task →", "begin")}</div><p id="task-error" class="error" role="alert"></p>`;
   }
-  const statuses = { ready: "READY WHEN YOU ARE", running: "SIMULATION RUNNING", awaiting_approval: "YOUR APPROVAL NEEDED", validating: "SIMULATED CHECKS RUNNING", completed: "SIMULATION COMPLETE", stopped: "STOPPED", failed: "CHECK FAILED · BLOCKED", limited: "BUDGET LIMIT · BLOCKED", uncertain: "OUTCOME UNKNOWN · BLOCKED" };
-  function taskControls() {
-    if (state.status === "ready") return button("Start simulation", "start");
-    if (state.status === "uncertain") return `<div class="callout warning"><strong>Inspect before restarting.</strong><br>The existing attempt may still be active. Its 800-token reservation is retained. A local stop alone would not prove remote cancellation.</div><div class="compact">${button("Reconcile existing attempt", "reconcile")}</div>`;
-    if (state.status === "awaiting_approval") return `<div class="callout"><strong>Allow this one sample edit?</strong><br>README.md in ${state.project} only. Shell, network and other files stay blocked.</div><pre class="diff">- Start the app.
-+ Getting started
-+ Open the sample project and follow the setup guide.</pre><div class="compact"><button class="primary" data-action="allow" data-approval="${state.approval}">Approve sample edit once</button><button class="secondary" data-action="deny" data-approval="${state.approval}">Deny and stop</button></div>`;
-    if (state.status === "completed") return `<div class="callout"><strong>${state.mode === "review" ? "Suggestion ready" : "Sample change ready for review"}</strong><br>${state.mode === "review" ? "Add a Getting started heading and explain the first step in the sample README." : "The fixture’s independent checks passed. Your real project has not changed."}</div>`;
-    if (state.status === "stopped") return '<div class="callout">The simulation is stopped. Nothing will resume automatically. Set up another simulation when you are ready.</div>';
-    if (state.status === "failed") return '<div class="callout warning">The fixture check found a missing heading. The task is not accepted. No automatic retry is allowed by this plan.</div>';
-    if (state.status === "limited") return '<div class="callout warning">The next segment exceeds the remaining fixture budget. The limit stays in place; no automatic increase or retry.</div>';
-    return '<p class="subnote">Playing a deterministic fixture. You can stop it at any time.</p>';
+  const statuses = { ready: "Ready to start", running: "Making progress", awaiting_approval: "Your permission is needed", validating: "Checking the result", completed: "Task complete", stopped: "Work stopped", failed: "Result needs attention", limited: "Task limit reached", uncertain: "Earlier work needs checking" };
+  function activityText() {
+    if (state.status === "running") return state.phase === 0 ? "Getting to know the example project" : "Preparing an improvement for you";
+    if (state.status === "validating") return "Checking the result before marking it complete";
+    if (state.status === "awaiting_approval") return "Waiting for your decision on one proposed change";
+    if (state.status === "completed") return "Your result is ready. Nothing else is scheduled.";
+    if (state.status === "uncertain") return "New work is on hold until the earlier task is checked";
+    if (state.status === "failed") return "The result hasn’t passed its check. No retry is running.";
+    if (state.status === "limited") return "Stopped before doing more than you allowed";
+    return "Nothing is running or scheduled to restart";
+  }
+  function progress() {
+    const milestones = sim.milestones(state);
+    const done = milestones.filter(m => m.state === "done").length;
+    const percent = Math.round(done / milestones.length * 100);
+    return `<section class="panel project-progress"><div class="section-heading"><div><p class="eyebrow">FIRST TASK PROGRESS</p><h2>${escape(state.task)}</h2></div><strong class="progress-number">${percent}%</strong></div>
+      <progress max="3" value="${done}" aria-label="Completed milestones">${done} of 3</progress>
+      <p class="subnote">${done} of 3 milestones completed</p><div class="current-activity"><span class="local-dot"></span><strong>${activityText()}</strong></div>
+      <ol class="milestones">${milestones.map(m => `<li class="${m.state}"><span class="milestone-mark" aria-hidden="true">${m.state === "done" ? "✓" : m.state === "current" ? "•" : "○"}</span><span>${m.label}</span><small>${m.state === "done" ? "Complete" : m.state === "current" ? (state.status === "awaiting_approval" ? "Waiting for you" : "In progress") : "Up next"}</small></li>`).join("")}</ol>
+      <div class="up-next"><h3>${state.status === "completed" ? "What’s next?" : "Coming up"}</h3><p>${state.status === "completed" ? "Review your result and decide what you’d like to do next. This demo won’t start another task." : needsAttention() ? "Resolve the item below before work can continue. No extra task will start on its own." : state.status === "stopped" ? "Choose a fresh example in Settings when you are ready. Nothing will restart by itself." : "DAF will finish the remaining milestones and put the result here."}</p></div></section>`;
+  }
+  function attention() {
+    if (state.status === "awaiting_approval") return `<section class="panel attention"><p class="eyebrow">ONE DECISION FOR YOU</p><h2>May DAF apply this example change?</h2><p>This replaces a vague instruction in ${state.project}’s example getting-started guide. Your permission covers this change only.</p>
+      <div class="change-preview"><div><small>BEFORE</small><p>Start the app.</p></div><div><small>AFTER</small><h3>Getting started</h3><p>${sim.projects[state.project].firstStep}</p></div></div>
+      <div class="compact">${button("Allow this example change", "allow", "primary", false, `data-approval="${state.approval}"`)}${button("No, stop here", "deny", "secondary", false, `data-approval="${state.approval}"`)}</div><p class="subnote">Only the example is affected. Other files, publishing and going live remain blocked.</p></section>`;
+    if (state.status === "uncertain") return `<section class="panel attention" role="alert"><p class="eyebrow">CHECK BEFORE CONTINUING</p><h2>${state.recoveryFailed ? "We still couldn’t confirm what happened" : "Let’s check where the work stopped"}</h2>
+      <p>${state.recoveryFailed ? "The example’s earlier result is still unavailable." : "The page was reloaded or the demo connection was interrupted, so we can’t yet confirm the last result."} Starting again could duplicate work. DAF has kept its allowance set aside.</p>
+      <p><strong>What to do:</strong> ${state.recoveryFailed ? "Use the fix to make the demo result available, then check the original task again." : "Check the earlier work. This inspects the original task; it does not restart it."}</p>
+      <div class="compact">${state.recoveryFailed ? button("Fix this: make the demo result available", "fix-recovery") + button("Retry", "reconcile", "secondary") : button("Check earlier work", "reconcile")}</div>
+      ${disclosure("recovery-help", "Why does DAF need to check?", '<p>Stopping new work does not tell us what happened just before an interruption. The demo confirms the original task has stopped before releasing its allowance. It cannot recover a real connection or a deleted browser tab.</p>')}</section>`;
+    if (state.status === "failed") return `<section class="panel attention" role="alert"><p class="eyebrow">QUALITY CHECK</p><h2>The example result isn’t ready yet</h2><p>${sim.edits(state) ? "The example change is missing a required getting-started heading." : "The example result is missing a required explanation of the first step."} DAF hasn’t marked the task complete because the result would be unclear to a new user.</p><p><strong>What to do:</strong> review the finding below. You can start a fresh demo from Settings if you’d like to try again; this task allows no automatic retries.</p>${button("Review the finding", "show-results", "secondary")}${disclosure("result-help", "Help with this result", '<p>A separate demo check disagreed with the assistant’s result. A real task would need a corrected result and another permitted check. DAF does not turn a failed check into a success or quietly increase your limits.</p>')}</section>`;
+    if (state.status === "limited") return `<section class="panel attention" role="alert"><p class="eyebrow">YOUR LIMIT HELD</p><h2>The next step would use too much of your allowance</h2><p>The demo used 800 example tokens. Its next step needs 1,500, which is more than remains. DAF stopped before that step, so the task is incomplete.</p><p><strong>What to do:</strong> review your limits in Settings. To try a smaller task, start a fresh demo there. This task will not restart or increase its own limit.</p>${button("Review my limits", "show-settings", "secondary")}${disclosure("budget-help", "What is this allowance?", '<p>Tokens are pieces of text an AI works with. These numbers are made up for the demo and have no monetary value. Real paid work would need a separately verified spending limit.</p>')}</section>`;
+    if (state.status === "stopped") return `<section class="panel stopped-note"><h2>${state.stopReason === "time" ? "Your time limit stopped the task" : "The task is stopped"}</h2><p>${state.stopReason === "recovered" ? "The earlier work was checked and confirmed stopped. No duplicate task was created." : state.stopReason === "denied" ? "You declined the change, so it was not applied." : "Nothing else will run, and any pending permission request has been cancelled."} Your progress remains here in this tab. Use Settings to start a fresh example when you’re ready.</p></section>`;
+    return "";
+  }
+  function resultContent() {
+    if (state.status === "failed") return '<p class="finding">Check failed: the result needs a clear getting-started heading and an explanation of the first step. This task has not been accepted.</p>';
+    if (state.status !== "completed") return `<p class="empty-state">${state.status === "awaiting_approval" ? "A proposed change is waiting for your permission in Overview." : "Your finished result will appear here. You can follow the milestones in Overview."}</p>`;
+    if (state.taskKind === "review") return `<ol class="result-list"><li><strong>Make the first step clear.</strong> Explain how someone starts using ${state.project}.</li><li><strong>Add an example.</strong> Show what a finished ${state.project === "Fieldnotes" ? "note" : "book entry"} looks like.</li><li><strong>Explain how to find things again.</strong> A short search tip will help returning users.</li></ol><p>Start with the first step — it’s a small improvement with a clear benefit.</p>`;
+    if (state.taskKind === "plan") return `<ol class="result-list"><li>Choose what people should be able to search: ${state.project === "Fieldnotes" ? "note titles" : "book titles"} first.</li><li>Sketch a search box and a helpful message for no results.</li><li>Try the idea with a few example entries before building it.</li></ol><p>This is a suggested plan, not a queue of work. Nothing has been changed or scheduled.</p>`;
+    return `<div class="result-document"><p class="eyebrow">${sim.edits(state) ? "APPROVED EXAMPLE CHANGE" : "SUGGESTED INTRODUCTION"}</p><h3>Getting started with ${state.project}</h3><p>${sim.projects[state.project].firstStep}</p></div><p class="subnote">${sim.edits(state) ? "You approved this one example change and its separate demo checks passed." : "This is a suggestion for you to review. Nothing was changed."}${state.taskKind === "custom" ? " This is the sample documentation result, not a response to your custom words." : ""}</p>`;
+  }
+  function history(all = false) {
+    const events = all ? state.events : state.events.slice(-3);
+    return `<ol class="timeline" aria-label="Recent activity">${events.map(e => `<li><small>STEP ${e.id}</small>${escape(e.text)}</li>`).join("")}</ol>`;
+  }
+  function resources() {
+    return `<section class="panel resources"><h2>Usage and limits</h2><div class="resource-row"><span>Real spending</span><strong>$0.00</strong></div><p class="subnote">Free demo. Paid requests are unavailable.</p>
+      <div class="resource-row"><span>Task time limit</span><strong>${state.minutes} minutes</strong></div><div class="resource-row"><span>Work at once</span><strong>One task</strong></div>
+      <p class="usage-state">${state.status === "uncertain" ? "Allowance held while we check" : state.status === "limited" ? "Not enough allowance for the next step" : "Within your demo allowance"}</p>
+      ${disclosure("usage", "See usage details", `<p>${state.used.toLocaleString()} of ${state.tokens.toLocaleString()} example tokens used; ${state.reserved.toLocaleString()} set aside for unfinished work.</p><p>All usage is simulated. Unknown work keeps its allowance until its outcome is confirmed. Time includes approval waits; hidden tabs may pause, and limits are checked again on return.</p>`)}</section>`;
+  }
+  function settings() {
+    return `<section class="panel"><h2>Your choices</h2><dl class="details-list"><div><dt>ASSISTANT</dt><dd>${provider().name} · Demo connection</dd></div><div><dt>PROJECT</dt><dd>${state.project} · Example only</dd></div><div><dt>WHAT DAF MAY DO</dt><dd>${permission()}. ${state.mode === "review" ? "It cannot change anything." : "Each proposed edit needs your permission."}</dd></div><div><dt>WHAT DAF CANNOT DO</dt><dd>Access other files, run shell commands, use tool internet access, publish changes or put anything live.</dd></div><div><dt>LIMITS</dt><dd>${state.minutes} minutes · ${state.tokens.toLocaleString()} example tokens · One task · No automatic retries · $0 real cost</dd></div></dl></section>
+      <section class="panel"><h2>Returning to your work</h2><p>This demo remembers progress in this tab when your browser allows it. Closing the tab may lose it. It does no background work and sends no notifications.</p><p>Reloading during a task asks you to check the earlier work. It never silently starts the task again.</p></section>
+      <section class="panel">${disclosure("workspace-demo", "Explore demo problems", `${scenarioOptions()}<div class="compact">${button("Interrupt the demo connection", "disconnect", "secondary", !sim.active.includes(state.status))}${button("Reach the time limit", "time-limit", "secondary", !sim.active.includes(state.status))}</div>
+      <label class="checkbox-label"><input type="checkbox" name="recoveryUnavailable" data-focus="recoveryUnavailable" ${state.recoveryUnavailable ? "checked" : ""} ${state.status !== "uncertain" ? "disabled" : ""}> Make the earlier result unavailable during the recovery demo</label>`)}</section>
+      <section class="panel"><h2>Try a fresh example</h2><p>Start over to choose another assistant, project or task. This clears the progress and history for this demo only.</p>${button("Start over", "reset", "secondary", busy())}${busy() ? '<p class="subnote">Stop the current task first. If its outcome is unknown, check the earlier work before starting over.</p>' : ""}</section>`;
   }
   function dashboard() {
-    const isActive = ["running", "awaiting_approval", "validating", "uncertain"].includes(state.status);
-    return `<div class="dashboard-top"><div><p class="eyebrow">YOUR LOCAL WORKSPACE</p><h1>Mission Control</h1><p class="lead">One task. Clear boundaries. You’re in charge.</p></div>${button("■ Stop task", "stop", "danger", !isActive && state.status !== "ready")}</div><div class="stats"><div class="stat"><small>PROVIDER</small><strong>${state.provider === "codex" ? "Codex" : "Claude"}</strong><p>Simulated connection</p></div><div class="stat"><small>REAL SPEND</small><strong>$0.00</strong><p>Paid requests disabled</p></div><div class="stat"><small>FIXTURE TOKENS</small><strong>${state.used.toLocaleString()} <small>/ ${state.tokens.toLocaleString()}</small></strong><p>${state.reserved} reserved · simulated</p></div><div class="stat"><small>PERMISSIONS</small><strong>${state.mode === "review" ? "Read only" : "Ask first"}</strong><p>1 task · ${state.minutes} min · 0 retries</p></div></div><div class="dashboard-grid"><section class="panel"><p class="status" role="status">${statuses[state.status]}</p><h2 class="task-title">${escape(state.task)}</h2><p class="subnote">${state.project} / README.md · Sample task ${state.attempt ? "· Attempt 1" : ""}</p>${taskControls()}<ol class="timeline" aria-label="Simulation activity">${state.events.map(e => `<li><small>EVENT ${String(e.id).padStart(2, "0")} · SIMULATED</small>${escape(e.text)}</li>`).join("")}</ol></section><aside><section class="panel"><h2>Boundaries at a glance</h2><dl class="details-list"><div><dt>WORKSPACE</dt><dd>${state.project} · Fictional project</dd></div><div><dt>FILE CHANGES</dt><dd>${mode()}</dd></div><div><dt>SHELL / TOOL NETWORK</dt><dd>Blocked / Blocked</dd></div><div><dt>MERGE / DEPLOY</dt><dd>Blocked / Blocked</dd></div><div><dt>STATE & RECOVERY</dt><dd>Saved in this browser tab when available. Reloading active work blocks the fixture for reconciliation. This is not a durable execution journal.</dd></div></dl></section><details class="panel scenario"><summary>Try a failure scenario</summary><p class="subnote">Deterministic fixtures for Product review.</p><label class="field">On the next simulated run<select name="scenario" ${state.status !== "ready" ? "disabled" : ""}><option value="normal" ${state.scenario === "normal" ? "selected" : ""}>Normal task</option><option value="check-failure" ${state.scenario === "check-failure" ? "selected" : ""} ${state.mode === "review" ? "disabled" : ""}>Failed check (supervised edits)</option><option value="limit" ${state.scenario === "limit" ? "selected" : ""}>Budget limit</option><option value="connection-lost" ${state.scenario === "connection-lost" ? "selected" : ""}>Connection lost</option></select></label><div class="compact">${button("Simulate connection loss", "disconnect", "secondary", !["running", "awaiting_approval", "validating"].includes(state.status))}</div></details></aside></div><div class="actions"><span class="subnote">Simulation only · No real provider requests</span>${button("Set up another simulation", "reset", "secondary", isActive)}</div>`;
+    const header = `<div class="dashboard-top"><div><p class="eyebrow">${state.project.toUpperCase()} · EXAMPLE PROJECT</p><h1>${state.view === "overview" ? "Mission Control" : names[state.view]}</h1><p class="lead">${state.view === "overview" ? sim.projects[state.project].description : "Your task, choices and progress in one place."}</p></div>${button("■ Stop task", "stop", "danger", !busy() && state.status !== "ready")}</div>
+      ${state.returnNotice ? `<div class="return-note"><p><strong>Welcome back.</strong> ${state.status === "uncertain" ? "Your last task needs checking before anything else can happen." : "Here’s the progress saved in this tab. No new task has been started."}</p>${button("Dismiss", "dismiss-return", "text-button")}</div>` : ""}`;
+    if (state.view === "results") return header + `<section class="panel"><h2>${state.status === "completed" ? "Your latest result" : "Result so far"}</h2>${resultContent()}</section>`;
+    if (state.view === "activity") return header + `<section class="panel"><h2>Task history</h2><p class="subnote">Steps from this demo, in order. This history belongs to this browser tab.</p>${history(true)}</section>`;
+    if (state.view === "settings") return header + settings();
+    return header + `<div class="health-strip ${needsAttention() ? "attention-health" : ""}"><span class="status-badge">${statuses[state.status]}</span>${needsAttention() ? '<a href="#attention" data-focus="attention-link">1 thing needs your attention ↓</a>' : '<span>Nothing needs your attention</span>'}</div>
+      <div class="dashboard-grid"><div>${progress()}<div id="attention" tabindex="-1">${attention()}</div><section class="panel"><div class="section-heading"><h2>${state.status === "completed" ? "Your latest result" : "Recent results"}</h2>${button("View results", "show-results", "text-button")}</div>${resultContent()}</section></div>
+      <aside>${resources()}<section class="panel"><h2>Working with ${provider().name}</h2><p>Demo connection · ${permission()}</p><p class="subnote">Only ${state.project} is in scope. No publishing or going live.</p></section><section class="panel"><div class="section-heading"><h2>Recent activity</h2>${button("All activity", "show-activity", "text-button")}</div>${history()}</section></aside></div>`;
   }
   function save() {
     try { sessionStorage.setItem(key, JSON.stringify(state)); } catch { storageAvailable = false; }
   }
-  function render(focus = false) {
+  function render(focusPage = false, focusKey = null) {
     clearTimeout(timer);
+    const focused = focusKey || document.activeElement?.dataset.focus;
+    document.querySelectorAll("details[data-disclosure]").forEach(el => openDetails.set(el.dataset.disclosure, el.open));
     save();
-    document.getElementById("breadcrumb").textContent = `Workspace / ${steps[state.step]}`;
-    document.getElementById("steps").innerHTML = steps.map((label, i) => `<div class="step ${i === state.step ? "current" : ""}" ${i === state.step ? 'aria-current="step"' : ""}><span class="step-number">${i < state.step ? "✓" : i + 1}</span>${label}</div>`).join("");
-    content.innerHTML = [welcome, chooseProvider, connect, projects, boundaries, verification, firstTask, dashboard][state.step]() + (!storageAvailable ? '<p class="callout warning">Browser storage is unavailable. This demo works in memory; reloading resets it and cannot resume any work.</p>' : "");
-    if (focus) { content.focus(); window.scrollTo(0, 0); }
-    if (["running", "validating"].includes(state.status)) timer = setTimeout(() => { sim.tick(state); render(); }, 1400);
+    document.body.classList.toggle("in-workspace", state.step === 7);
+    nav.setAttribute("aria-label", state.step === 7 ? "Workspace" : "Setup progress");
+    if (state.step === 7) {
+      nav.innerHTML = Object.entries(names).map(([id, title]) => `<button class="workspace-nav ${state.view === id ? "current" : ""}" data-view="${id}" data-focus="nav-${id}" ${state.view === id ? 'aria-current="page"' : ""}>${title}${id === "overview" && needsAttention() ? '<span class="nav-count" aria-label="1 item needs attention">1</span>' : ""}</button>`).join("");
+      document.getElementById("workspace-label").innerHTML = `<span class="workspace-icon">${state.project[0]}</span><div>${state.project}<small>Example project</small></div>`;
+    } else {
+      nav.innerHTML = setupNames.map((name, i) => `<div class="step ${i === setupIndex() ? "current" : ""}" ${i === setupIndex() ? 'aria-current="step"' : ""}><span class="step-number">${i < setupIndex() ? "✓" : i || "◇"}</span>${name}</div>`).join("");
+      document.getElementById("workspace-label").innerHTML = '<span class="workspace-icon">W</span><div>Your workspace<small>Let’s get started</small></div>';
+    }
+    document.getElementById("breadcrumb").textContent = state.step === 7 ? `${state.project} / ${names[state.view]}` : "Welcome to DAF";
+    content.innerHTML = [welcome, chooseProvider, connect, projects, boundaries, verification, firstTask, dashboard][state.step]() +
+      (!storageAvailable ? '<p class="callout warning">This browser cannot save demo progress. You can still try everything here, but reloading the page will start the demo over.</p>' : "");
+    document.querySelectorAll("details[data-disclosure]").forEach(el => { el.open = openDetails.get(el.dataset.disclosure) || false; });
+    if (focusPage) { content.focus(); window.scrollTo(0, 0); }
+    else if (focused) (document.querySelector(`[data-focus="${CSS.escape(focused)}"]`) || content).focus({ preventScroll: true });
+    document.getElementById("announcements").textContent = state.step === 7 ? statuses[state.status] : state.step === 5 ? (state.checkStatus === "failed" ? "A setup check needs your attention. Your task has not started." : "Checking your setup automatically.") : "";
+    schedule();
+  }
+  function schedule() {
+    clearTimeout(timer);
+    if (document.hidden) return;
+    if (state.step === 5 && state.checkStatus === "checking") timer = setTimeout(() => { sim.verify(state); render(true); }, 750);
+    else if (["running", "validating"].includes(state.status)) timer = setTimeout(() => { sim.tick(state); render(); }, 1800);
   }
   content.addEventListener("click", event => {
     const control = event.target.closest("button[data-action]");
     if (!control || control.disabled) return;
     const action = control.dataset.action;
-    let focus = false;
-    if (action === "next") focus = sim.next(state);
-    if (action === "back" && state.step > 0 && state.step < 7) { state.step--; focus = true; }
-    if (action === "connect") state.connected = true;
-    if (action === "verify" || action === "verify-fail") { verificationError = !sim.verify(state, action === "verify-fail"); }
-    if (action === "prepare") {
-      if (!sim.prepare(state, document.getElementById("task").value)) { document.getElementById("task-error").textContent = "Enter a short task before continuing (up to 500 characters)."; return; }
-      focus = true;
+    let page = false; let focusKey = null;
+    if (action === "next") page = sim.next(state);
+    if (action === "back") page = sim.back(state);
+    if (action === "connect") page = sim.connect(state);
+    if (action === "retry-check") page = sim.beginCheck(state);
+    if (action === "fix-check") { sim.fixCheck(state); page = true; }
+    if (action === "custom") { sim.chooseTask(state, "custom"); focusKey = "customTask"; }
+    if (action === "begin") {
+      if (!sim.prepare(state)) {
+        document.getElementById("task-error").textContent = "Write a short task, or choose one of the suggested tasks above. Up to 500 characters is plenty.";
+        document.getElementById("customTask")?.focus(); return;
+      }
+      sim.start(state); page = true;
     }
-    if (action === "start") sim.start(state);
-    if (action === "stop") sim.stop(state);
+    if (action === "stop") { sim.stop(state); state.view = "overview"; page = true; }
     if (action === "allow" || action === "deny") sim.decide(state, Number(control.dataset.approval), action === "allow");
-    if (action === "disconnect") sim.disconnect(state);
+    if (action === "disconnect") { sim.disconnect(state); state.view = "overview"; page = true; }
+    if (action === "time-limit") { sim.elapse(state, state.minutes * 60); state.view = "overview"; page = true; }
     if (action === "reconcile") sim.reconcile(state);
-    if (action === "reset" && !["running", "validating", "awaiting_approval", "uncertain"].includes(state.status)) { state = sim.initial(); verificationError = false; focus = true; }
-    render(focus);
+    if (action === "fix-recovery") { state.recoveryUnavailable = false; sim.reconcile(state); }
+    if (action === "dismiss-return") state.returnNotice = false;
+    if (action.startsWith("show-")) { state.view = action.slice(5); page = true; }
+    if (action === "reset" && !busy()) { state = sim.initial(); openDetails.clear(); page = true; }
+    render(page, focusKey);
+  });
+  nav.addEventListener("click", event => {
+    const target = event.target.closest("button[data-view]");
+    if (target && state.step === 7 && names[target.dataset.view]) { state.view = target.dataset.view; render(true); }
   });
   content.addEventListener("change", event => {
     const { name, value } = event.target;
-    if (["provider", "project", "mode", "tokens", "minutes"].includes(name)) {
-      sim.configuration(state, name, ["tokens", "minutes"].includes(name) ? Number(value) : value);
-      verificationError = false; render();
-      // Keep keyboard focus on the changed control after replacing the view.
-      content.querySelector(`[name="${name}"][value="${value}"]`)?.focus();
-      if (["tokens", "minutes"].includes(name)) content.querySelector(`[name="${name}"]`)?.focus();
+    if (["provider", "project", "mode", "tokens", "minutes", "setupIssue"].includes(name)) {
+      sim.configuration(state, name, ["tokens", "minutes"].includes(name) ? Number(value) : value); render();
     }
+    if (name === "taskKind") { sim.chooseTask(state, value); render(); }
     if (name === "scenario" && state.status === "ready" && ["normal", "check-failure", "limit", "connection-lost"].includes(value)) { state.scenario = value; save(); }
+    if (name === "recoveryUnavailable" && state.status === "uncertain") { state.recoveryUnavailable = event.target.checked; save(); }
   });
   content.addEventListener("input", event => {
-    if (event.target.id === "task") { state.task = event.target.value; save(); }
+    if (event.target.id === "customTask" && state.step === 6) {
+      state.customTask = event.target.value;
+      sim.chooseTask(state, "custom"); save();
+      content.querySelectorAll('[name="taskKind"]').forEach(el => { el.checked = false; el.closest('.choice').classList.remove('selected'); });
+    }
   });
   let lastTime = Date.now();
-  setInterval(() => {
+  function updateTime() {
     const now = Date.now(); const delta = Math.floor((now - lastTime) / 1000);
     if (!delta) return;
     lastTime += delta * 1000;
-    const before = state.status;
-    sim.elapse(state, delta);
-    if (before !== state.status) render();
-    else if (["running", "validating", "awaiting_approval"].includes(state.status)) save();
-  }, 1000);
+    const before = state.status; sim.elapse(state, delta);
+    if (before !== state.status) render(); else if (sim.active.includes(state.status)) save();
+  }
+  setInterval(() => { if (!document.hidden) updateTime(); }, 1000);
+  document.addEventListener("visibilitychange", () => {
+    clearTimeout(timer);
+    if (!document.hidden) { updateTime(); schedule(); }
+  });
   render();
 })();

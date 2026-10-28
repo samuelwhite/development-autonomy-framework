@@ -8,20 +8,29 @@ the v0.1 Python packages do not.
 Read [the Product proposal](../docs/v0.2-product-proposal.md) for the proposed journey,
 integration research, limitations and implementation sequence.
 
+Follow the [complete short walkthrough with screenshots](../docs/v0.2-ux-walkthrough.md).
 For Product review, try:
 
-1. Codex + Review only: connect, verify, prepare and start the sample task.
-2. Claude Code + Supervised edits: approve once, or deny and stop.
-3. Failed verification: Continue remains disabled until a successful fixture check.
-4. Mission Control → Try a failure scenario: budget refusal, lost connection or
-   failed independent check (edit mode).
+1. Choose Codex or Claude (no default), try its demo connection, pick an example
+   project, and keep **Just give me suggestions**. Checks happen automatically.
+2. Choose a suggested task and **Start example task**. Watch progress and read
+   Results; documentation, review and planning each have a different prepared result.
+3. Choose **Make changes, but ask me first** with the documentation task: allow
+   the example change once, or decline and stop. Review and planning never edit.
+4. **Explore a setup problem** on the permissions screen: Retry alone still fails;
+   the explicit **Fix this** action changes the relevant setting and rechecks it.
+   **Explore a task problem** on the starter screen offers failed result checks,
+   budget refusal and interrupted connections.
 5. Stop while running or waiting for approval. Nothing resumes automatically.
-6. Reload during active work: reconcile the same attempt before starting another
-   simulation. Unknown outcomes retain a reservation and cannot be reset from the UI.
+6. Reload during active work: **Check earlier work** inspects the same attempt.
+   Unknown outcomes keep their allowance and block Start over. Settings →
+   **Explore demo problems** also demonstrates time expiry and failed recovery.
 
 State is tab-scoped, best-effort session storage, never authority. The demo displays
-your task text but always uses the same README fixture. Restarting setup clears
-fixture history. The v0.1 engine, journals, stop gate and ledger are untouched.
+custom task text but uses the labelled sample documentation result for that option.
+There is no background execution, notification or durable recovery. **Start over**
+clears this tab's history after work stops; older prototype storage resets to welcome.
+The v0.1 engine, journals, stop gate and ledger are untouched.
 
 ## Development checks
 
