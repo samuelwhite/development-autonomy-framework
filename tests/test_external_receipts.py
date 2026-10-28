@@ -74,6 +74,6 @@ def test_duplicate_or_cross_repository_checks_refused():
 
 def test_unexpected_fields_refused():
     record = fixture()
-    record["provider_token"] = "hidden"
+    record["unexpected_field"] = "test-value"
     with pytest.raises(Refused, match="invalid_receipt_fields"):
         validate_external_receipt(record)
