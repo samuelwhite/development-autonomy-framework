@@ -38,7 +38,7 @@ demonstration, source-package rebuild demonstration and a strict dependency audi
 Audits reported no known vulnerabilities at run time; this is not a security
 certification or a guarantee against future advisories.
 
-## Safeguards verified at launch and rechecked for presentation work
+## Verified repository safeguards
 
 - Protected `main`, including administrators: independent approval, stale-review
   dismissal, last-push approval and resolved conversations; no force pushes or deletion.
@@ -50,6 +50,6 @@ certification or a guarantee against future advisories.
   credential persistence disabled and no publishing or deployment workflow steps.
 
 See [Issue #1](https://github.com/samuelwhite/development-autonomy-framework/issues/1)
-for staging closure. Public visibility and green offline CI do not approve a formal
-Release, tag, package publication, external announcement, deployment or live execution.
-The product remains an offline Developer Preview with synthetic data only.
+for staging closure. No formal GitHub Release, version tag or package registry release
+is available. The product remains an offline Developer Preview with synthetic data
+only; green offline CI does not establish support for live execution or deployment.

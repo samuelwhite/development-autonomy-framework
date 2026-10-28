@@ -12,7 +12,7 @@ This preview lets developers examine those control mechanisms through small Pyth
 components and deterministic, synthetic demonstrations. It makes **no model calls**
 and needs no API key, server or Node.js.
 
-![Synthetic Mission Control showing three accepted milestones, four retained attempts, 400 fixture tokens and zero real provider requests](docs/mission-control-synthetic.png)
+![Synthetic Mission Control showing three accepted milestones, four retained attempts, 400 fixture tokens and zero real provider requests](docs/mission-control-synthetic.jpg)
 
 *A static, read-only snapshot of synthetic data. The OFFLINE / SYNTHETIC label
 applies to every scenario and metric. [Screenshot provenance](docs/screenshot.md).*
@@ -82,13 +82,14 @@ The source is public. All four hosted CI jobs passed on the
 smoke tests, and dependency audits. The badge tracks `main`; the linked evidence
 records the exact validated commit. macOS is not in that matrix.
 
-Formal v0.1 release notes and introduction copy are
-[drafts for Product review](docs/portfolio.md). No GitHub Release, version tag or package
-publication has been made. Offline CI does not establish production readiness or
-support for live autonomous execution.
+The [v0.1 source notes](docs/release-notes-v0.1.md) describe the available preview.
+Package metadata is `0.1.0.dev1`; no GitHub Release, version tag or package registry
+release is available. Offline CI does not establish production readiness or support
+for live autonomous execution.
 
 ## Explore and contribute
 
+[Why DAF emerged from Victoria](docs/portfolio.md) ·
 [Architecture](docs/architecture.md) · [Security](SECURITY.md) ·
 [Roadmap](docs/roadmap.md) · [Contributing](CONTRIBUTING.md) ·
 [Release checklist](docs/release-checklist.md) · [Licensing](LICENSING.md)

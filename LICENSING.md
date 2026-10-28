@@ -16,10 +16,8 @@ Preserve the Apache licence and applicable notices when redistributing DAF,
 and identify modifications as required by its terms. The authoritative terms
 are the full LICENSE file and [Apache's published text](https://www.apache.org/licenses/LICENSE-2.0).
 
-Public source availability and a formal v0.1 release announcement are separate
-decisions. The reviewed source is now public after independent disclosure clearance;
+The reviewed source is public after independent disclosure clearance;
 the [launch record](docs/public-launch.md) identifies the preserved source and CI results.
-Maintainer actions to create formal releases, publish packages, announce the
-project, activate live execution, deploy services or disclose private development
-history remain separate owner decisions. See the
-[publication checklist](docs/release-checklist.md).
+Package metadata is `0.1.0.dev1`. No formal GitHub Release, version tag or package
+registry release is available. Licensing does not change the preview's
+[offline capability boundaries](docs/capabilities.md).

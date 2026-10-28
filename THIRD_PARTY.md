@@ -40,7 +40,7 @@ referenced at fixed commits; their code is not copied into this package. Recheck
 when reviewing future workflow changes. The approved public CI configuration is
 enabled; its pinned references and permissions remain unchanged.
 
-The [Mission Control screenshot](docs/mission-control-synthetic.png) captures DAF's
+The [Mission Control screenshot](docs/mission-control-synthetic.jpg) captures DAF's
 own dashboard with synthetic data. It contains no third-party artwork, private journals
 or live provider results; see [screenshot provenance](docs/screenshot.md).
 

@@ -1,6 +1,9 @@
-# DAF v0.1 Developer Preview — draft release notes
+# DAF v0.1 Developer Preview — source notes
 
-**DRAFT — for Product review. No GitHub Release, tag or package publication created.**
+**Public source preview · package version `0.1.0.dev1` · offline only**
+
+These notes describe the source available in this repository. No formal GitHub
+Release, version tag or package registry release is available.
 
 DAF (Development Autonomy Framework) explores the control layer around AI development:
 explicit plans, retained evidence, recovery and clear stopping boundaries. This first
@@ -25,7 +28,7 @@ Python 3.12+ and the repository source are sufficient; no model credentials or s
 are needed. Follow the [README quick start](../README.md#try-it-in-a-minute), then open
 the generated HTML snapshot. The [walkthrough](demo.md) explains each scenario.
 
-The package identifier is `daf-developer-preview`, with unchanged development version
+The package identifier is `daf-developer-preview`, with development version
 `0.1.0.dev1`. Install from the repository. No package registry release is available.
 
 ## Validation
@@ -34,7 +37,7 @@ The [public launch matrix](public-launch.md) passed all four standard GitHub-hos
 Ubuntu/Windows × Python 3.12/3.13 jobs: 145 tests per job, lint/format, distribution
 checks, builds, isolated wheel/source smoke demonstrations and dependency audits.
 Those results apply to commit `a9181e7b84ecdff74e3e1afb4db52460ddf63f57`.
-Before formal publication, record the final approved release commit and its own CI.
+For later revisions, consult the checks attached to that exact commit or pull request.
 
 ## Developer Preview limitations
 
@@ -52,7 +55,3 @@ the hosted matrix. See [capabilities](capabilities.md) and [security](../SECURIT
 
 Evaluation feedback and focused contributions are welcome through Issues and pull
 requests. Report sensitive findings using the private route in [SECURITY.md](../SECURITY.md).
-
-Product review should confirm the title, scope, wording and final validation evidence.
-Creating a Release or tag, publishing a package and posting an announcement each
-remain separate owner decisions.
