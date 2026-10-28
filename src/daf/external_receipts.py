@@ -74,8 +74,8 @@ def validate_external_receipt(value: Any) -> dict[str, Any]:
                 "invalid_receipt_check_result")
         require(isinstance(check["url"], str) and _URL.fullmatch(check["url"]) is not None,
                 "invalid_receipt_link")
-        require(check["url"].startswith("https://github.com/" + value["repository"] + "/actions/runs/"),
-                "receipt_repository_mismatch")
+        expected_prefix = "https://github.com/" + value["repository"] + "/actions/runs/"
+        require(check["url"].startswith(expected_prefix), "receipt_repository_mismatch")
     return json.loads(canonical(value))
 
 
