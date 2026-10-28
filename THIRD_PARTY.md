@@ -37,7 +37,12 @@ is not bundled here.
 
 GitHub Actions checkout and setup-python are MIT-licensed upstream projects
 referenced at fixed commits; their code is not copied into this package. Recheck action provenance and advisories
-before enabling public CI.
+when reviewing future workflow changes. The approved public CI configuration is
+enabled; its pinned references and permissions remain unchanged.
+
+The [Mission Control screenshot](docs/mission-control-synthetic.jpg) captures DAF's
+own dashboard with synthetic data. It contains no third-party artwork, private journals
+or live provider results; see [screenshot provenance](docs/screenshot.md).
 
 Samuel James White has confirmed personal ownership of DAF and authority to license
 and redistribute the reviewed source under Apache-2.0. This confirmation does not
