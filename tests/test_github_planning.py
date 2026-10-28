@@ -131,6 +131,7 @@ def test_bad_identity_or_path_refused(field, value):
     if field == "milestone":
         options["get_json"] = fake_source()[0]
     else:
+
         def no_network(_path):
             raise AssertionError("Invalid input reached external transport")
 
@@ -147,12 +148,18 @@ def test_bad_identity_or_path_refused(field, value):
             lambda d: d["plan"]["milestones"][1].update(depends_on=["missing"]),
             "dependency_must_precede_milestone",
         ),
-        (lambda d: d["tasks"].append(deepcopy(d["tasks"][0])),
-         "invalid_or_duplicate_planning_task"),
-        (lambda d: d["tasks"][0].update(allowed_paths=["src/daf/engine.py"]),
-         "planning_task_out_of_scope"),
-        (lambda d: d["tasks"][0].update(allowed_paths=[".github/workflows/ci.yml"]),
-         "planning_task_out_of_scope"),
+        (
+            lambda d: d["tasks"].append(deepcopy(d["tasks"][0])),
+            "invalid_or_duplicate_planning_task",
+        ),
+        (
+            lambda d: d["tasks"][0].update(allowed_paths=["src/daf/engine.py"]),
+            "planning_task_out_of_scope",
+        ),
+        (
+            lambda d: d["tasks"][0].update(allowed_paths=[".github/workflows/ci.yml"]),
+            "planning_task_out_of_scope",
+        ),
         (
             lambda d: d["tasks"][0]["required_checks"][0].update(workflow_sha256="a" * 64),
             "planning_workflow_mismatch",
@@ -206,7 +213,7 @@ def test_symlink_output_and_existing_record_link_refused(tmp_path):
         pytest.skip("Symlink creation unavailable")
     with pytest.raises(Refused, match="linked_storage_directory_refused"):
         store_idempotently(record, alias)
-    existing = folder / f'{record["ingestion_id"]}.json'
+    existing = folder / f"{record['ingestion_id']}.json"
     existing.symlink_to(EXAMPLE)
     with pytest.raises(Refused, match="ingestion_conflict"):
         store_idempotently(record, folder)
