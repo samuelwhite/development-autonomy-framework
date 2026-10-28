@@ -1,4 +1,5 @@
 """Offline boundary tests for supplied receipts; no remote evidence verification."""
+
 from copy import deepcopy
 
 import pytest
@@ -19,9 +20,12 @@ def fixture():
         "task_sha256": "d" * 64,
         "execution": "supervised_codex",
         "checks": [
-            {"name": "offline", "head_sha": "c" * 40,
-             "result": "passed",
-             "url": "https://github.com/example/product/actions/runs/12"}
+            {
+                "name": "offline",
+                "head_sha": "c" * 40,
+                "result": "passed",
+                "url": "https://github.com/example/product/actions/runs/12",
+            }
         ],
         "pr_url": "https://github.com/example/product/pull/3",
         "status": "externally_supplied_unverified",
@@ -37,16 +41,19 @@ def test_valid_receipt_is_copied_without_promoting_claims():
     assert receipt_sha256(output) == receipt_sha256(original)
 
 
-@pytest.mark.parametrize("field,value", [
-    ("status", "verified"),
-    ("execution", "autonomous_codex"),
-    ("head_sha", "wrong"),
-    ("pr_url", "https://github.com/other/product/pull/3"),
-    ("pr_url", "file:///tmp/secrets"),
-    ("repository", "../outside"),
-    ("schema_version", True),
-    ("task_sha256", "z" * 64),
-])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("status", "verified"),
+        ("execution", "autonomous_codex"),
+        ("head_sha", "wrong"),
+        ("pr_url", "https://github.com/other/product/pull/3"),
+        ("pr_url", "file:///tmp/secrets"),
+        ("repository", "../outside"),
+        ("schema_version", True),
+        ("task_sha256", "z" * 64),
+    ],
+)
 def test_invalid_claims_refused(field, value):
     record = fixture()
     record[field] = value
