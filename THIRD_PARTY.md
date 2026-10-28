@@ -22,7 +22,7 @@ transitive packages, not just the direct tools above. They are downloaded separa
 by development tooling and CI; their code and licence grants are not incorporated
 into the DAF runtime wheel or source archive. Tools such as pip and Ruff may contain
 their own bundled components; their upstream notices continue to apply to those
-tool distributions. DAF's licence, once chosen, does not relicense them.
+tool distributions. DAF's Apache-2.0 licence does not relicense them.
 
 The inventory includes MPL-2.0 build/audit dependencies (certifi and pathspec),
 Python Software Foundation terms (defusedxml and typing_extensions), permissive
@@ -37,5 +37,8 @@ is not bundled here.
 
 GitHub Actions checkout and setup-python are MIT-licensed upstream projects
 referenced at fixed commits; their code is not copied into this package. Recheck action provenance and advisories
-before enabling public CI. Candidate source redistribution rights still need the
-owner's confirmation even where no third-party file was found.
+before enabling public CI.
+
+Samuel James White has confirmed personal ownership of DAF and authority to license
+and redistribute the reviewed source under Apache-2.0. This confirmation does not
+replace the third-party provenance and licence checks described above.

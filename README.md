@@ -1,6 +1,6 @@
 # DAF — Development Autonomy Framework
 
-**v0.1 Developer Preview · offline evaluation candidate**
+**v0.1 Developer Preview · offline only**
 
 AI development needs more than generated code. It needs a durable account of what
 was requested, what was attempted, what was checked, what it consumed and where
@@ -12,9 +12,12 @@ authenticate an owner, approve execution, edit a product repository, merge code,
 send notifications or deploy. Its fixture budgets are not proof of provider
 spending limits. See [capabilities and limitations](docs/capabilities.md).
 
-**Candidate status:** Apache-2.0 licensed, privately staged for validation.
-Public release requires completed hosted CI, security and disclosure checks,
-and separate owner approval. See [licensing](LICENSING.md).
+**Preview status:** Apache-2.0 licensed source for evaluation. Repository visibility,
+hosted validation and a formal v0.1 release announcement are separate milestones.
+The soft launch makes reviewed source available for inspection; it does not claim
+green hosted CI, production readiness or a formal release. Check the repository's
+Actions results for the exact commit being evaluated. See the
+[publication checklist](docs/release-checklist.md) and [licensing](LICENSING.md).
 
 ## Quick start
 
