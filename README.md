@@ -74,6 +74,13 @@ preview cannot authenticate an owner, approve live execution, edit a product
 repository, merge code, send notifications or deploy. See the full
 [capabilities and limitations](docs/capabilities.md).
 
+## Offline supervised handoffs
+
+The separate [receipt bridge](docs/external-receipts.md) exports proposed task
+bundles and compares operator-supplied PR/CI records and local artifact bytes.
+It never invokes Codex or GitHub. Matching evidence remains unverified and grants
+no execution authority. The guide includes a synthetic, offline walkthrough.
+
 ## Validation and release status
 
 The source is public. All four hosted CI jobs passed on the

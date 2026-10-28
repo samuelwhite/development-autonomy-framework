@@ -1,0 +1,32 @@
+{
+  "baseline_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "changed_paths": [
+    "src/example.py"
+  ],
+  "checks": [
+    {
+      "artifact": {
+        "artifact_id": 56,
+        "name": "homeci-result",
+        "sha256": "4115e884e368b3b819f860eb2a636df9e76a4c867bda4ce9e4f8b52963533501"
+      },
+      "conclusion": "success",
+      "head_sha": "cccccccccccccccccccccccccccccccccccccccc",
+      "job_id": 34,
+      "name": "offline",
+      "run_attempt": 1,
+      "run_id": 12,
+      "source": "homeci",
+      "status": "completed",
+      "url": "https://github.com/example/product/actions/runs/12",
+      "validator_id": "reviewer-1",
+      "workflow_path": ".github/workflows/offline.yml",
+      "workflow_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+  ],
+  "head_sha": "cccccccccccccccccccccccccccccccccccccccc",
+  "pr_url": "https://github.com/example/product/pull/3",
+  "repository": "example/product",
+  "schema_version": 1,
+  "status": "externally_supplied_unverified"
+}

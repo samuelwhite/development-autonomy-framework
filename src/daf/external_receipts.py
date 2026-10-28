@@ -23,8 +23,23 @@ _URL = re.compile(
 
 def _nonempty(value: Any, limit: int = 500) -> str:
     require(
-        isinstance(value, str) and bool(value.strip()) and len(value) <= limit,
+        isinstance(value, str)
+        and bool(value)
+        and value == value.strip()
+        and value.isprintable()
+        and len(value) <= limit,
         "invalid_receipt_field",
+    )
+    return value
+
+
+def validate_repository(value: Any) -> str:
+    """Accept a portable GitHub owner/repository identifier, never dot segments."""
+    require(
+        isinstance(value, str)
+        and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9_.-]{1,100}", value) is not None
+        and value.split("/")[1] not in {".", ".."},
+        "invalid_receipt_repository",
     )
     return value
 
@@ -72,16 +87,13 @@ def validate_external_receipt(value: Any) -> dict[str, Any]:
             isinstance(value[key], str) and _ID.fullmatch(value[key]) is not None,
             "invalid_receipt_identity",
         )
-    require(
-        isinstance(value["repository"], str)
-        and re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", value["repository"]) is not None,
-        "invalid_receipt_repository",
-    )
+    validate_repository(value["repository"])
     require(
         value["status"] == "externally_supplied_unverified", "external_evidence_cannot_self_verify"
     )
     require(
-        value["execution"] in {"supervised_codex", "manual", "ci_only"},
+        isinstance(value["execution"], str)
+        and value["execution"] in {"supervised_codex", "manual", "ci_only"},
         "unsupported_execution_mode",
     )
     require(
@@ -107,7 +119,8 @@ def validate_external_receipt(value: Any) -> dict[str, Any]:
         ids.add(name)
         require(check["head_sha"] == value["head_sha"], "receipt_revision_mismatch")
         require(
-            check["result"] in {"passed", "failed", "pending", "unknown"},
+            isinstance(check["result"], str)
+            and check["result"] in {"passed", "failed", "pending", "unknown"},
             "invalid_receipt_check_result",
         )
         require(
