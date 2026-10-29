@@ -19,14 +19,15 @@ from daf.github_planning import (  # noqa: E402
     _document_response,
     ingest_public_milestone,
     store_idempotently,
+    validate_public_github_path,
 )
 
 GITHUB_HOST = "api.github.com"
 
 
 def get_public_github_json(path):
-    """Two fixed GitHub REST GET endpoints; no arbitrary URLs or HTTP redirects."""
-    require(isinstance(path, str) and path.startswith("/repos/"), "invalid_github_path")
+    """Pinned GitHub REST GET endpoints; no arbitrary URLs or HTTP redirects."""
+    validate_public_github_path(path)
     conn = http.client.HTTPSConnection(GITHUB_HOST, timeout=8)
     try:
         conn.request(
@@ -62,7 +63,7 @@ def main(argv=None):
     parser.add_argument("--milestone", required=True, help="Milestone ID in the pinned plan")
     parser.add_argument("--output-dir", type=Path, required=True, help="Existing local directory")
     parser.add_argument(
-        "--public-read", action="store_true", help="Explicit opt-in to two GitHub GETs"
+        "--public-read", action="store_true", help="Explicit opt-in to bounded public GitHub GETs"
     )
     args = parser.parse_args(argv)
     try:

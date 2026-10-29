@@ -89,7 +89,7 @@ no execution authority. The guide includes a synthetic, offline walkthrough.
 
 ## Public GitHub planning input (M1.1, optional)
 
-The source-checkout [pinned planning reader](docs/github-planning-ingestion.md) can retrieve a **public** GitHub plan at an exact commit and produce one deterministic, idempotently stored **proposal**. Its opt-in sidecar uses two read-only GitHub requests; the packaged DAF runtime remains offline. This neither authenticates owner approval nor launches Codex.
+The source-checkout [pinned planning reader](docs/github-planning-ingestion.md) can retrieve a **public** GitHub plan at an exact commit and produce one deterministic, idempotently stored **proposal**. Its opt-in sidecar uses bounded read-only GitHub requests; the packaged DAF runtime remains offline. This neither authenticates owner approval nor launches Codex.
 
 ## Validation and release status
 

@@ -45,7 +45,23 @@ def fake_source(doc=None, *, raw=None, metadata=None):
     def reader(path):
         seen.append(path)
         if "/git/commits/" in path:
-            return {"sha": COMMIT}
+            return {"sha": COMMIT, "tree": {"sha": f"{1:040x}"}}
+        if "/git/trees/" in path:
+            index = int(path.rsplit("/", 1)[1], 16) - 1
+            parts = PATH.split("/")
+            last = index == len(parts) - 1
+            return {
+                "sha": f"{index + 1:040x}",
+                "truncated": False,
+                "tree": [
+                    {
+                        "path": parts[index],
+                        "type": "blob" if last else "tree",
+                        "mode": "100644" if last else "040000",
+                        "sha": git_hash if last else f"{index + 2:040x}",
+                    }
+                ],
+            }
         return contents
 
     return reader, seen
@@ -61,6 +77,7 @@ def test_valid_public_example_and_exact_pinned_paths():
     record, seen = imported(milestone="F2")
     assert seen == [
         f"/repos/{REPO}/git/commits/{COMMIT}",
+        *[f"/repos/{REPO}/git/trees/{i + 1:040x}" for i in range(len(PATH.split("/")))],
         f"/repos/{REPO}/contents/{PATH}?ref={COMMIT}",
     ]
     assert record["execution_authority"] is False

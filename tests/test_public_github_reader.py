@@ -1,12 +1,11 @@
 """Offline tests of the opt-in public GitHub sidecar; no real network calls."""
 
-import base64
-import hashlib
 import importlib.util
 import json
 from pathlib import Path
 
 import pytest
+from test_github_planning import fake_source
 
 from daf.contract import Refused
 
@@ -83,6 +82,44 @@ def test_reader_rejects_non_json_and_excess_data(monkeypatch):
         sidecar.get_public_github_json("/repos/example/product/git/commits/" + "a" * 40)
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        "https://api.github.com/repos/example/product",
+        "/repos/example/product/issues",
+        "/repos/example/product/git/commits/main",
+        "/repos/../product/git/trees/" + "a" * 40,
+        "/repos/example/product/contents/../plan.json?ref=" + "a" * 40,
+        "/repos/example/product/contents/plan.json?ref=main",
+        "/repos/example/product/contents/plan.json?ref=" + "a" * 40 + "&extra=1",
+        "/repos/example/product/contents/%70lan.json?ref=" + "a" * 40,
+        "/repos/example/product/git/trees/" + "a" * 40 + "?recursive=1",
+    ],
+)
+def test_reader_rejects_unbounded_or_unpinned_endpoint_before_connection(monkeypatch, path):
+    def no_connection(*args, **kwargs):
+        raise AssertionError("Unsafe input reached HTTP connection")
+
+    monkeypatch.setattr(sidecar.http.client, "HTTPSConnection", no_connection)
+    with pytest.raises(Refused):
+        sidecar.get_public_github_json(path)
+
+
+@pytest.mark.parametrize(
+    "endpoint",
+    [
+        "git/trees/" + "a" * 40,
+        "contents/plans/Plan.json?ref=" + "b" * 40,
+    ],
+)
+def test_reader_permits_only_pinned_tree_and_content_reads(monkeypatch, endpoint):
+    FakeConnection.response = FakeResponse(b"{}")
+    monkeypatch.setattr(sidecar.http.client, "HTTPSConnection", FakeConnection)
+    path = "/repos/example/product/" + endpoint
+    assert sidecar.get_public_github_json(path) == {}
+    assert FakeConnection.created[-1].calls[0][0] == ("GET", path)
+
+
 def test_cli_requires_public_network_opt_in(monkeypatch, tmp_path, capsys):
     def no_network(_path):
         raise AssertionError("Network access without opt-in")
@@ -106,21 +143,7 @@ def test_cli_requires_public_network_opt_in(monkeypatch, tmp_path, capsys):
 
 def test_cli_repeat_is_idempotent(monkeypatch, tmp_path, capsys):
     raw = (ROOT / SOURCE).read_bytes()
-    blob_sha = hashlib.sha1(
-        b"blob " + str(len(raw)).encode() + b"\0" + raw, usedforsecurity=False
-    ).hexdigest()
-
-    def read(path):
-        if "/git/commits/" in path:
-            return {"sha": COMMIT}
-        return {
-            "type": "file",
-            "path": SOURCE,
-            "size": len(raw),
-            "encoding": "base64",
-            "content": base64.b64encode(raw).decode(),
-            "sha": blob_sha,
-        }
+    read, _seen = fake_source(raw=raw)
 
     monkeypatch.setattr(sidecar, "get_public_github_json", read)
     args = [
