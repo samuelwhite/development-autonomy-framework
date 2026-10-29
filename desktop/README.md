@@ -10,7 +10,8 @@ unsigned Product-review candidate, not a public release. Never bypass an OS warn
 
 ## Maintainer build
 
-Build tools only: Node **24.15.0** with npm, Git and internet access to download
+Build tools only: Node **22.12 or later** (locally validated with **24.15.0**) with
+npm, Git and internet access to download
 the locked npm dependencies and Electron **45.1.0**. The installed app uses none
 of the developer tools and runs offline. On Windows PowerShell, from the repo:
 
@@ -47,8 +48,11 @@ Evidence screenshots and local network logs go to ignored `desktop/test-output`.
 Raw network logs are not uploaded because they can contain host configuration.
 
 The original four `preview-quality` jobs remain unchanged. The new desktop workflow
-adds Windows and Ubuntu packaged tests and short-lived review artifacts, without
-creating a release, publishing to a registry or enabling an updater.
+adds Windows and Ubuntu packaged tests, without creating a release, publishing to
+a registry or enabling an updater. Repository policy permits only the existing
+pinned checkout/setup-python Actions: desktop CI uses runner-provided Node and
+writes aggregate results to its job summary. It does not change that policy or
+upload packages/artifacts. Obtain the review ZIP from the maintainer's local build.
 
 See [architecture decision](../docs/adr-001-desktop-packaging.md),
 [validation evidence and limitations](../docs/v0.2.1-validation.md) and

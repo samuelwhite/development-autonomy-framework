@@ -20,11 +20,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: '24.15.0'
-          cache: npm
-          cache-dependency-path: desktop/package-lock.json
+      - name: Check runner-provided Node (no extra GitHub Actions)
+        run: |
+          node --version
+          npm --version
+          node -e "const [major,minor]=process.versions.node.split('.').map(Number); if(major<22 || (major===22 && minor<12)) process.exit(1)"
       - run: npm ci --no-fund
       - run: npm audit --audit-level=moderate
       - run: npm test
@@ -53,14 +53,13 @@ jobs:
         run: |
           tar -czf ../dist/desktop/DAF-0.2.1-linux-x64.tar.gz -C ../dist/desktop DAF-linux-x64
           sha256sum ../dist/desktop/DAF-0.2.1-linux-x64.tar.gz > ../dist/desktop/DAF-0.2.1-linux-x64.tar.gz.sha256
-      - name: Review evidence and candidates (no release or registry)
+      - name: Validation summary (no artifact upload)
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: DAF-0.2.1-${{ runner.os }}-review
-          retention-days: 14
-          path: |
-            dist/desktop/*.zip*
-            dist/desktop/*.tar.gz*
-            desktop/test-output/screenshots/*.png
-            desktop/test-output/*summary.json
+        shell: pwsh
+        run: |
+          Get-ChildItem -LiteralPath test-output -Filter '*summary.json' -ErrorAction SilentlyContinue | ForEach-Object {
+            Get-Content -LiteralPath $_.FullName | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          }
+          Get-ChildItem -LiteralPath ../dist/desktop -Filter '*.metrics.json' -ErrorAction SilentlyContinue | ForEach-Object {
+            Get-Content -LiteralPath $_.FullName | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          }
