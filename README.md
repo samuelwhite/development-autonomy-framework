@@ -90,6 +90,11 @@ support for live autonomous execution.
 
 ## Explore and contribute
 
+The next iteration has a separate [v0.2 graphical prototype and Product proposal](docs/v0.2-product-proposal.md).
+Open `prototype/index.html` from this branch's extracted source ZIP to try the
+interactive, simulated setup without installing anything. It does not change or
+connect the v0.1 runtime, and is not a new release.
+
 [Why DAF emerged from Victoria](docs/portfolio.md) ·
 [Architecture](docs/architecture.md) · [Security](SECURITY.md) ·
 [Roadmap](docs/roadmap.md) · [Contributing](CONTRIBUTING.md) ·
