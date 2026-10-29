@@ -1,0 +1,66 @@
+name: desktop-candidate
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['desktop/**', 'prototype/**', '.github/workflows/desktop.yml']
+permissions:
+  contents: read
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.15.0'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci --no-fund
+      - run: npm audit --audit-level=moderate
+      - run: npm test
+      - run: node --test ../prototype/simulation.test.cjs
+      - run: npm run build
+      - name: Archive and extract Windows candidate
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./archive-windows.ps1
+          Expand-Archive -LiteralPath ../dist/desktop/DAF-0.2.1-windows-x64.zip -DestinationPath ../dist/extracted
+          "DAF_DESKTOP_EXECUTABLE=$((Resolve-Path ../dist/extracted/DAF-win32-x64/DAF.exe).Path)" >> $env:GITHUB_ENV
+      - name: Windows packaged journeys
+        if: runner.os == 'Windows'
+        run: npm run test:desktop
+      - name: Linux sandbox configuration on disposable runner
+        if: runner.os == 'Linux'
+        run: |
+          sudo chown root:root ../dist/desktop/DAF-linux-x64/chrome-sandbox
+          sudo chmod 4755 ../dist/desktop/DAF-linux-x64/chrome-sandbox
+      - name: Linux packaged journeys with sandbox enabled
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run test:desktop
+      - name: Linux review archive
+        if: runner.os == 'Linux'
+        run: |
+          tar -czf ../dist/desktop/DAF-0.2.1-linux-x64.tar.gz -C ../dist/desktop DAF-linux-x64
+          sha256sum ../dist/desktop/DAF-0.2.1-linux-x64.tar.gz > ../dist/desktop/DAF-0.2.1-linux-x64.tar.gz.sha256
+      - name: Review evidence and candidates (no release or registry)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: DAF-0.2.1-${{ runner.os }}-review
+          retention-days: 14
+          path: |
+            dist/desktop/*.zip*
+            dist/desktop/*.tar.gz*
+            desktop/test-output/screenshots/*.png
+            desktop/test-output/*summary.json

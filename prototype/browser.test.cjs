@@ -3,13 +3,13 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
-const { pathToFileURL } = require('node:url');
-const { chromium } = require(process.env.DAF_PLAYWRIGHT_PATH || 'playwright');
-const url = pathToFileURL(path.join(__dirname, 'index.html')).href;
+const { launchTarget, url, isLocal } = require('./test-target.cjs');
+
+
 const out = process.env.DAF_UI_ARTIFACT_DIR;
 
 test('beginner journeys, automatic checks, workspace and safe recovery stay offline', { timeout: 180000 }, async () => {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await launchTarget();
   const errors = [], external = [];
   try {
     const context = await browser.newContext({ offline: true, viewport: { width: 1440, height: 1000 } });
@@ -18,7 +18,7 @@ test('beginner journeys, automatic checks, workspace and safe recovery stay offl
       if (page) await page.close();
       page = await context.newPage();
       page.on('pageerror', error => errors.push(error.message));
-      page.on('request', request => { if (!request.url().startsWith('file:')) external.push(request.url()); });
+      page.on('request', request => { if (!isLocal(request.url())) external.push(request.url()); });
       await page.goto(url);
     }
     async function click(name) { await page.getByRole('button', { name, exact: true }).click(); }
@@ -177,7 +177,7 @@ test('beginner journeys, automatic checks, workspace and safe recovery stay offl
 });
 
 test('approved-plan journeys, milestone evidence and immediate exceptions stay offline', {timeout:180000}, async () => {
-  const browser = await chromium.launch({headless:true});
+  const browser = await launchTarget();
   const errors = [], external = [];
   try {
     const context = await browser.newContext({offline:true, viewport:{width:1440,height:1000}});
@@ -195,7 +195,7 @@ test('approved-plan journeys, milestone evidence and immediate exceptions stay o
       if (page) await page.close();
       page=await context.newPage();
       page.on('pageerror',error=>errors.push(error.message));
-      page.on('request',request=>{if(!request.url().startsWith('file:')) external.push(request.url());});
+      page.on('request',request=>{if(!isLocal(request.url())) external.push(request.url());});
       await page.goto(url); await click('Let’s get started →');
       await page.locator(`[name="provider"][value="${provider}"]`).check();
       await click('Continue →'); await click('Try the demo connection →'); await click('Continue →');

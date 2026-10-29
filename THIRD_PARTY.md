@@ -1,5 +1,14 @@
 # Third-party inventory
 
+The separate v0.2.1 desktop candidate bundles Electron 45.1.0 (MIT) and its
+Chromium/Node dependencies. Its complete upstream `LICENSE` and
+`LICENSES.chromium.html` ship beside `DAF-LICENSE` and `DAF-NOTICE`; retain them.
+Desktop build/test tools (`@electron/packager` 20.3.0, BSD-2-Clause;
+Playwright 1.64.1, Apache-2.0) and transitive dependencies are locked in
+`desktop/package-lock.json` and are not included in `app.asar`. Electron itself
+contains components under their own licences. DAF's Apache-2.0 notice does not
+relicense that runtime. The inventory below refers to the unchanged Python package.
+
 The runtime uses Python's standard library (including its SQLite bindings).
 No third-party source, fonts, images, model weights, JavaScript bundles or SDKs
 are vendored. The dashboard CSS and JavaScript are project source.
