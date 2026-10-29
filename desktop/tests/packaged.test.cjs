@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const http = require('node:http');
+const { pathToFileURL } = require('node:url');
 const { _electron } = require('playwright');
 const executablePath = process.env.DAF_DESKTOP_EXECUTABLE;
 
@@ -21,6 +22,8 @@ test('packaged security boundary, native close/relaunch and Chromium network log
   const output = path.resolve(__dirname, '../test-output');
   await fs.mkdir(output, { recursive: true });
   const netlog = path.join(output, 'network.json');
+  const sentinel = path.join(output, 'must-not-read.txt');
+  await fs.writeFile(sentinel, 'This local test file must not be served to the application.');
   const { app, page } = await launch([`--log-net-log=${netlog}`]);
   let closedNormally = false;
   let requests = 0;
@@ -35,13 +38,13 @@ test('packaged security boundary, native close/relaunch and Chromium network log
     assert.equal(preferences.nodeIntegration, false); assert.equal(preferences.webviewTag, false);
     assert.equal(await page.evaluate(() => window.open('https://example.invalid')), null);
     assert.equal(app.windows().length, 1);
-    const blocked = await app.evaluate(async ({ BrowserWindow }, port) => {
+    const blocked = await app.evaluate(async ({ BrowserWindow }, { port, localFile }) => {
       const session = BrowserWindow.getAllWindows()[0].webContents.session;
-      const urls = [`http://127.0.0.1:${port}/`, 'https://example.invalid/', 'file:///etc/passwd', 'daf://app/main.cjs'];
+      const urls = [`http://127.0.0.1:${port}/`, 'https://example.invalid/', localFile, 'daf://app/main.cjs'];
       return Promise.all(urls.map(async url => {
         try { const response = await session.fetch(url); return !response.ok; } catch { return true; }
       }));
-    }, server.address().port);
+    }, { port: server.address().port, localFile: pathToFileURL(sentinel).href });
     assert.deepEqual(blocked, [true, true, true, true]);
     assert.equal(requests, 0);
     await page.getByRole('button', { name: 'Let’s get started →' }).click();
