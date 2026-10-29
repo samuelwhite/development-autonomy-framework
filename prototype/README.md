@@ -17,19 +17,29 @@ For Product review, try:
    Results; documentation, review and planning each have a different prepared result.
 3. Choose **Make changes, but ask me first** with the documentation task: allow
    the example change once, or decline and stop. Review and planning never edit.
-4. **Explore a setup problem** on the permissions screen: Retry alone still fails;
+4. Choose **Work independently, check in with me**. Review the concrete example
+   plan, scope and limits, confirm all three, then approve and start. Each of the
+   three synthetic milestones shows completed work and verification evidence before
+   pausing for review. Routine changes do not require individual edit approvals.
+5. **Explore a setup problem** on the permissions screen: Retry alone still fails;
    the explicit **Fix this** action changes the relevant setting and rechecks it.
    **Explore a task problem** on the starter screen offers failed result checks,
    budget refusal and interrupted connections.
-5. Stop while running or waiting for approval. Nothing resumes automatically.
-6. Reload during active work: **Check earlier work** inspects the same attempt.
+6. In independent mode, try scope, permission, allowance, unexpected-decision or
+   publication/merge/deployment exceptions. A successful check never widens authority.
+   Settings can raise an exception immediately. There is no boundary bypass; stop
+   and approve a fresh plan if needed. Real independent execution is unavailable.
+7. Stop while running or waiting for approval/review. Nothing resumes automatically.
+   Completed example work remains visible; stopping does not undo it.
+8. Reload during active work: **Check earlier work** inspects the same attempt.
    Unknown outcomes keep their allowance and block Start over. Settings →
    **Explore demo problems** also demonstrates time expiry and failed recovery.
 
 State is tab-scoped, best-effort session storage, never authority. The demo displays
 custom task text but uses the labelled sample documentation result for that option.
 There is no background execution, notification or durable recovery. **Start over**
-clears this tab's history after work stops; older prototype storage resets to welcome.
+clears this tab's history after work stops. Previous suggestions/edit demo state is
+retained, with active work treated as interrupted; unrecognised state resets to welcome.
 The v0.1 engine, journals, stop gate and ledger are untouched.
 
 ## Development checks

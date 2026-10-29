@@ -106,7 +106,7 @@ test('beginner journeys, automatic checks, workspace and safe recovery stay offl
     }
     // Back from an automatic check cannot cause a late advance or bypass changed settings.
     await setup(); await click('← Back'); await click('Continue →'); await click('← Back');
-    await page.waitForTimeout(1000); assert.equal(await page.getByRole('heading', {name:'How would you like DAF to help?'}).count(), 1);
+    await page.waitForTimeout(1000); assert.equal(await page.getByRole('heading', {name:'How much would you like DAF to do on its own?'}).count(), 1);
     // Edit approval is the only required interruption on the successful edit journey.
     await setup('claude', 'edit'); await start();
     await page.getByRole('button', {name:'Allow this example change', exact:true}).waitFor();
@@ -174,4 +174,138 @@ test('beginner journeys, automatic checks, workspace and safe recovery stay offl
     assert.equal(await fallback.getByRole('heading',{name:'Choose your AI assistant'}).count(), 1);
     await noStorage.close();
   } finally { await browser.close(); }
+});
+
+test('approved-plan journeys, milestone evidence and immediate exceptions stay offline', {timeout:180000}, async () => {
+  const browser = await chromium.launch({headless:true});
+  const errors = [], external = [];
+  try {
+    const context = await browser.newContext({offline:true, viewport:{width:1440,height:1000}});
+    let page;
+    const click = name => page.getByRole('button',{name,exact:true}).click();
+    const status = name => page.locator('.status-badge').filter({hasText:name}).waitFor();
+    const nav = name => page.locator(`[data-view="${name}"]`).click();
+    const saved = () => page.evaluate(() => JSON.parse(sessionStorage.getItem('daf-v02-offline-prototype')));
+    async function snap(name) {
+      if (!out) return;
+      fs.mkdirSync(out,{recursive:true}); await page.evaluate(() => window.scrollTo(0,0));
+      await page.screenshot({path:path.join(out,`${name}.png`),fullPage:true});
+    }
+    async function prepare(provider='codex', scenario='normal', kind='documentation') {
+      if (page) await page.close();
+      page=await context.newPage();
+      page.on('pageerror',error=>errors.push(error.message));
+      page.on('request',request=>{if(!request.url().startsWith('file:')) external.push(request.url());});
+      await page.goto(url); await click('Let’s get started →');
+      await page.locator(`[name="provider"][value="${provider}"]`).check();
+      await click('Continue →'); await click('Try the demo connection →'); await click('Continue →');
+      assert.equal(await page.locator('[name="mode"]').count(),3);
+      assert.equal(await page.locator('[name="mode"][value="review"]').isChecked(),true);
+      await page.locator('[name="mode"][value="independent"]').check();
+      assert.match(await page.locator('main').textContent(), /Real independent work is a future capability/);
+      await click('Continue →');
+      await page.locator(`[name="taskKind"][value="${kind}"]`).check();
+      if(scenario!=='normal') {
+        await page.getByText('Explore a task problem (optional demo)',{exact:true}).click();
+        await page.locator('[name="scenario"]').selectOption(scenario);
+      }
+      await click('Review example plan →');
+      await page.getByRole('heading',{name:'Agree the plan before anything starts',exact:true}).waitFor();
+      assert.match(await page.locator('.plan-outline').textContent(),/Checks to run:/);
+      assert.doesNotMatch(await page.locator('.plan-outline').textContent(),/Added a|Prepared a|Recorded three/);
+      assert.equal((await saved()).attempt,0);
+      assert.equal(await page.getByRole('button',{name:'Approve plan and start demo →',exact:true}).isDisabled(),true);
+    }
+    async function approve() {
+      await page.locator('[name="consent-plan"]').check();
+      await page.locator('[name="consent-scope"]').check();
+      assert.equal(await page.getByRole('button',{name:'Approve plan and start demo →',exact:true}).isDisabled(),true);
+      await page.locator('[name="consent-limits"]').check();
+      await click('Approve plan and start demo →'); await status('Making progress');
+    }
+    for(const provider of ['codex','claude']) {
+      await prepare(provider);
+      if(provider==='codex') await snap('independent-plan');
+      await approve();
+      const original = (await saved()).approvedPlan;
+      for(let milestone=1;milestone<=3;milestone++) {
+        await page.getByRole('heading',{name:`Milestone ${milestone} is ready for your review`,exact:true}).waitFor();
+        assert.equal(await page.getByRole('button',{name:'Allow this example change',exact:true}).count(),0);
+        const attention=page.locator('#attention');
+        assert.match(await attention.textContent(),/SYNTHETIC VERIFICATION EVIDENCE/);
+        assert.match(await attention.textContent(),/Completed example work/);
+        assert.match(await attention.textContent(),/Routine choices/);
+        if(provider==='codex' && milestone===1) {
+          await snap('milestone-review');
+          const before=await saved(); await page.waitForTimeout(2000);
+          assert.equal((await saved()).status,'milestone_review');
+          assert.deepEqual((await saved()).milestoneResults,before.milestoneResults);
+        }
+        await click(milestone<3 ? `Continue to milestone ${milestone+1}` : 'Finish and keep the result');
+        assert.equal((await saved()).approvedPlan,original);
+      }
+      await status('Task complete');
+      assert.match(await page.locator('main').textContent(),/3 of 3 milestones verified · 3 reviewed/);
+      await nav('results'); assert.equal(await page.locator('.milestone-evidence').count(),3);
+      assert.match(await page.locator('main').textContent(),/Nothing was published, merged or deployed/);
+      if(provider==='codex') await snap('independent-results');
+      await page.reload(); assert.match(await page.locator('main').textContent(),/Welcome back/);
+      assert.equal((await saved()).status,'completed');
+    }
+    // A changed task starts a fresh approval, not a reuse of checked boxes.
+    await prepare(); await page.locator('[name="consent-plan"]').check();
+    await click('← Back to starter tasks'); await page.locator('[name="taskKind"][value="plan"]').check();
+    await click('Review example plan →');
+    assert.equal(await page.locator('.plan-consents input:checked').count(),0);
+    assert.match(await page.locator('.plan-card').textContent(),/No changes to the example project/);
+    // Validation does not authorise an exception in the next milestone.
+    for(const scenario of ['scope','unexpected','limit','publication']) {
+      await prepare('claude',scenario); await approve();
+      await click('Continue to milestone 2'); await status('Paused at a boundary');
+      const before=await saved();
+      assert.match(await page.getByRole('alert').textContent(),/What to do:/);
+      assert.equal(before.milestoneResults.length,1); assert.equal(before.milestoneResults[0].reviewed,true);
+      assert.equal(await page.getByRole('button',{name:'Continue to milestone 3',exact:true}).count(),0);
+      if(scenario==='scope') await snap('boundary-pause');
+      await page.waitForTimeout(1000); assert.equal((await saved()).status,'boundary_pause');
+      assert.equal((await saved()).approvedPlan,before.approvedPlan);
+      await nav('settings'); assert.equal(await page.getByRole('button',{name:'Start over',exact:true}).isDisabled(),true);
+      await click('■ Stop task'); await status('Work stopped');
+    }
+    // An exception raised while waiting for review immediately invalidates its decision.
+    await prepare(); await approve();
+    await page.getByRole('heading',{name:'Milestone 1 is ready for your review',exact:true}).waitFor();
+    await nav('settings'); await page.getByText('Explore demo problems',{exact:true}).click();
+    await page.locator('[name="exceptionKind"]').selectOption('permissions'); await click('Pause for this exception');
+    await status('Paused at a boundary'); assert.equal((await saved()).approval,null);
+    await page.reload(); await status('Earlier work needs checking');
+    const held=(await saved()).reserved;
+    await nav('settings'); await page.getByText('Explore demo problems',{exact:true}).click();
+    await page.locator('[name="recoveryUnavailable"]').check();
+    await nav('overview'); await click('Check earlier work');
+    assert.equal((await saved()).reserved,held); assert.equal((await saved()).status,'uncertain');
+    await click('Fix this: make the demo result available'); await status('Work stopped');
+    assert.equal((await saved()).attempt,1); assert.equal((await saved()).used,250);
+    await nav('results'); assert.match(await page.locator('main').textContent(),/Completed example work/);
+    // Failed evidence and an interrupted connection never reach a review/continuation gate.
+    await prepare('codex','check-failure'); await approve(); await status('Result needs attention');
+    assert.match(await page.getByRole('alert').textContent(),/missing a required scope note/);
+    await nav('results'); assert.match(await page.locator('main').textContent(),/not accepted/);
+    await prepare('claude','connection-lost'); await approve(); await status('Earlier work needs checking');
+    assert.equal((await saved()).milestoneResults.length,0);
+    // Narrow plan approval and milestone review remain usable with Stop visible on scroll.
+    await prepare(); await page.setViewportSize({width:390,height:844});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await approve(); await page.getByRole('heading',{name:'Milestone 1 is ready for your review',exact:true}).waitFor();
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await snap('independent-mobile');
+    await page.evaluate(()=>window.scrollTo(0,document.body.scrollHeight));
+    const stop=await page.getByRole('button',{name:'■ Stop task',exact:true}).boundingBox();
+    assert.ok(stop.y>=0 && stop.y+stop.height<=844);
+    await click('Stop here'); await status('Work stopped');
+    assert.equal((await saved()).milestoneResults[0].reviewed,false);
+    assert.match(await page.locator('main').textContent(),/Stopping does not undo/);
+    assert.deepEqual(errors,[]); assert.deepEqual(external,[]);
+    await context.close();
+  } finally {await browser.close();}
 });

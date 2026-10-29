@@ -6,6 +6,7 @@
   let storageAvailable = true;
   try { state = sim.restore(sessionStorage.getItem(key)); } catch { storageAvailable = false; }
   let timer;
+  let exceptionChoice = "scope";
   const content = document.getElementById("content");
   const nav = document.getElementById("steps");
   const openDetails = new Map();
@@ -18,9 +19,9 @@
   const intro = (title, body) => `<p class="eyebrow">GETTING STARTED · ${setupIndex()} OF 4</p><h1>${title}</h1><p class="lead">${body}</p>`;
   const backNext = (disabled = false) => `<div class="actions">${button("← Back", "back", "text-button")}${button("Continue →", "next", "primary", disabled)}</div>`;
   const provider = () => sim.providers[state.provider];
-  const permission = () => state.mode === "review" ? "Suggestions only" : "Ask before any changes";
+  const permission = () => ({ review: "Suggestions only", edit: "Ask before any changes", independent: "Approved plan · Milestone check-ins" })[state.mode];
   const busy = () => [...sim.active, "uncertain"].includes(state.status);
-  const needsAttention = () => ["awaiting_approval", "uncertain", "failed", "limited"].includes(state.status);
+  const needsAttention = () => ["awaiting_approval", "milestone_review", "boundary_pause", "uncertain", "failed", "limited"].includes(state.status);
   const disclosure = (id, title, body) => `<details data-disclosure="${id}"><summary data-focus="disclosure-${id}">${title}</summary>${body}</details>`;
   function choice(field, value, title, body, extra = "") {
     return `<label class="choice ${state[field] === value ? "selected" : ""}">
@@ -39,7 +40,7 @@
       <div class="mini-row"><span class="check">○</span> Your result, ready to review</div>
       <div class="mini-foot"><span>You choose what’s allowed.</span><span>Stop at any time.</span></div></div></div>
       <div class="features"><div><div class="feature-number">01 / CHOOSE</div><h3>Start with something small</h3><p>Pick an example project and a useful first task.</p></div>
-      <div><div class="feature-number">02 / DECIDE</div><h3>You stay in control</h3><p>Get suggestions, or ask to approve changes first.</p></div>
+      <div><div class="feature-number">02 / DECIDE</div><h3>You stay in control</h3><p>Choose suggestions, edit approvals or a plan with check-ins.</p></div>
       <div><div class="feature-number">03 / FOLLOW ALONG</div><h3>Know what happens next</h3><p>See progress, results and anything that needs you.</p></div></div>`;
   }
   function chooseProvider() {
@@ -68,10 +69,11 @@
       </div></fieldset><div class="future-project"><div><h2>Use my own project</h2><p>In a future version, you’ll choose a project from your computer. This demo cannot open your files.</p></div><span class="pill muted">COMING LATER</span></div>` + backNext();
   }
   function boundaries() {
-    return intro("How would you like DAF to help?", "Start with suggestions, or try approving a change before it happens. You can stop the task at any time.") +
+    return intro("How much would you like DAF to do on its own?", "Choose how you’d like to work together. Start with suggestions, approve each change, or agree a plan with regular check-ins. You can stop at any time.") +
       `<fieldset><legend class="sr-only">What DAF is allowed to do</legend><div class="cards permission-cards">
-      ${choice("mode", "review", "Just give me suggestions", "DAF can look at the example and recommend improvements, but cannot change anything. For example: suggest a clearer introduction.", '<span class="pill">A GOOD PLACE TO START</span>')}
-      ${choice("mode", "edit", "Make changes, but ask me first", "DAF can propose a change and show it to you. It must get your permission before applying it to the example.")}
+      ${choice("mode", "review", "Just give me suggestions", "DAF reviews and recommends improvements without making changes.", '<span class="pill">A GOOD PLACE TO START</span>')}
+      ${choice("mode", "edit", "Make changes, but ask me first", "DAF proposes changes and requests approval before applying each one.")}
+      ${choice("mode", "independent", "Work independently, check in with me", "DAF can make changes within an explicitly approved plan, deciding routine technical implementation details independently.</p><p>It pauses for review at agreed milestones and immediately whenever work exceeds scope, permissions, limits or other established boundaries.</p><p><strong>Try this behaviour in the demo.</strong> Real independent work is a future capability; no files or assistants are connected.", '<span class="pill">PLAN FIRST · REGULAR CHECK-INS</span>')}
       </div></fieldset><div class="plain-limits"><div><strong>One small task</strong><span>Up to ${state.minutes} minutes. No automatic retries.</span></div><div><strong>Free to try</strong><span>$0 real spending. Paid requests are unavailable.</span></div></div>
       <p class="subnote">DAF cannot access your other files, publish work or put a project live. A future real connection must explain its costs before you start.</p>
       <div class="panel advanced">${disclosure("limits", "More about permissions and limits", `
@@ -99,9 +101,38 @@
       <option value="normal" ${state.scenario === "normal" ? "selected" : ""}>Normal progress</option>
       <option value="check-failure" ${state.scenario === "check-failure" ? "selected" : ""}>Result does not pass its check</option>
       <option value="limit" ${state.scenario === "limit" ? "selected" : ""}>Next step would exceed the allowance</option>
-      <option value="connection-lost" ${state.scenario === "connection-lost" ? "selected" : ""}>Connection is lost</option></select></label>`;
+      <option value="connection-lost" ${state.scenario === "connection-lost" ? "selected" : ""}>Connection is lost</option>
+      ${state.mode === "independent" ? Object.entries(boundaryProblems).filter(([id]) => id !== "limit").map(([id, item]) => `<option value="${id}" ${state.scenario === id ? "selected" : ""}>${item.label}</option>`).join("") : ""}</select></label>`;
+  }
+  const boundaryProblems = {
+    scope: { label: "A new feature is outside the plan", title: "That would go beyond your plan", detail: "A request to add a new feature falls outside the approved written work. The example did not make that change." },
+    permissions: { label: "A step needs blocked permissions", title: "That step needs permission DAF doesn’t have", detail: "The proposed step needs a shell command. Shell access is blocked, so the example did not run it." },
+    limit: { label: "A step would exceed the allowance", title: "That step would exceed your agreed limit", detail: "The proposed step needs 2,000 more example tokens, which is more than remains. The example did not start it or increase your allowance." },
+    unexpected: { label: "An unexpected product decision comes up", title: "This decision needs you", detail: "The example raised a question about changing how the app behaves. That is a new product decision, outside the routine choices you approved." },
+    publication: { label: "A request to publish the result", title: "Publishing is outside this plan", detail: "A request to publish the result was blocked. An approved plan and successful checks do not permit publication." },
+    merge: { label: "A request to merge changes", title: "Merging is outside this plan", detail: "A request to merge the example changes was blocked. A milestone review cannot permit a merge." },
+    deployment: { label: "A request to put the project live", title: "Going live is outside this plan", detail: "A deployment request was blocked. This demo has no way to put a project live." }
+  };
+  function planSummary(plan) {
+    return `<div class="plan-scope"><h3>What’s in scope</h3><p>${escape(plan.scope)}</p><h3>What DAF may decide</h3><p>${escape(plan.routineChoices)}</p></div>
+      <ol class="plan-outline">${plan.milestones.map(m => `<li><strong>${escape(m.title)}</strong><p>${escape(m.intent)}</p><small>Checks to run: ${m.evidence.map(escape).join(" · ")}</small></li>`).join("")}</ol>
+      <p><strong>When DAF checks in:</strong> ${escape(plan.reviews)}</p>
+      <div class="summary-line"><span>${plan.limits.minutes} minutes, including reviews</span><span>${plan.limits.tokens.toLocaleString()} example tokens</span><span>One task · No retries · $0 real cost</span></div>
+      <p class="subnote">800 example tokens are set aside for the whole plan. These are simulated usage figures, not a real spending cap.</p>
+      <h3>Always outside this plan</h3><p>${plan.blocked.map(escape).join(" · ")}.</p><p><strong>Passing a check never expands the plan.</strong> Exceptions pause work. A different scope or limit needs a new plan and your approval.</p>`;
+  }
+  function planApproval() {
+    const plan = sim.planFor(state);
+    return intro("Agree the plan before anything starts", "Review what DAF may do, what stays out of scope and when it will check in. You’re approving this example only.") +
+      `<section class="panel plan-card"><p class="eyebrow">EXAMPLE PLAN · ${state.project.toUpperCase()}</p><h2>${escape(plan.task)}</h2>
+      <p class="callout">This is an offline demonstration with prepared work and verification evidence. Real independent execution is not available.</p>
+      ${state.taskKind === "custom" ? '<p class="subnote">Your custom words are shown above. The approved work is the fixed documentation example below, not an interpretation of your request.</p>' : ""}
+      ${planSummary(plan)}</section><fieldset class="panel plan-consents"><legend>Your approval</legend>
+      ${[["plan", "I approve this example plan and its milestone check-ins."], ["scope", "I approve this scope and the routine decisions DAF may make within it."], ["limits", "I approve these limits and the actions that remain blocked."]].map(([id, label]) => `<label class="checkbox-label"><input type="checkbox" name="consent-${id}" data-focus="consent-${id}" ${state.consents[id] ? "checked" : ""}>${label}</label>`).join("")}</fieldset>
+      <div class="actions">${button("← Back to starter tasks", "back", "text-button")}${button("Approve plan and start demo →", "approve-plan", "primary", !Object.values(state.consents).every(Boolean))}</div>`;
   }
   function firstTask() {
+    if (state.mode === "independent" && state.planReview) return planApproval();
     return intro("Start with a useful little task", "Choose a starting point. There’s no need to write instructions — we’ve prepared an example for you.") +
       `<p class="ready-note"><span class="check">✓</span> Your demo connection, permissions and limits are ready.</p>
       <fieldset><legend class="sr-only">Starter task</legend><div class="starter-tasks">
@@ -110,14 +141,21 @@
       <label class="field" for="customTask">Your task<textarea id="customTask" name="customTask" data-focus="customTask" maxlength="500" ${state.taskKind !== "custom" ? "disabled" : ""} placeholder="Tell DAF what you’d like help with…">${escape(state.customTask)}</textarea></label>
       <p class="subnote">Your words stay in this tab. The demo will show a sample documentation task, not a response to your custom request.</p>`)}</div>
       <section class="panel next-preview"><h2>Here’s what will happen</h2><p><strong>${provider().name}</strong> will work through the <strong>${state.project}</strong> example and prepare ${state.taskKind === "plan" ? "a short plan" : state.taskKind === "review" ? "three suggestions" : "a clearer introduction"}.</p>
-      <p>${sim.edits(state) ? "You’ll see the proposed change and choose whether to allow it. DAF then checks the result." : "You’ll get ideas to review. Nothing will be changed, and you won’t need to approve any edits."}</p>
+      <p>${state.mode === "independent" ? "First, you’ll approve a specific example plan, scope and limits. DAF will then work through three synthetic milestones and pause after each one for your review, without asking about every routine edit. Exceptions pause work immediately." : sim.edits(state) ? "You’ll see the proposed change and choose whether to allow it. DAF then checks the result." : "You’ll get ideas to review. Nothing will be changed, and you won’t need to approve any edits."}</p>
+      ${state.mode === "independent" && !sim.edits(state) ? '<p>This starter produces a written result only. Selecting independent work does not give a review or planning task permission to edit the example project.</p>' : ""}
       <div class="summary-line"><span>${permission()}</span><span>Up to ${state.minutes} minutes</span><span>$0 real cost</span></div>
       ${state.taskKind === "custom" ? '<p class="subnote">Selected: your own words, using the sample documentation demonstration.</p>' : ""}</section>
       <div class="demo-options">${disclosure("task-demo", "Explore a task problem (optional demo)", scenarioOptions())}</div>
-      <div class="actions">${button("← Back", "back", "text-button")}${button("Start example task →", "begin")}</div><p id="task-error" class="error" role="alert"></p>`;
+      <div class="actions">${button("← Back", "back", "text-button")}${button(state.mode === "independent" ? "Review example plan →" : "Start example task →", "begin")}</div><p id="task-error" class="error" role="alert"></p>`;
   }
-  const statuses = { ready: "Ready to start", running: "Making progress", awaiting_approval: "Your permission is needed", validating: "Checking the result", completed: "Task complete", stopped: "Work stopped", failed: "Result needs attention", limited: "Task limit reached", uncertain: "Earlier work needs checking" };
+  const statuses = { ready: "Ready to start", running: "Making progress", awaiting_approval: "Your permission is needed", validating: "Checking the result", milestone_review: "Paused for milestone review", boundary_pause: "Paused at a boundary", completed: "Task complete", stopped: "Work stopped", failed: "Result needs attention", limited: "Task limit reached", uncertain: "Earlier work needs checking" };
   function activityText() {
+    if (state.mode === "independent") {
+      if (state.status === "running") return `Working on milestone ${state.phase + 1} within your approved plan`;
+      if (state.status === "validating") return `Checking the evidence for milestone ${state.phase + 1}`;
+      if (state.status === "milestone_review") return `Milestone ${state.phase} is checked. Waiting for your review before continuing`;
+      if (state.status === "boundary_pause") return "Work paused immediately. Your original plan and limits still apply";
+    }
     if (state.status === "running") return state.phase === 0 ? "Getting to know the example project" : "Preparing an improvement for you";
     if (state.status === "validating") return "Checking the result before marking it complete";
     if (state.status === "awaiting_approval") return "Waiting for your decision on one proposed change";
@@ -131,13 +169,30 @@
     const milestones = sim.milestones(state);
     const done = milestones.filter(m => m.state === "done").length;
     const percent = Math.round(done / milestones.length * 100);
-    return `<section class="panel project-progress"><div class="section-heading"><div><p class="eyebrow">FIRST TASK PROGRESS</p><h2>${escape(state.task)}</h2></div><strong class="progress-number">${percent}%</strong></div>
+    return `<section class="panel project-progress"><div class="section-heading"><div><p class="eyebrow">${state.mode === "independent" ? "APPROVED PLAN PROGRESS" : "FIRST TASK PROGRESS"}</p><h2>${escape(state.task)}</h2></div><strong class="progress-number">${percent}%</strong></div>
       <progress max="3" value="${done}" aria-label="Completed milestones">${done} of 3</progress>
-      <p class="subnote">${done} of 3 milestones completed</p><div class="current-activity"><span class="local-dot"></span><strong>${activityText()}</strong></div>
-      <ol class="milestones">${milestones.map(m => `<li class="${m.state}"><span class="milestone-mark" aria-hidden="true">${m.state === "done" ? "✓" : m.state === "current" ? "•" : "○"}</span><span>${m.label}</span><small>${m.state === "done" ? "Complete" : m.state === "current" ? (state.status === "awaiting_approval" ? "Waiting for you" : "In progress") : "Up next"}</small></li>`).join("")}</ol>
-      <div class="up-next"><h3>${state.status === "completed" ? "What’s next?" : "Coming up"}</h3><p>${state.status === "completed" ? "Review your result and decide what you’d like to do next. This demo won’t start another task." : needsAttention() ? "Resolve the item below before work can continue. No extra task will start on its own." : state.status === "stopped" ? "Choose a fresh example in Settings when you are ready. Nothing will restart by itself." : "DAF will finish the remaining milestones and put the result here."}</p></div></section>`;
+      <p class="subnote">${done} of 3 milestones ${state.mode === "independent" ? `verified · ${state.milestoneResults.filter(m => m.reviewed).length} reviewed` : "completed"}</p><div class="current-activity"><span class="local-dot"></span><strong>${activityText()}</strong></div>
+      <ol class="milestones">${milestones.map(m => `<li class="${m.state}"><span class="milestone-mark" aria-hidden="true">${m.state === "done" ? "✓" : m.state === "current" ? "•" : "○"}</span><span>${m.label}</span><small>${m.state === "done" ? (state.mode === "independent" ? m.reviewed ? "Checked · Reviewed" : "Checked · Review needed" : "Complete") : m.state === "current" ? (state.status === "awaiting_approval" ? "Waiting for you" : "In progress") : "Up next"}</small></li>`).join("")}</ol>
+      <div class="up-next"><h3>${state.status === "completed" ? "What’s next?" : "Coming up"}</h3><p>${state.status === "completed" ? "Review your result and decide what you’d like to do next. This demo won’t start another task." : needsAttention() ? "Resolve the item below before work can continue. No extra task will start on its own." : state.status === "stopped" ? "Choose a fresh example in Settings when you are ready. Nothing will restart by itself." : state.mode === "independent" ? "Finish and check the current milestone, then pause for your review. Later milestones will wait." : "DAF will finish the remaining milestones and put the result here."}</p></div></section>`;
   }
   function attention() {
+    if (state.status === "milestone_review") {
+      const plan = JSON.parse(state.approvedPlan);
+      return `<section class="panel attention"><p class="eyebrow">AGREED CHECK-IN · ${state.phase} OF 3</p><h2>Milestone ${state.phase} is ready for your review</h2>
+        <p>${sim.edits(state) ? "These example changes were made within the plan you approved. You’re reviewing a milestone, not approving each edit." : "This written result stays within your approved plan. No project content was changed."}</p>
+        ${milestoneEvidence(state.milestoneResults.at(-1))}
+        <p><strong>Up next:</strong> ${state.phase < 3 ? escape(plan.milestones[state.phase].title) + ". It will not begin until you continue." : "All three milestones have been checked. Review the result, then finish the plan. No further work is scheduled."}</p>
+        <div class="compact">${button(state.phase < 3 ? `Continue to milestone ${state.phase + 1}` : "Finish and keep the result", "continue-milestone", "primary", false, `data-approval="${state.approval}"`)}${button("Stop here", "stop-milestone", "secondary", false, `data-approval="${state.approval}"`)}</div>
+        <p class="subnote">Your scope and limits stay the same. Passing checks cannot authorise extra work, publication, merging or deployment.</p></section>`;
+    }
+    if (state.status === "boundary_pause") {
+      const problem = boundaryProblems[state.exception];
+      return `<section class="panel attention" role="alert"><p class="eyebrow">EXCEPTION · WORK PAUSED</p><h2>${problem.title}</h2><p>${problem.detail}</p>
+        <p><strong>What to do:</strong> stop this plan, then use Settings to start a fresh example and approve a new plan if needed. You cannot skip this boundary or expand the current plan.</p>
+        <div class="compact">${button("Stop this plan", "stop")}${button("View the approved plan", "show-settings", "secondary")}</div>
+        ${disclosure("boundary-help", "Why can’t DAF continue?", "<p>Routine choices are allowed only inside the approved plan. A passed check or milestone review is not permission for a new feature, higher limits or blocked actions. Publication, merging and deployment remain unavailable in every demo plan.</p>")}</section>`;
+    }
+    if (state.mode === "independent" && state.status === "failed") return `<section class="panel attention" role="alert"><p class="eyebrow">MILESTONE CHECK</p><h2>This milestone hasn’t passed its check</h2><p>The sample verification evidence is missing a required scope note. DAF cannot accept the milestone or start the next one.</p><p><strong>What to do:</strong> review the evidence in Results. To try again, start a fresh demo from Settings and approve its plan. This attempt will not retry.</p>${button("Review the finding", "show-results", "secondary")}${disclosure("result-help", "Help with this result", "<p>Completed example work is shown separately from verification. A failed check does not undo earlier work or grant permission for a correction outside the plan.</p>")}</section>`;
     if (state.status === "awaiting_approval") return `<section class="panel attention"><p class="eyebrow">ONE DECISION FOR YOU</p><h2>May DAF apply this example change?</h2><p>This replaces a vague instruction in ${state.project}’s example getting-started guide. Your permission covers this change only.</p>
       <div class="change-preview"><div><small>BEFORE</small><p>Start the app.</p></div><div><small>AFTER</small><h3>Getting started</h3><p>${sim.projects[state.project].firstStep}</p></div></div>
       <div class="compact">${button("Allow this example change", "allow", "primary", false, `data-approval="${state.approval}"`)}${button("No, stop here", "deny", "secondary", false, `data-approval="${state.approval}"`)}</div><p class="subnote">Only the example is affected. Other files, publishing and going live remain blocked.</p></section>`;
@@ -148,10 +203,23 @@
       ${disclosure("recovery-help", "Why does DAF need to check?", '<p>Stopping new work does not tell us what happened just before an interruption. The demo confirms the original task has stopped before releasing its allowance. It cannot recover a real connection or a deleted browser tab.</p>')}</section>`;
     if (state.status === "failed") return `<section class="panel attention" role="alert"><p class="eyebrow">QUALITY CHECK</p><h2>The example result isn’t ready yet</h2><p>${sim.edits(state) ? "The example change is missing a required getting-started heading." : "The example result is missing a required explanation of the first step."} DAF hasn’t marked the task complete because the result would be unclear to a new user.</p><p><strong>What to do:</strong> review the finding below. You can start a fresh demo from Settings if you’d like to try again; this task allows no automatic retries.</p>${button("Review the finding", "show-results", "secondary")}${disclosure("result-help", "Help with this result", '<p>A separate demo check disagreed with the assistant’s result. A real task would need a corrected result and another permitted check. DAF does not turn a failed check into a success or quietly increase your limits.</p>')}</section>`;
     if (state.status === "limited") return `<section class="panel attention" role="alert"><p class="eyebrow">YOUR LIMIT HELD</p><h2>The next step would use too much of your allowance</h2><p>The demo used 800 example tokens. Its next step needs 1,500, which is more than remains. DAF stopped before that step, so the task is incomplete.</p><p><strong>What to do:</strong> review your limits in Settings. To try a smaller task, start a fresh demo there. This task will not restart or increase its own limit.</p>${button("Review my limits", "show-settings", "secondary")}${disclosure("budget-help", "What is this allowance?", '<p>Tokens are pieces of text an AI works with. These numbers are made up for the demo and have no monetary value. Real paid work would need a separately verified spending limit.</p>')}</section>`;
-    if (state.status === "stopped") return `<section class="panel stopped-note"><h2>${state.stopReason === "time" ? "Your time limit stopped the task" : "The task is stopped"}</h2><p>${state.stopReason === "recovered" ? "The earlier work was checked and confirmed stopped. No duplicate task was created." : state.stopReason === "denied" ? "You declined the change, so it was not applied." : "Nothing else will run, and any pending permission request has been cancelled."} Your progress remains here in this tab. Use Settings to start a fresh example when you’re ready.</p></section>`;
+    if (state.status === "stopped") return `<section class="panel stopped-note"><h2>${state.stopReason === "time" ? "Your time limit stopped the task" : "The task is stopped"}</h2><p>${state.stopReason === "recovered" ? "The earlier work was checked and confirmed stopped. No duplicate task was created." : state.stopReason === "denied" ? "You declined the change, so it was not applied." : "Nothing else will run, and any pending permission request was cancelled."} Your progress remains here in this tab. Use Settings to start a fresh example when you’re ready.</p>${state.mode === "independent" ? '<p>Completed example work remains visible in Results. Stopping does not undo it or turn unchecked work into an accepted result.</p>' : ""}</section>`;
     return "";
   }
+  function milestoneEvidence(result) {
+    const milestone = JSON.parse(state.approvedPlan).milestones[result.index];
+    return `<article class="milestone-evidence"><h3>${result.index + 1}. ${escape(milestone.title)}</h3><p><strong>Completed example work:</strong> ${escape(milestone.work)}</p>
+      <p><strong>Routine choices:</strong> ${escape(milestone.choices)}</p><p class="eyebrow">SYNTHETIC VERIFICATION EVIDENCE</p>
+      <ul class="evidence-list">${milestone.evidence.map(e => `<li><span aria-hidden="true">${result.check === "passed" ? "✓" : "○"}</span> ${escape(e)} <strong>${result.check === "passed" ? "Passed" : "Not verified"}</strong></li>`).join("")}</ul>
+      <p class="subnote">${result.check === "failed" ? "Check failed: a required scope note is missing from the sample evidence. This milestone is not accepted." : result.check === "pending" ? "Verification is unfinished. This work is not yet accepted." : result.reviewed ? "Checked and reviewed by you." : "Checks passed. Your milestone review is still needed."} Prepared demo evidence only; no real files or tests were run.</p></article>`;
+  }
   function resultContent() {
+    if (state.mode === "independent") {
+      if (!state.milestoneResults.length) return '<p class="empty-state">Completed work and its synthetic verification evidence will appear here after the first milestone.</p>';
+      if (state.view === "overview" && state.status === "milestone_review") return `<p>Milestone ${state.phase} is ready for review above. Results keeps the completed work and evidence from every milestone.</p>`;
+      const results = state.view === "overview" ? state.milestoneResults.slice(-1) : state.milestoneResults;
+      return results.map(milestoneEvidence).join("") + (state.status === "completed" ? '<p class="ready-note">All three milestones checked and reviewed. Nothing was published, merged or deployed.</p>' : "");
+    }
     if (state.status === "failed") return '<p class="finding">Check failed: the result needs a clear getting-started heading and an explanation of the first step. This task has not been accepted.</p>';
     if (state.status !== "completed") return `<p class="empty-state">${state.status === "awaiting_approval" ? "A proposed change is waiting for your permission in Overview." : "Your finished result will appear here. You can follow the milestones in Overview."}</p>`;
     if (state.taskKind === "review") return `<ol class="result-list"><li><strong>Make the first step clear.</strong> Explain how someone starts using ${state.project}.</li><li><strong>Add an example.</strong> Show what a finished ${state.project === "Fieldnotes" ? "note" : "book entry"} looks like.</li><li><strong>Explain how to find things again.</strong> A short search tip will help returning users.</li></ol><p>Start with the first step — it’s a small improvement with a clear benefit.</p>`;
@@ -169,9 +237,11 @@
       ${disclosure("usage", "See usage details", `<p>${state.used.toLocaleString()} of ${state.tokens.toLocaleString()} example tokens used; ${state.reserved.toLocaleString()} set aside for unfinished work.</p><p>All usage is simulated. Unknown work keeps its allowance until its outcome is confirmed. Time includes approval waits; hidden tabs may pause, and limits are checked again on return.</p>`)}</section>`;
   }
   function settings() {
-    return `<section class="panel"><h2>Your choices</h2><dl class="details-list"><div><dt>ASSISTANT</dt><dd>${provider().name} · Demo connection</dd></div><div><dt>PROJECT</dt><dd>${state.project} · Example only</dd></div><div><dt>WHAT DAF MAY DO</dt><dd>${permission()}. ${state.mode === "review" ? "It cannot change anything." : "Each proposed edit needs your permission."}</dd></div><div><dt>WHAT DAF CANNOT DO</dt><dd>Access other files, run shell commands, use tool internet access, publish changes or put anything live.</dd></div><div><dt>LIMITS</dt><dd>${state.minutes} minutes · ${state.tokens.toLocaleString()} example tokens · One task · No automatic retries · $0 real cost</dd></div></dl></section>
+    return `<section class="panel"><h2>Your choices</h2><dl class="details-list"><div><dt>ASSISTANT</dt><dd>${provider().name} · Demo connection</dd></div><div><dt>PROJECT</dt><dd>${state.project} · Example only</dd></div><div><dt>WHAT DAF MAY DO</dt><dd>${permission()}. ${state.mode === "review" ? "It cannot change anything." : state.mode === "independent" ? "Routine decisions stay within your approved plan. Every milestone needs review; exceptions pause work." : "Each proposed edit needs your permission."}</dd></div><div><dt>WHAT DAF CANNOT DO</dt><dd>Access other files, run shell commands, use tool internet access, publish, merge or deploy changes.</dd></div><div><dt>LIMITS</dt><dd>${state.minutes} minutes · ${state.tokens.toLocaleString()} example tokens · One task · No automatic retries · $0 real cost</dd></div></dl></section>
+      ${state.mode === "independent" ? `<section class="panel"><h2>Your approved example plan</h2>${disclosure("approved-plan", "See the plan, scope and limits", planSummary(JSON.parse(state.approvedPlan)))}</section>` : ""}
       <section class="panel"><h2>Returning to your work</h2><p>This demo remembers progress in this tab when your browser allows it. Closing the tab may lose it. It does no background work and sends no notifications.</p><p>Reloading during a task asks you to check the earlier work. It never silently starts the task again.</p></section>
       <section class="panel">${disclosure("workspace-demo", "Explore demo problems", `${scenarioOptions()}<div class="compact">${button("Interrupt the demo connection", "disconnect", "secondary", !sim.active.includes(state.status))}${button("Reach the time limit", "time-limit", "secondary", !sim.active.includes(state.status))}</div>
+      ${state.mode === "independent" ? `<label class="field">Try an immediate boundary pause<select name="exceptionKind" data-focus="exceptionKind">${Object.entries(boundaryProblems).map(([id, item]) => `<option value="${id}" ${exceptionChoice === id ? "selected" : ""}>${item.label}</option>`).join("")}</select></label>${button("Pause for this exception", "exception", "secondary", !["running", "validating", "milestone_review"].includes(state.status))}` : ""}
       <label class="checkbox-label"><input type="checkbox" name="recoveryUnavailable" data-focus="recoveryUnavailable" ${state.recoveryUnavailable ? "checked" : ""} ${state.status !== "uncertain" ? "disabled" : ""}> Make the earlier result unavailable during the recovery demo</label>`)}</section>
       <section class="panel"><h2>Try a fresh example</h2><p>Start over to choose another assistant, project or task. This clears the progress and history for this demo only.</p>${button("Start over", "reset", "secondary", busy())}${busy() ? '<p class="subnote">Stop the current task first. If its outcome is unknown, check the earlier work before starting over.</p>' : ""}</section>`;
   }
@@ -229,12 +299,16 @@
     if (action === "fix-check") { sim.fixCheck(state); page = true; }
     if (action === "custom") { sim.chooseTask(state, "custom"); focusKey = "customTask"; }
     if (action === "begin") {
-      if (!sim.prepare(state)) {
+      if (!(state.mode === "independent" ? sim.reviewPlan(state) : sim.prepare(state))) {
         document.getElementById("task-error").textContent = "Write a short task, or choose one of the suggested tasks above. Up to 500 characters is plenty.";
         document.getElementById("customTask")?.focus(); return;
       }
-      sim.start(state); page = true;
+      if (state.mode !== "independent") sim.start(state);
+      page = true;
     }
+    if (action === "approve-plan") { sim.approvePlan(state); page = true; }
+    if (action === "continue-milestone" || action === "stop-milestone") sim.reviewMilestone(state, Number(control.dataset.approval), action === "continue-milestone");
+    if (action === "exception") { sim.raiseException(state, exceptionChoice); state.view = "overview"; page = true; }
     if (action === "stop") { sim.stop(state); state.view = "overview"; page = true; }
     if (action === "allow" || action === "deny") sim.decide(state, Number(control.dataset.approval), action === "allow");
     if (action === "disconnect") { sim.disconnect(state); state.view = "overview"; page = true; }
@@ -256,7 +330,9 @@
       sim.configuration(state, name, ["tokens", "minutes"].includes(name) ? Number(value) : value); render();
     }
     if (name === "taskKind") { sim.chooseTask(state, value); render(); }
-    if (name === "scenario" && state.status === "ready" && ["normal", "check-failure", "limit", "connection-lost"].includes(value)) { state.scenario = value; save(); }
+    if (name === "scenario") { sim.selectScenario(state, value); save(); }
+    if (name.startsWith("consent-")) { sim.consent(state, name.slice(8), event.target.checked); render(); }
+    if (name === "exceptionKind" && sim.exceptions.includes(value)) exceptionChoice = value;
     if (name === "recoveryUnavailable" && state.status === "uncertain") { state.recoveryUnavailable = event.target.checked; save(); }
   });
   content.addEventListener("input", event => {

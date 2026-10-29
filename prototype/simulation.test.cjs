@@ -153,3 +153,162 @@ test('old, corrupt, prototype-key and inconsistent state cannot restore a runnab
     JSON.stringify({...initial, checkStatus:'failed', checkError:null}),
     JSON.stringify({...initial, events:[{id:1,text:{}}]})]) assert.deepEqual(sim.restore(raw), initial);
 });
+
+function planned(scenario = 'normal', kind = 'documentation', provider = 'codex') {
+  const s = setup(provider, 'independent'); sim.verify(s); sim.chooseTask(s, kind);
+  sim.selectScenario(s, scenario); assert.equal(sim.reviewPlan(s), true);
+  for (const key of ['plan', 'scope', 'limits']) assert.equal(sim.consent(s, key, true), true);
+  assert.equal(sim.approvePlan(s), true); return s;
+}
+function checkpoint(s) { sim.tick(s); sim.tick(s); assert.equal(s.status, 'milestone_review'); }
+
+test('independent work requires explicit plan, scope and limit consent before any start', () => {
+  const s = setup('codex', 'independent'); sim.verify(s);
+  assert.equal(sim.prepare(s), false); assert.equal(sim.start(s), false);
+  assert.equal(sim.approvePlan(s), false); assert.equal(sim.reviewPlan(s), true);
+  for (const key of ['plan', 'scope']) { sim.consent(s, key, true); assert.equal(sim.approvePlan(s), false); }
+  assert.equal(s.attempt, 0); assert.equal(s.used, 0); assert.equal(s.reserved, 0);
+  sim.consent(s, 'limits', true); assert.equal(sim.approvePlan(s), true);
+  assert.equal(s.attempt, 1); assert.equal(s.reserved, 800); assert.equal(s.status, 'running');
+  assert.equal(sim.approvePlan(s), false); assert.equal(sim.start(s), false);
+  assert.equal(sim.configuration(s, 'mode', 'edit'), false);
+});
+
+test('changed plan details invalidate consent and cannot use a stale plan approval', () => {
+  for (const [key, value] of [['tokens', 2000], ['minutes', 10], ['project', 'Little Library'], ['provider', 'claude']]) {
+    const s = setup('codex', 'independent'); sim.verify(s); sim.reviewPlan(s);
+    for (const key of ['plan','scope','limits']) sim.consent(s, key, true);
+    s[key] = value; // Stale displayed-plan race, independent of the UI's configuration guard.
+    assert.equal(sim.approvePlan(s), false); assert.equal(s.attempt, 0);
+  }
+  for (const change of [s => sim.chooseTask(s, 'plan'), s => sim.selectScenario(s, 'scope'), s => sim.back(s)]) {
+    const s = setup('codex','independent'); sim.verify(s); sim.reviewPlan(s);
+    for (const key of ['plan','scope','limits']) sim.consent(s,key,true);
+    change(s); assert.equal(s.planDraft, null); assert.equal(s.approvedPlan, null);
+    assert.deepEqual(s.consents, {plan:false,scope:false,limits:false}); assert.equal(sim.approvePlan(s), false);
+  }
+});
+
+for (const provider of ['codex','claude']) {
+  test(`${provider}: three verified milestones each pause, without per-edit permission`, () => {
+    const s = planned('normal','documentation',provider), scope = s.approvedPlan;
+    for (let index = 0; index < 3; index++) {
+      sim.tick(s); assert.equal(s.status, 'validating');
+      assert.equal(s.approval, null); assert.equal(s.milestoneResults[index].check, 'pending');
+      assert.equal(sim.reviewMilestone(s, s.approval, true), false);
+      sim.tick(s); assert.equal(s.status, 'milestone_review');
+      assert.equal(s.milestoneResults[index].check, 'passed');
+      assert.equal(s.milestoneResults[index].reviewed, false);
+      const id = s.approval, snapshot = JSON.stringify(s);
+      sim.tick(s); sim.tick(s); assert.equal(JSON.stringify(s), snapshot);
+      assert.equal(sim.decide(s, id, true), false); // Edit permission cannot acknowledge a milestone.
+      assert.equal(sim.reviewMilestone(s, id + 1, true), false);
+      assert.equal(sim.reviewMilestone(s, id, true), true);
+      assert.equal(sim.reviewMilestone(s, id, true), false);
+      assert.equal(s.approvedPlan, scope); assert.equal(s.attempt, 1);
+    }
+    assert.equal(s.status, 'completed'); assert.equal(s.used, 800); assert.equal(s.reserved, 0);
+    assert.equal(s.milestoneResults.filter(m => m.reviewed).length, 3);
+    const plan = JSON.parse(scope);
+    for (const forbidden of ['Publication','Merging','Deployment']) assert.ok(plan.blocked.includes(forbidden));
+    assert.match(s.events.at(-1).text, /Nothing was published, merged, deployed/);
+    const restored = sim.restore(JSON.stringify(s));
+    assert.equal(restored.status, 'completed'); assert.deepEqual(restored.milestoneResults, s.milestoneResults);
+  });
+}
+for (const kind of ['review','plan']) {
+  test(`independent ${kind} remains written work only, with no editing authority`, () => {
+    const s = planned('normal', kind); assert.equal(sim.edits(s), false);
+    assert.match(sim.planFor(s).scope, /No changes to the example project/);
+    for (let i=0;i<3;i++) { checkpoint(s); sim.reviewMilestone(s,s.approval,true); }
+    assert.equal(s.status, 'completed'); assert.equal(sim.edits(s), false);
+  });
+}
+for (const kind of sim.exceptions) {
+  test(`${kind} exception: successful validation cannot expand the approved plan`, () => {
+    const s = planned(kind), plan = s.approvedPlan;
+    checkpoint(s); sim.reviewMilestone(s, s.approval, true);
+    const before = {used:s.used, reserved:s.reserved, records:JSON.stringify(s.milestoneResults)};
+    sim.tick(s); assert.equal(s.status, 'boundary_pause'); assert.equal(s.exception, kind);
+    assert.equal(s.approvedPlan, plan); assert.equal(s.approval, null);
+    for (let n=0;n<4;n++) sim.tick(s);
+    assert.deepEqual({used:s.used,reserved:s.reserved,records:JSON.stringify(s.milestoneResults)}, before);
+    assert.equal(sim.reviewMilestone(s, 1, true), false); assert.equal(sim.approvePlan(s), false);
+    assert.equal(sim.start(s), false); assert.equal(sim.configuration(s,'tokens',2000), false);
+  });
+}
+for (const phase of ['running','validating','milestone_review','boundary_pause']) {
+  test(`independent ${phase}: stop and reload revoke pending decisions without losing work`, () => {
+    const s = planned();
+    if (phase !== 'running') sim.tick(s);
+    if (['milestone_review','boundary_pause'].includes(phase)) sim.tick(s);
+    if (phase === 'boundary_pause') sim.raiseException(s, 'unexpected');
+    assert.equal(s.status, phase);
+    const id = s.approval, held = s.reserved, used = s.used, work = JSON.stringify(s.milestoneResults);
+    const restored = sim.restore(JSON.stringify(s));
+    assert.equal(restored.status, 'uncertain'); assert.equal(restored.approval, null);
+    assert.equal(restored.reserved, held); assert.equal(restored.used, used);
+    assert.equal(JSON.stringify(restored.milestoneResults), work);
+    restored.recoveryUnavailable = true; assert.equal(sim.reconcile(restored), false);
+    sim.stop(restored); assert.equal(restored.status,'uncertain'); assert.equal(restored.reserved,held);
+    restored.recoveryUnavailable = false; assert.equal(sim.reconcile(restored), true);
+    assert.equal(restored.attempt,1); assert.equal(restored.status,'stopped');
+    assert.equal(restored.used,used); assert.equal(restored.reserved,0);
+    sim.stop(s); sim.tick(s); assert.equal(s.status,'stopped'); assert.equal(s.used,used);
+    assert.equal(JSON.stringify(s.milestoneResults),work); assert.equal(sim.reviewMilestone(s,id,true),false);
+  });
+}
+for (const phase of ['running','validating','milestone_review']) {
+  test(`immediate exception during ${phase} blocks the next callback and invalidates review`, () => {
+    const s = planned();
+    if (phase !== 'running') sim.tick(s);
+    if (phase === 'milestone_review') sim.tick(s);
+    const id = s.approval;
+    assert.equal(sim.raiseException(s,'permissions'),true);
+    const snapshot = JSON.stringify(s); sim.tick(s); assert.equal(JSON.stringify(s),snapshot);
+    assert.equal(sim.reviewMilestone(s,id,true),false); assert.equal(s.status,'boundary_pause');
+  });
+}
+test('changing approved scope or limits cannot continue after a passed milestone', () => {
+  for (const [key,value] of [['tokens',2000],['minutes',10],['project','Little Library'],['taskKind','review']]) {
+    const s = planned(); checkpoint(s); s[key]=value;
+    assert.equal(sim.reviewMilestone(s,s.approval,true),false); assert.equal(s.status,'boundary_pause');
+    assert.equal(s.milestoneResults.length,1); assert.equal(s.used,250);
+  }
+});
+test('failed milestone evidence blocks all later work and is not silently accepted', () => {
+  const s = planned('check-failure'); sim.tick(s); sim.tick(s);
+  assert.equal(s.status,'failed'); assert.equal(s.milestoneResults[0].check,'failed');
+  assert.equal(s.phase,0); assert.equal(s.reserved,0);
+  assert.equal(sim.reviewMilestone(s,null,true),false); sim.tick(s); assert.equal(s.status,'failed');
+  assert.equal(sim.restore(JSON.stringify(s)).status,'failed');
+});
+test('declining milestone review keeps completed work and stops the remaining plan', () => {
+  const s = planned(); checkpoint(s); sim.reviewMilestone(s,s.approval,false);
+  assert.equal(s.status,'stopped'); assert.equal(s.stopReason,'milestone_declined');
+  assert.equal(s.milestoneResults[0].check,'passed'); assert.equal(s.milestoneResults[0].reviewed,false);
+  assert.equal(s.used,250); assert.equal(s.reserved,0); sim.tick(s); assert.equal(s.phase,1);
+});
+test('time expiry during a milestone review cancels its decision and never extends limits', () => {
+  const s = planned(); checkpoint(s); const id=s.approval;
+  sim.elapse(s,300); assert.equal(s.status,'stopped'); assert.equal(s.stopReason,'time');
+  assert.equal(s.approval,null); assert.equal(sim.reviewMilestone(s,id,true),false); assert.equal(s.minutes,5);
+});
+test('independent connection loss does not record unobserved work', () => {
+  const s=planned('connection-lost'); sim.tick(s);
+  assert.equal(s.status,'uncertain'); assert.equal(s.reserved,800); assert.equal(s.milestoneResults.length,0);
+});
+test('malformed plan storage cannot restore approved work or fabricate completed reviews', () => {
+  const s=planned(); checkpoint(s);
+  for (const bad of [{...s,approvedPlan:null}, {...s,approvedPlan:'{}'}, {...s,phase:3,status:'completed'},
+    {...s,milestoneResults:[{index:0,check:'pending',reviewed:true}]}, {...s,consents:null},
+    {...s,consents:{plan:true,scope:false,limits:true}},
+    {...s,status:'boundary_pause',exception:null}]) assert.deepEqual(sim.restore(JSON.stringify(bad)),sim.initial());
+});
+test('previous suggestion/edit state retains its history and unknown allowance on upgrade', () => {
+  const s=ready('edit'); sim.tick(s); sim.tick(s); s.version=2;
+  for(const key of ['planReview','planDraft','consents','approvedPlan','milestoneResults','exception']) delete s[key];
+  const restored=sim.restore(JSON.stringify(s)); assert.equal(restored.version,3);
+  assert.equal(restored.status,'uncertain'); assert.equal(restored.reserved,800); assert.equal(restored.attempt,1);
+  assert.deepEqual(restored.events.slice(0,-1),s.events);
+});
