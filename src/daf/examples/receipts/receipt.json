@@ -1,0 +1,21 @@
+{
+  "attempt_id": "attempt-1",
+  "baseline_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "checks": [
+    {
+      "head_sha": "cccccccccccccccccccccccccccccccccccccccc",
+      "name": "offline",
+      "result": "passed",
+      "url": "https://github.com/example/product/actions/runs/12"
+    }
+  ],
+  "execution": "supervised_codex",
+  "head_sha": "cccccccccccccccccccccccccccccccccccccccc",
+  "milestone_id": "M1",
+  "plan_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "pr_url": "https://github.com/example/product/pull/3",
+  "repository": "example/product",
+  "schema_version": 1,
+  "status": "externally_supplied_unverified",
+  "task_sha256": "5a7bf214b7d4d1005f5c5e7d76faa8d780b83ae9e406d9bf29bfc338ef689b6f"
+}

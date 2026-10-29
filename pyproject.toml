@@ -14,6 +14,7 @@ license-files = ["LICENSE", "NOTICE"]
 
 [project.scripts]
 daf-preview = "daf.__main__:main"
+daf-receipts = "daf.receipt_bridge:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/daf"]

@@ -1,0 +1,23 @@
+{
+  "allowed_paths": [
+    "src/example.py",
+    "tests/test_example.py"
+  ],
+  "attempt_id": "attempt-1",
+  "baseline_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "instruction": "Update the synthetic example.\nKeep the change within the named files.",
+  "milestone_id": "M1",
+  "plan_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "repository": "example/product",
+  "required_checks": [
+    {
+      "artifact_name": "homeci-result",
+      "name": "offline",
+      "source": "homeci",
+      "validator_id": "reviewer-1",
+      "workflow_path": ".github/workflows/offline.yml",
+      "workflow_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+  ],
+  "schema_version": 1
+}

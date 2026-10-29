@@ -17,6 +17,8 @@ def main():
     with zipfile.ZipFile(wheels[0]) as archive:
         assert "daf/examples/plan.json" in archive.namelist()
         assert "daf/assets/app.js" in archive.namelist()
+        for name in ("request", "bundle", "receipt", "evidence", "artifact"):
+            assert f"daf/examples/receipts/{name}.json" in archive.namelist()
         assert not any(n.startswith(("tests/", ".git/")) for n in archive.namelist())
         metadata = archive.read(next(n for n in archive.namelist() if n.endswith("/METADATA")))
         assert b"Requires-Dist:" not in metadata
@@ -48,6 +50,53 @@ def main():
             timeout=60,
             stdout=subprocess.DEVNULL,
         )
+        # Exercise the installed receipt bridge from outside the checkout too.
+        examples = ROOT / "src/daf/examples/receipts"
+        bundle_result = subprocess.run(
+            [
+                str(python),
+                "-I",
+                "-m",
+                "daf.receipt_bridge",
+                "prepare",
+                str(examples / "request.json"),
+            ],
+            cwd=directory,
+            env=environment,
+            check=True,
+            timeout=60,
+            capture_output=True,
+            text=True,
+        )
+        bundle = json.loads(bundle_result.stdout)
+        assert bundle["execution_authority"] is False
+        bundle_path = directory / "bundle.json"
+        bundle_path.write_text(json.dumps(bundle), encoding="utf-8")
+        receipt_result = subprocess.run(
+            [
+                str(python),
+                "-I",
+                "-m",
+                "daf.receipt_bridge",
+                "reconcile",
+                str(bundle_path),
+                str(examples / "receipt.json"),
+                str(examples / "evidence.json"),
+                "--artifact",
+                "homeci-result",
+                str(examples / "artifact.json"),
+            ],
+            cwd=directory,
+            env=environment,
+            check=True,
+            timeout=60,
+            capture_output=True,
+            text=True,
+        )
+        receipt = json.loads(receipt_result.stdout)
+        assert receipt["status"] == "externally_supplied_unverified"
+        assert receipt["execution_authority"] is False
+        assert receipt["all_required_checks_claimed_passed"] is True
         report = json.loads((directory / "demonstration/demonstration.json").read_text())
         assert report["provider_requests"] == 0
         assert report["progression"]["known_actual_tokens"] == 400
@@ -55,6 +104,7 @@ def main():
             json.dumps(
                 {
                     "wheel_install": "passed",
+                    "receipt_bridge": "passed_unverified",
                     "outside_source_tree": True,
                     "runtime_dependencies": 0,
                     "provider_requests": 0,

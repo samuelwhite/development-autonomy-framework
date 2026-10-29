@@ -4,7 +4,9 @@ This is an offline research/developer preview, not an approved autonomous
 production controller. No live model transport, credential lookup, approval
 service, remote listener, notification delivery or deployment adapter is shipped.
 
-The CLI creates only new synthetic state. Its static dashboard uses text nodes,
+The demo CLI creates only new synthetic state. The separate offline receipt CLI
+reads explicitly named local inputs and emits unverified comparisons on stdout;
+it grants no authority and launches no worker. The demo dashboard uses text nodes,
 escaped embedded data, a restrictive content security policy and no external
 assets or network requests. Existing directories and linked output paths are
 refused. The package does not inspect your home directory or discover credentials.
