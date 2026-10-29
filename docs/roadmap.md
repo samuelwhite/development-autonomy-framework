@@ -15,3 +15,8 @@ repository safeguards and four-job hosted matrix are complete as of 2026-10-28.
 
 These are requirements and research directions, not committed delivery dates.
 Passing offline tests does not remove the blockers for live use.
+
+The [v0.2 UI-first proposal](v0.2-product-proposal.md) adds a graphical setup and
+supervision experience ahead of live activation. Its offline prototype and
+[provider research](v0.2-provider-feasibility.md) make the journey reviewable while
+preserving the admission, authority, spending and recovery gates above.
