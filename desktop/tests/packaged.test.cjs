@@ -9,6 +9,24 @@ const { _electron } = require('playwright');
 const { auditNetwork } = require('./network-audit.cjs');
 const executablePath = process.env.DAF_DESKTOP_EXECUTABLE;
 
+test('package contains only the named host and approved UI assets', async () => {
+  const { listPackage, extractFile } = await import('@electron/asar');
+  const archive = path.join(path.dirname(executablePath), 'resources/app.asar');
+  assert.deepEqual(listPackage(archive).map(name => name.replaceAll('\\', '/')).sort(), [
+    '/main.cjs', '/package.json', '/policy.cjs', '/ui', '/ui/app.js',
+    '/ui/index.html', '/ui/simulation.js', '/ui/style.css',
+  ]);
+  for (const file of ['app.js', 'simulation.js', 'style.css']) {
+    assert.deepEqual(extractFile(archive, `ui/${file}`), await fs.readFile(path.resolve(__dirname, '../../prototype', file)));
+  }
+  for (const file of ['main.cjs', 'policy.cjs']) {
+    assert.deepEqual(extractFile(archive, file), await fs.readFile(path.resolve(__dirname, '..', file)));
+  }
+  for (const file of ['LICENSE', 'LICENSES.chromium.html', 'DAF-LICENSE', 'DAF-NOTICE', 'START-HERE.txt']) {
+    assert.ok((await fs.stat(path.join(path.dirname(executablePath), file))).size > 0);
+  }
+});
+
 async function launch(args = []) {
   const env = { ...process.env };
   delete env.ELECTRON_RUN_AS_NODE; delete env.NODE_OPTIONS;

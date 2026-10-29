@@ -11,7 +11,9 @@ async function build() {
   if (!['win32', 'linux'].includes(platform)) throw new Error('Only win32 and linux x64 candidates are configured.');
   const root = path.resolve(__dirname, '..');
   const out = path.join(root, 'dist', 'desktop');
-  const stage = path.join(out, `stage-${platform}`);
+  await fs.mkdir(out, { recursive: true });
+  // A fresh staging directory prevents stale/debug files entering later builds.
+  const stage = await fs.mkdtemp(path.join(out, `stage-${platform}-`));
   await fs.mkdir(path.join(stage, 'ui'), { recursive: true });
   // Only named public prototype/runtime assets enter the package.
   for (const file of ['main.cjs', 'policy.cjs']) await fs.copyFile(path.join(__dirname, file), path.join(stage, file));
