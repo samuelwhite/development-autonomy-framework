@@ -4,6 +4,12 @@
 
 **v0.1 Developer Preview · offline only · Apache-2.0**
 
+**Desktop candidate for Product review:** [DAF v0.2.1](desktop/README.md) packages
+the approved offline graphical demo as a Windows application. Extract its portable
+ZIP and open DAF; no developer tools are needed. The candidate is unsigned and is
+not a public release or a functional AI development controller. The published
+v0.1 preview and Python runtime below are unchanged.
+
 DAF explores how to make AI development work inspectable and recoverable. It turns
 explicit plans into tracked milestones, retains failed attempts and acceptance
 evidence, and records where work must stop.
@@ -96,6 +102,11 @@ source installation above. Offline CI does not establish production readiness or
 support for live autonomous execution.
 
 ## Explore and contribute
+
+The next iteration has a separate [v0.2 graphical prototype and Product proposal](docs/v0.2-product-proposal.md).
+Open `prototype/index.html` from this branch's extracted source ZIP to try the
+interactive, simulated setup without installing anything. It does not change or
+connect the v0.1 runtime, and is not a new release.
 
 [Why DAF emerged from Victoria](docs/portfolio.md) ·
 [Architecture](docs/architecture.md) · [Security](SECURITY.md) ·

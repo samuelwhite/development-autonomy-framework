@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="light">
+  <title>DAF · Your work, under control</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="simulation.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <aside class="sidebar">
+    <a class="brand" href="index.html" aria-label="DAF home"><span class="brand-mark">d.</span> DAF <span class="version">0.2</span></a>
+    <p class="sidebar-caption">DEVELOPMENT AUTONOMY FRAMEWORK</p>
+    <div class="workspace" id="workspace-label"><span class="workspace-icon">W</span><div>Your workspace<small>Let’s get started</small></div></div>
+    <nav aria-label="Setup progress" id="steps"></nav>
+    <div class="sidebar-bottom"><span class="local-dot"></span> Local by design<p>You set the boundaries.<br>DAF keeps them in view.</p><span class="version">PRODUCT PROTOTYPE</span></div>
+  </aside>
+  <div class="shell">
+    <header><span id="breadcrumb">Welcome to DAF</span><span class="offline"><span class="local-dot"></span> OFFLINE DEMO · SIMULATED</span></header>
+    <div class="notice"><strong>You’re trying a demo.</strong> The AI connections and projects are examples. No real accounts or files are accessed, and there’s nothing to pay.</div>
+    <div id="announcements" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+    <main id="content" tabindex="-1"></main>
+    <footer><span>DAF v0.2 · Product preview</span><span>Runs in this page · No background work or notifications</span></footer>
+  </div>
+  <noscript>This interactive offline prototype needs JavaScript enabled in your browser.</noscript>
+</body>
+</html>
