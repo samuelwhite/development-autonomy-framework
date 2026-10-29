@@ -6,6 +6,7 @@ const path = require('node:path');
 const http = require('node:http');
 const { pathToFileURL } = require('node:url');
 const { _electron } = require('playwright');
+const { auditNetwork } = require('./network-audit.cjs');
 const executablePath = process.env.DAF_DESKTOP_EXECUTABLE;
 
 async function launch(args = []) {
@@ -61,13 +62,11 @@ test('packaged security boundary, native close/relaunch and Chromium network log
     if (!closedNormally) await app.close();
   }
   const log = JSON.parse(await fs.readFile(netlog, 'utf8'));
-  const eventNames = new Map(Object.entries(log.constants.logEventTypes).map(([name, id]) => [id, name]));
   // Includes Chromium background traffic, not just page requests. Playwright's
   // local debug pipe/inspector exists only during this test, not ordinary launch.
-  const connections = log.events.filter(event => ['TCP_CONNECT', 'UDP_CONNECT', 'SOCKET_ALIVE'].includes(eventNames.get(event.type)));
-  assert.deepEqual(connections, [], 'No outbound socket may be opened, even for deliberate blocked probes');
+  const network = auditNetwork(log);
   await fs.writeFile(path.join(output, 'boundary-summary.json'), JSON.stringify({
-    outboundSocketEvents: connections.length, blockedProbeCount: 4, localServerRequests: requests,
+    ...network, blockedProbeCount: 4, localServerRequests: requests,
     rendererSandbox: true, rendererNodeAccess: false, nativeClose: 'passed',
   }, null, 2));
   const next = await launch();

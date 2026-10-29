@@ -37,8 +37,14 @@ autoUpdater, crashReporter upload or shell-opening facility is used.
 
 These follow [Electron's security guidance](https://www.electronjs.org/docs/latest/tutorial/security)
 and [custom protocol API](https://www.electronjs.org/docs/latest/api/protocol).
-Network logs and adversarial packaged tests validate the observed boundary; this
-is not a claim of OS-level air-gap enforcement against a compromised runtime.
+Network logs and adversarial packaged tests validate the observed boundary. On
+some hosts Chromium performs a local IPv6 route lookup by connecting a UDP socket
+to its fixed address constant and inspecting the local address; no datagram is
+sent by this lookup. See `StartGloballyReachableCheck` / `FinishGloballyReachableCheck`
+in [Chromium's resolver source](https://chromium.googlesource.com/chromium/src/+/HEAD/net/dns/host_resolver_manager.cc).
+The audit reports these checks separately and rejects all transport sends, TCP
+attempts and other UDP destinations. This is not OS-level air-gap enforcement or
+proof against a compromised runtime.
 
 The simulation remains tab/session storage. Reload demonstrates interruption;
 closing clears progress and ends the process. No durable controller journal or

@@ -2,6 +2,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { assets, assetFor, canNavigate, home } = require('../policy.cjs');
+const { auditNetwork } = require('./network-audit.cjs');
 
 test('only bundled assets are addressable', () => {
   for (const asset of Object.keys(assets)) assert.equal(assetFor(`daf://app${asset}`), asset);
@@ -12,4 +13,15 @@ test('only bundled assets are addressable', () => {
     'daf://app/../index.html', 'daf://app/%69ndex.html', 'daf://user@app/index.html',
     'daf://app/index.html?path=secret', 'daf://app/main.cjs', 'daf://app:123/index.html',
     'daf://app/__proto__', 'not a url']) assert.equal(assetFor(url), null, url);
+});
+
+test('network audit separates local route lookup from attempts to send traffic', () => {
+  const constants = { logEventTypes: { UDP_CONNECT: 1, UDP_BYTES_SENT: 2, TCP_CONNECT: 3,
+    SOCKET_BYTES_SENT: 4, HTTP_TRANSACTION_SEND_REQUEST: 5, SOCKET_ALIVE: 6 }, logEventPhase: { PHASE_BEGIN: 1 } };
+  const route = { type: 1, phase: 1, params: { address: '[2001:4860:4860::8888]:443' } };
+  assert.deepEqual(auditNetwork({ constants, events: [route, { type: 6, phase: 1 }] }), {
+    outboundTransportEvents: 0, localIPv6RouteChecks: 1,
+  });
+  for (const type of [2, 3, 4, 5]) assert.throws(() => auditNetwork({ constants, events: [route, { type }] }));
+  assert.throws(() => auditNetwork({ constants, events: [{ ...route, params: { address: '127.0.0.1:123' } }] }));
 });

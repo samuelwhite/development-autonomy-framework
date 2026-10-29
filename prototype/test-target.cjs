@@ -1,7 +1,6 @@
 'use strict';
 const path = require('node:path');
 const fs = require('node:fs/promises');
-const assert = require('node:assert/strict');
 const { pathToFileURL } = require('node:url');
 const playwright = require(process.env.DAF_PLAYWRIGHT_PATH || 'playwright');
 const desktop = process.env.DAF_DESKTOP_EXECUTABLE;
@@ -41,10 +40,8 @@ async function launchTarget() {
         async close() {
           await app.close(); apps.splice(apps.indexOf(app), 1);
           const log = JSON.parse(await fs.readFile(logPath, 'utf8'));
-          const names = new Map(Object.entries(log.constants.logEventTypes).map(([name, id]) => [id, name]));
-          const sockets = log.events.filter(event => ['TCP_CONNECT', 'UDP_CONNECT', 'SOCKET_ALIVE'].includes(names.get(event.type)));
-          assert.deepEqual(sockets, [], 'The complete journey must not open an outbound socket');
-          await fs.writeFile(`${logPath.slice(0, -5)}-summary.json`, JSON.stringify({ outboundSocketEvents: sockets.length, rendererOffline: true }));
+          const { auditNetwork } = require('../desktop/tests/network-audit.cjs');
+          await fs.writeFile(`${logPath.slice(0, -5)}-summary.json`, JSON.stringify({ ...auditNetwork(log), rendererOffline: true }));
         },
       };
     },
