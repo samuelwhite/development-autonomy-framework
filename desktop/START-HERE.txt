@@ -1,0 +1,56 @@
+DAF 0.2.1 — OFFLINE DESKTOP DEMO
+
+All assistants, tasks, checks, approvals and results are simulated.
+This is not a working AI development controller. No accounts or payment needed.
+
+WINDOWS (Windows 11, Intel/AMD 64-bit)
+1. Save the DAF portable ZIP from the review candidate supplied by the maintainer.
+2. In File Explorer, right-click the ZIP, choose Extract All, then Extract.
+3. Open the extracted folder and double-click DAF (DAF.exe).
+Keep every file in the folder together. Do not run DAF from inside the ZIP.
+You do not need Python, Node, Docker, WSL, a browser, administrator rights or
+an internet connection. The application includes its own runtime.
+
+This review candidate is unsigned. Windows SmartScreen or organisational policy
+may block it or show an unknown publisher. Do not disable security controls or
+bypass the warning. Stop and request an approved signed build from the maintainer.
+Public distribution requires signing and clean-machine acceptance first.
+
+TRY THE DEMO
+Choose Let's get started, choose OpenAI Codex or Claude, try the demo connection,
+choose an example project and a permission level. Checks run automatically.
+Pick a suggested task and explore Mission Control. Independent mode asks you to
+approve a plan and review each milestone. Explore demo problems to try exceptions.
+Stop task stops the simulation. Ctrl+R (Demo menu) demonstrates an interruption;
+Check earlier work checks the same simulated attempt without starting another.
+Tab / Shift+Tab moves focus; arrow keys select choices; Space / Enter activate.
+View offers zoom controls. No real project or assistant is ever connected.
+
+CLOSE AND REMOVE
+Use the window's X or Demo > Exit DAF. Closing ends all demonstration activity;
+reopening starts fresh. Reload retains progress only in the current session.
+To remove, close DAF and delete its extracted folder and downloaded ZIP.
+Optional: in File Explorer enter %APPDATA% and delete only the DAF Offline Demo
+folder to remove Chromium preferences/cache. No service, startup entry, background
+worker, telemetry or automatic updater is installed.
+
+IF SOMETHING GOES WRONG
+Missing files / blank window: close DAF, extract the entire ZIP into a new folder
+and try again. Do not copy only DAF.exe or run it from inside the ZIP.
+Windows blocks launch: stop and request an approved signed build. Do not turn off
+SmartScreen, antivirus, sandboxing or other security protections.
+Window stops responding: close and reopen. Only simulated progress is lost.
+Setup problem in the demo: read What to do, then use its named Fix this action.
+Earlier work needs checking: choose Check earlier work and follow its recovery
+instructions. Unknown results cannot be approved or restarted automatically.
+
+LINUX
+An experimental x64 archive is validated on Ubuntu 24.04 in hosted CI. Extract it
+with the desktop archive manager and launch DAF from the extracted folder if your
+desktop permits executable files. GTK 3, NSS, ALSA and a graphical session are OS
+prerequisites. Sandboxing must be available; never launch with --no-sandbox or as
+root to work around a policy error. Other distributions and a graphical installer
+are not qualified. Windows is the primary target; Linux support remains planned.
+
+No public release has been created for this candidate.
+Licences: DAF-LICENSE, DAF-NOTICE, LICENSE and LICENSES.chromium.html.

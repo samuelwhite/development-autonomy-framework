@@ -1,0 +1,21 @@
+{
+  "name": "daf-offline-desktop",
+  "productName": "DAF",
+  "version": "0.2.1",
+  "private": true,
+  "description": "DAF offline desktop demonstration — all work is simulated",
+  "author": "Samuel James White",
+  "license": "Apache-2.0",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "build": "node build.cjs",
+    "test": "node --test tests/policy.test.cjs",
+    "test:desktop": "node tests/run.cjs"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "electron": "45.1.0",
+    "playwright": "1.64.1"
+  }
+}
