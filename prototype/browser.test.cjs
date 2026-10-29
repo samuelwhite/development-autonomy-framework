@@ -48,7 +48,7 @@ test('beginner journeys, automatic checks, workspace and safe recovery stay offl
         await page.locator('[name="setupIssue"]').selectOption(issue);
       }
       await click('Continue →');
-      if (issue === 'none') await page.getByRole('heading', { name:'Start with a useful little task', exact:true }).waitFor();
+      if (issue === 'none') await page.getByRole('heading', { name:'Try a short demonstration', exact:true }).waitFor();
       else await page.getByRole('heading', { name:'One thing needs your attention', exact:true }).waitFor();
     }
     async function start(kind = 'documentation', scenario = 'normal') {
@@ -71,7 +71,7 @@ test('beginner journeys, automatic checks, workspace and safe recovery stay offl
     assert.equal(await page.evaluate(() => document.activeElement.value), 'claude');
     await click('Continue →'); await click('Try the demo connection →'); await snap('projects');
     await click('Continue →'); await snap('permissions'); await click('Continue →');
-    await page.getByRole('heading', {name:'Start with a useful little task'}).waitFor(); await snap('starter-tasks');
+    await page.getByRole('heading', {name:'Try a short demonstration'}).waitFor(); await snap('starter-tasks');
     await start(); await status('Making progress'); await snap('mission-running');
     await page.locator('[data-disclosure="usage"] summary').focus(); await page.keyboard.press('Enter');
     await page.waitForTimeout(2000);
@@ -101,7 +101,7 @@ test('beginner journeys, automatic checks, workspace and safe recovery stay offl
       if (issue === 'permissions') await snap('setup-attention');
       await click('Retry'); await page.getByRole('heading', {name:'One thing needs your attention'}).waitFor();
       assert.equal(await page.getByRole('button', {name:'Start example task →', exact:true}).count(), 0);
-      await click(fix); await page.getByRole('heading', {name:'Start with a useful little task'}).waitFor();
+      await click(fix); await page.getByRole('heading', {name:'Try a short demonstration'}).waitFor();
       if (issue === 'permissions') assert.match(await page.locator('.summary-line').textContent(), /Suggestions only/);
     }
     // Back from an automatic check cannot cause a late advance or bypass changed settings.

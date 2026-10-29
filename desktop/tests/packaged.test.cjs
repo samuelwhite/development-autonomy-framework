@@ -138,7 +138,7 @@ test('keyboard-only onboarding reaches Mission Control and finishes a task', { t
     assert.equal(await page.locator('[name="provider"]:checked').count(), 1);
     await activate('[data-action="next"]'); await activate('[data-action="connect"]');
     await activate('[data-action="next"]'); await activate('[data-action="next"]');
-    await page.getByRole('heading', { name: 'Start with a useful little task' }).waitFor();
+    await page.getByRole('heading', { name: 'Try a short demonstration' }).waitFor();
     await activate('[data-action="begin"]');
     await page.locator('.status-badge').filter({ hasText: 'Task complete' }).waitFor();
     assert.match(await page.locator('main').textContent(), /Mission Control/);

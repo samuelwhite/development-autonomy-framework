@@ -133,7 +133,7 @@
   }
   function firstTask() {
     if (state.mode === "independent" && state.planReview) return planApproval();
-    return intro("Start with a useful little task", "Choose a starting point. There’s no need to write instructions — we’ve prepared an example for you.") +
+    return intro("Try a short demonstration", "Choose a prepared example to explore how DAF works. This first task is a short, simulated demonstration. The intended independent mode lets DAF make routine technical decisions within your approved plan and limits, checking in at milestones.") +
       `<p class="ready-note"><span class="check">✓</span> Your demo connection, permissions and limits are ready.</p>
       <fieldset><legend class="sr-only">Starter task</legend><div class="starter-tasks">
       ${Object.entries(sim.tasks).map(([id, task]) => choice("taskKind", id, task.title, task.outcome)).join("")}</div></fieldset>
