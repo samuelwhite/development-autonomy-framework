@@ -17,11 +17,15 @@ test('only bundled assets are addressable', () => {
 
 test('network audit separates local route lookup from attempts to send traffic', () => {
   const constants = { logEventTypes: { UDP_CONNECT: 1, UDP_BYTES_SENT: 2, TCP_CONNECT: 3,
-    SOCKET_BYTES_SENT: 4, HTTP_TRANSACTION_SEND_REQUEST: 5, SOCKET_ALIVE: 6 }, logEventPhase: { PHASE_BEGIN: 1 } };
+    SOCKET_BYTES_SENT: 4, HTTP_TRANSACTION_SEND_REQUEST: 5, SOCKET_ALIVE: 6,
+    TCP_CONNECT_JOB_CONNECT: 7, UDP_SEND_ERROR: 8, TCP_CONNECT_ATTEMPT: 9,
+    TCP_CONNECT_JOB_CONNECTOR_CONNECT_START: 10 }, logEventPhase: { PHASE_BEGIN: 1, PHASE_END: 2 } };
   const route = { type: 1, phase: 1, params: { address: '[2001:4860:4860::8888]:443' } };
   assert.deepEqual(auditNetwork({ constants, events: [route, { type: 6, phase: 1 }] }), {
-    outboundTransportEvents: 0, localIPv6RouteChecks: 1,
+    outboundTransportEvents: 0, localIPv6RouteChecks: 1, blockedConnectionJobs: 0,
   });
-  for (const type of [2, 3, 4, 5]) assert.throws(() => auditNetwork({ constants, events: [route, { type }] }));
+  for (const type of [2, 3, 4, 5, 8, 9, 10]) assert.throws(() => auditNetwork({ constants, events: [route, { type }] }));
   assert.throws(() => auditNetwork({ constants, events: [{ ...route, params: { address: '127.0.0.1:123' } }] }));
+  assert.equal(auditNetwork({ constants, events: [{ type: 7, phase: 2, params: { net_error: -105 } }] }).blockedConnectionJobs, 1);
+  assert.throws(() => auditNetwork({ constants, events: [{ type: 7, phase: 2, params: { net_error: 0 } }] }));
 });

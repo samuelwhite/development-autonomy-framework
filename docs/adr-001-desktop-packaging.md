@@ -43,7 +43,10 @@ to its fixed address constant and inspecting the local address; no datagram is
 sent by this lookup. See `StartGloballyReachableCheck` / `FinishGloballyReachableCheck`
 in [Chromium's resolver source](https://chromium.googlesource.com/chromium/src/+/HEAD/net/dns/host_resolver_manager.cc).
 The audit reports these checks separately and rejects all transport sends, TCP
-attempts and other UDP destinations. This is not OS-level air-gap enforcement or
+attempts and other UDP destinations. Failed pre-socket connection jobs are also
+counted separately; they are distinct from socket connection attempts in
+[Chromium's event definitions](https://chromium.googlesource.com/chromium/src/+/HEAD/net/log/net_log_event_type_list.h).
+This is not OS-level air-gap enforcement or
 proof against a compromised runtime.
 
 The simulation remains tab/session storage. Reload demonstrates interruption;
