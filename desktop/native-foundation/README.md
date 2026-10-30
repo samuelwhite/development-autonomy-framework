@@ -1,7 +1,8 @@
-# M2.1A native foundation — blocked acceptance checkpoint
+# M2.1A native foundation — blocked evidence checkpoint
 
-**Maintainer-only. Do not ship or connect to Electron.** Cancellation acceptance
-failed; subsequent native cases were stopped. The implementation is not qualified.
+**Maintainer-only. Do not ship or connect to Electron.** Cancellation is repaired;
+the final repeat stopped at evidence persistence after 54 passing cases. The
+implementation is not qualified. No further native launch followed the stop.
 See [the validation record](../../docs/m2.1a-native-validation.md) and
 [security decision](../../docs/adr-003-bounded-native-foundation.md).
 
@@ -64,8 +65,12 @@ reason/latency and cleanup. Termination reasons are 0 normal/kernel exit,
 1 wall deadline, 2 parent death, 3 output rejection, 4 requested cancellation.
 Unexpected stdout/stderr stays in bounded memory. Only validated response fields
 and enumerated expected probe outcomes may be persisted. No raw child logs exist.
-The failed cancellation case currently loses its detailed record before assertion;
-the report states this gap rather than manufacturing a measurement.
+The runner saves an unconfirmed case before launch and sanitized observations
+before assertions, including actual values that fail checks and explicitly missing
+fields. The final repeat exposed a remaining persistence failure: the next case's
+`results.pending` survived but could not be published, and the failure marker was
+not saved. Both unqualified records and their hashes are retained. Do not infer
+completion from the earlier 55-case pass or manufacture missing measurements.
 
 ## Maintainer reproduction
 
@@ -78,9 +83,12 @@ No installation, signing, release, administrator dependency or system ACL change
 python desktop/native-foundation/acceptance.py dist/m21a-review
 ```
 
-The current acceptance command intentionally retains the failing cancellation
-check. Do not use a later result or prior research pass to bypass it. No automatic
-rerun is performed. The first build attempt omitted C++17; the second had a
+The cancellation gate requires exact complete LF/CRLF readiness, reason 4,
+successful job termination, retained-handle signalling and zero active processes.
+The suite records five attempts each for cancellation and helper/parent death.
+The final fifth parent-death case never launched because evidence publication
+failed. Stop on mandatory failure; no automatic rerun is performed. Historical
+build attempts included an omitted C++17 flag and a
 PowerShell argument-array defect. Both failed compilation. A preliminary host
 launch then failed with error 203 before child creation because required standard
 Windows bootstrap variables were missing. The measured build restored only the
@@ -103,7 +111,7 @@ No `/GS-`, custom insecure startup, bcrypt import or CPython dependency is used.
 Portable tests run separately:
 
 ```powershell
-python -m unittest discover -s desktop/native-foundation -p test_contracts.py -v
+python -m unittest discover -s desktop/native-foundation -p "test_*.py" -v
 ```
 
 They validate contracts and bytes, not access decisions. The real Windows suite

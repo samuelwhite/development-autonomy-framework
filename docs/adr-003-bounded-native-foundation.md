@@ -1,7 +1,8 @@
 # ADR 003: bounded native foundation for the single M2.1 correction
 
 Date: 30 October 2026. Decision: narrowly approved by Product; implementation
-acceptance **blocked at cancellation**. [Measured status](m2.1a-native-validation.md).
+acceptance **blocked at evidence persistence after the cancellation repair**.
+[Measured status](m2.1a-native-validation.md).
 
 Product accepts the WRITE_RESTRICTED LPAC ambient-read exposure and periodically
 enforced two-second Job Object user-CPU limit for this fixed, first-party,
@@ -39,9 +40,12 @@ unchanged, draft and unmerged. Only reviewed isolation primitives and fixed prob
 are reused. No CPython worker, loader tracing or diagnostic dependency investigation
 is imported into the production binaries.
 
-The actual cancellation acceptance check failed. Stop native acceptance, retain
-the failed result and leave later leakage/lifecycle checks unqualified. Do not
-relax this requirement, infer a pass from CI or describe M2.1A/M2.1 as complete.
+The original cancellation failure is retained as historical evidence. The exact
+CRLF mismatch was reproduced and narrowly repaired. A complete 55-case run passed,
+but the final source revision's repeat stopped after 54 passes when evidence
+publication failed before the fifth parent-death case. Both unqualified evidence
+files are retained; no further native launch followed. Do not infer qualification
+from the earlier run or CI, weaken the gate or describe M2.1A/M2.1 as complete.
 
 This exception does not extend to M2.2, M3, Python workers, arbitrary or generated
 executable code, repository scripts, Codex/Claude or autonomous development. General
