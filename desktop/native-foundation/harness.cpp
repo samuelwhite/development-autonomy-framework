@@ -17,6 +17,8 @@
 #include <cstring>
 #include <thread>
 #include <atomic>
+#include "readiness.h"
+#include "sha256.h"
 #pragma comment(lib, "userenv.lib")
 #pragma comment(lib, "advapi32.lib")
 #pragma comment(lib, "ole32.lib")
@@ -29,6 +31,14 @@ static void check(bool ok, const char* operation) {
 }
 static void event(const char* name, unsigned long long value) {
     std::cerr << "{\"native\":\"" << name << "\",\"value\":" << value << "}\n";
+}
+static void evidenceHash(const char* name, const std::vector<char>& bytes, bool complete) {
+    unsigned char digest[32];
+    sha256((const unsigned char*)bytes.data(), bytes.size(), digest);
+    const char hex[] = "0123456789abcdef"; char encoded[65]{};
+    for (unsigned i = 0; i < 32; ++i) { encoded[2*i] = hex[digest[i] >> 4]; encoded[2*i+1] = hex[digest[i] & 15]; }
+    std::cerr << "{\"native\":\"" << name << "\",\"sha256\":\"" << encoded
+        << "\",\"bytes\":" << bytes.size() << ",\"complete\":" << (complete ? "true" : "false") << "}\n";
 }
 static std::string utf8(const std::wstring& s) {
     int n = WideCharToMultiByte(CP_UTF8, 0, s.data(), (int)s.size(), nullptr, 0, nullptr, nullptr);
@@ -591,6 +601,8 @@ int wmain(int argc, wchar_t** argv) {
             CloseHandle(inputWrite);
         });
         std::vector<char> received; bool badOutput = false, ended = false, ready = false;
+        std::vector<char> diagnosticPrefix;
+        size_t readinessCursor = 0;
         DWORD reason = 0; ULONGLONG terminationStart = 0;
         while (!ended) {
             for (int stream = 0; stream < 2; ++stream) {
@@ -603,14 +615,19 @@ int wmain(int argc, wchar_t** argv) {
                 if (available) {
                     char buffer[4096]; DWORD got = 0;
                     if (!ReadFile(pipe, buffer, min(available, (DWORD)sizeof(buffer)), &got, nullptr)) badOutput = true;
-                    else if (stream || received.size() + got > 65624) badOutput = true;
+                    else if (stream) {
+                        if (diagnosticPrefix.size() + got <= 16384)
+                            diagnosticPrefix.insert(diagnosticPrefix.end(), buffer, buffer + got);
+                        badOutput = true;
+                    }
+                    else if (received.size() + got > 65624) badOutput = true;
                     else received.insert(received.end(), buffer, buffer + got);
                 }
             }
             if (target == L"probe" && !ready && (mode == L"hold" || mode == L"cancel")) {
-                const std::string bytes(received.begin(), received.end());
-                if (bytes.find("{\"probe\":\"hold_ready\",\"status\":\"observed\",\"code\":0}\n") != std::string::npos) {
+                if (scanReady(received.data(), received.size(), readinessCursor)) {
                     event("hold_ready", 1); ready = true;
+                    event("readiness_ms", GetTickCount64() - started);
                 }
             }
             bool finished = WaitForSingleObject(process, 0) == WAIT_OBJECT_0;
@@ -625,7 +642,10 @@ int wmain(int argc, wchar_t** argv) {
                 else if (GetTickCount64() - started >= 10000) reason = 1;
                 if (reason) {
                     terminationStart = GetTickCount64();
-                    if (!TerminateJobObject(job, 125)) event("termination_api_error", GetLastError());
+                    event("terminate_job_called", reason);
+                    BOOL terminated = TerminateJobObject(job, 125);
+                    event("terminate_job_succeeded", terminated ? 1 : 0);
+                    if (!terminated) event("termination_api_error", GetLastError());
                 }
             }
             if (reason && GetTickCount64() - terminationStart > 3000) {
@@ -638,8 +658,11 @@ int wmain(int argc, wchar_t** argv) {
         event("wall_elapsed_ms", GetTickCount64() - started);
         event("termination_latency_ms", reason ? GetTickCount64() - terminationStart : 0);
         check(WaitForSingleObject(process, 0) == WAIT_OBJECT_0, "confirmed process exit");
+        event("retained_process_handle_signalled", 1);
         event("worker_output_rejected", badOutput ? 1 : 0);
         event("child_stdout_bytes", received.size());
+        evidenceHash("child_stdout_prefix", received, !badOutput);
+        evidenceHash("child_stderr_prefix", diagnosticPrefix, !badOutput);
         // Only bounded in-memory bytes reach the trusted Python validator's pipe.
         // Never a file, inherited log handle, terminal or diagnostic bundle.
         if (!badOutput && !received.empty()) {

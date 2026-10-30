@@ -13,6 +13,12 @@ $env:PATH = "$vc\bin\Hostx64\x64;" + $env:PATH
 $env:INCLUDE = "$vc\include;$sdk\Include\$sdkVersion\ucrt;$sdk\Include\$sdkVersion\shared;$sdk\Include\$sdkVersion\um"
 $env:LIB = "$vc\lib\x64;$sdk\Lib\$sdkVersion\ucrt\x64;$sdk\Lib\$sdkVersion\um\x64"
 New-Item -ItemType Directory -Path $output | Out-Null
+& "$vc\bin\Hostx64\x64\cl.exe" /nologo /std:c++17 /W4 /O1 /MT /GS /guard:cf /sdl /EHsc `
+    (Join-Path $PSScriptRoot 'readiness-test.cpp') "/Fe:$output\readiness-test.exe" "/Fo:$output\readiness-test.obj" `
+    /link /DYNAMICBASE /HIGHENTROPYVA /NXCOMPAT /guard:cf /INCREMENTAL:NO
+if ($LASTEXITCODE -ne 0) { throw 'Readiness test build failed.' }
+& "$output\readiness-test.exe"
+if ($LASTEXITCODE -ne 0) { throw 'Exact readiness framing tests failed.' }
 foreach ($name in @('producer','verifier','harness','probe')) {
     $ext = if ($name -eq 'probe') { 'c' } else { 'cpp' }
     [string[]]$language = if ($ext -eq 'cpp') { '/std:c++17' } else { @() }
