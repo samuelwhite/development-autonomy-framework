@@ -18,8 +18,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import contracts as c  # noqa: E402
+from case_manifest import BAD_INPUTS, VERIFIER_EXTRA  # noqa: E402
 from cleanup import cleanup  # noqa: E402
-from evidence import Evidence, StreamHash, observed  # noqa: E402
+from evidence import Evidence, EvidenceFailure, StreamHash, error_identity, observed  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -233,9 +234,7 @@ class Run:
         return record, bytes(self.out.data)
 
 
-def probe_result(raw, mode, record=None):
-    c.require(len(raw) <= 16384, "probe_limit")
-    rows = [c.load(line, 512) for line in raw.splitlines()]
+def expected_probes(mode):
     expected = {
         "native_entry": ("status", "observed"),
         "pid": ("value", None),
@@ -283,6 +282,13 @@ def probe_result(raw, mode, record=None):
         expected["cpu_ready"] = ("code", 0)
     elif mode in ("hold", "cancel"):
         expected["hold_ready"] = ("code", 0)
+    return expected
+
+
+def probe_result(raw, mode, record=None):
+    c.require(len(raw) <= 16384, "probe_limit")
+    rows = [c.load(line, 512) for line in raw.splitlines()]
+    expected = expected_probes(mode)
     seen = {}
     if record is not None:
         record["probe_observations"] = {}
@@ -354,7 +360,7 @@ def matrix(root, evidence):
     record, raw = Run(root, "producer", "producer", producer, evidence=evidence).finish()
     record["response"], candidate = c.response(raw, 1, prepared.digest)
     c.require(record["child_exit"] == 0 and candidate is not None, "producer_failed")
-    evidence.passed(record)
+    evidence.passed(record, validate_final_case)
     verifier = c.request(prepared, source, 2, candidate)
     record, raw = Run(root, "verifier", "verifier", verifier, evidence=evidence).finish()
     record["response"], _ = c.response(raw, 2, prepared.digest, candidate)
@@ -364,11 +370,11 @@ def matrix(root, evidence):
         and record["package_identity_sha256"] != records[0]["package_identity_sha256"],
         "shared_identity",
     )
-    evidence.passed(record)
+    evidence.passed(record, validate_final_case)
     record, raw = Run(root, "isolation", "probe", evidence=evidence).finish()
     record["probes"] = probe_result(raw, "sealed", record)
     c.require(record["child_exit"] == 0, "isolation_failed")
-    evidence.passed(record)
+    evidence.passed(record, validate_final_case)
     print(
         "Production bytes and independent verifier passed; isolation controls passed.", flush=True
     )
@@ -427,7 +433,7 @@ def matrix(root, evidence):
             )
             c.require(record["response"]["status"] == expected, "adversarial_input_not_rejected")
             c.require(record["child_exit"] == c.FAILURES.index(expected), "failure_exit")
-            evidence.passed(record)
+            evidence.passed(record, validate_final_case)
     for name, mode in (
         ("memory", "memory"),
         ("cpu", "cpu"),
@@ -449,7 +455,7 @@ def matrix(root, evidence):
             )
         if mode == "cancel":
             cancellation(record)
-        evidence.passed(record)
+        evidence.passed(record, validate_final_case)
     for name in ("leak", "overflow", "crash"):
         record, raw = Run(root, name, "probe", mode=name, evidence=evidence).finish()
         try:
@@ -462,7 +468,7 @@ def matrix(root, evidence):
             c.require(record["worker_output_rejected"] == 1, "overflow_not_rejected")
         if name == "crash":
             c.require(record["child_exit"] == 99, "crash_control")
-        evidence.passed(record)
+        evidence.passed(record, validate_final_case)
     # Five distinct attempts per lifecycle control, each persisted, no success-only sampling.
     for index in range(5):
         if index:
@@ -471,7 +477,7 @@ def matrix(root, evidence):
             ).finish()
             record["probes"] = probe_result(raw, "cancel", record)
             cancellation(record)
-            evidence.passed(record)
+            evidence.passed(record, validate_final_case)
         lifecycle(root, evidence, index, parent_death=False)
         lifecycle(root, evidence, index, parent_death=True)
 
@@ -560,13 +566,142 @@ def lifecycle(root, evidence, index, *, parent_death):
             and record.get("retained_helper_handle_signalled") is True,
             "helper_death",
         )
-    evidence.passed(record)
+    evidence.passed(record, validate_final_case)
 
 
 def close_handle(handle):
     k = C.WinDLL("kernel32")
     k.CloseHandle.argtypes = [W.HANDLE]
     k.CloseHandle(handle)
+
+
+def validate_final_case(record):
+    """Recheck required observations at final qualification and read-only review."""
+    c.require(
+        record.get("status") == "passed" and record.get("cleanup") == "confirmed",
+        "case_unconfirmed",
+    )
+    for name in (
+        "final_token_checked",
+        "image_checked",
+        "ambient_write_denied",
+        "positive_write_observed",
+    ):
+        c.require(record.get(name) is True, "control_unconfirmed")
+    for name, expected in {
+        "host_elevated": 0,
+        "host_appcontainer": 0,
+        "appcontainer": 1,
+        "final_elevated": 0,
+        "CreateRestrictedToken_flags": 9,
+        "job_at_creation": 1,
+        "image_identity_checked": 1,
+        "job_limit_flags": 8458,
+        "job_process_limit": 1,
+        "job_memory_bytes": 134217728,
+        "job_cpu_100ns": 20000000,
+        "capability_count": 1,
+        "child_resumed": 1,
+    }.items():
+        c.require(type(record.get(name)) is int and record[name] == expected, "token_or_job")
+    c.require(record.get("invalid_or_duplicate_observations") == [], "ambiguous_observations")
+    for name in ("stdout_overflow", "stderr_overflow", "parent_deadline_expired"):
+        c.require(record.get(name) is False, "output_or_deadline_unconfirmed")
+    for name in ("child_pid", "helper_pid", "creation_time_100ns"):
+        c.require(type(record.get(name)) is int and record[name] > 0, "process_identity")
+    for name in ("stdout", "host_stderr"):
+        stream = record.get(name, {})
+        c.require(stream.get("complete") is True, "pipe_unconfirmed")
+        c.hex_value(stream.get("sha256"))
+    name = record["case"]
+    helper_death, parent_death = name.startswith("helper-death-"), name.startswith("parent-death-")
+    exit_field = "supervising_parent_exit" if parent_death else "helper_exit"
+    c.require(type(record.get(exit_field)) is int, "helper_exit_unconfirmed")
+    if helper_death or parent_death:
+        c.require(
+            record.get("hold_ready") == 1 and type(record.get("readiness_ms")) is int,
+            "lifecycle_readiness",
+        )
+        c.require(
+            record.get("retained_child_handle_signalled") is True
+            and record.get("retained_helper_handle_signalled") is True
+            and type(record.get("death_latency_ms")) is int,
+            "lifecycle_unconfirmed",
+        )
+    if helper_death:
+        return  # Killed helper cannot emit final native accounting; handles prove death.
+    for field in (
+        "job_total_user_time_100ns",
+        "peak_process_memory_bytes",
+        "wall_elapsed_ms",
+        "termination_latency_ms",
+    ):
+        c.require(type(record.get(field)) is int and record[field] >= 0, "resource_observation")
+    c.require(
+        record.get("active_after_wait") == 0
+        and record.get("retained_process_handle_signalled") == 1,
+        "process_unconfirmed",
+    )
+    c.require(
+        type(record.get("child_exit")) is int
+        and type(record.get("termination_reason")) is int
+        and type(record.get("termination_latency_ms")) is int,
+        "termination_unconfirmed",
+    )
+    if name in ("producer", "verifier"):
+        response = record.get("response", {})
+        c.require(
+            record["child_exit"] == 0
+            and response.get("status") == "ok"
+            and response.get("bytes") == 7771
+            and response.get("sha256") == c.EXPECTED,
+            "worker_result",
+        )
+        c.hex_value(response.get("manifest"))
+    elif name.startswith(("producer-", "verifier-")):
+        expected = dict(BAD_INPUTS + VERIFIER_EXTRA)[name.split("-", 1)[1]]
+        c.require(
+            record.get("response", {}).get("status") == expected
+            and record["child_exit"] == c.FAILURES.index(expected),
+            "failure_result",
+        )
+    elif name in ("leak", "overflow", "crash"):
+        c.require(
+            record.get("unexpected_output") == "rejected_without_persistence", "output_unconfirmed"
+        )
+        if name == "overflow":
+            c.require(record.get("worker_output_rejected") == 1, "overflow_unconfirmed")
+        if name == "crash":
+            c.require(record["child_exit"] == 99, "crash_unconfirmed")
+    else:
+        mode = {"isolation": "sealed", "wall": "hold"}.get(name, name)
+        if name.startswith("cancel"):
+            mode = "cancel"
+            cancellation(record)
+        if parent_death:
+            mode = "hold"
+            c.require(
+                record["termination_reason"] == 2
+                and record.get("terminate_job_called") == 2
+                and record.get("terminate_job_succeeded") == 1,
+                "parent_death_termination",
+            )
+        if name == "wall":
+            c.require(record["termination_reason"] == 1, "wall_termination")
+        if name == "cpu":
+            c.require(
+                record["child_exit"] == 0xC0000044 or record["termination_reason"] == 1,
+                "cpu_termination",
+            )
+        if name in ("isolation", "memory"):
+            c.require(record["child_exit"] == 0, "probe_failure")
+        expected = {key: value for key, (_, value) in expected_probes(mode).items() if key != "pid"}
+        c.require(
+            record.get("missing_probe_observations") == []
+            and record.get("probes") == expected
+            and record.get("probe_observations") == expected,
+            "probe_unconfirmed",
+        )
 
 
 def main():
@@ -582,16 +717,20 @@ def main():
     evidence = Evidence(root)
     try:
         matrix(root, evidence)
-        c.require(all(r["status"] == "passed" for r in evidence.records), "incomplete_cases")
-        evidence.document["qualified"] = True
+        evidence.qualify(validate_final_case)
+    except EvidenceFailure:
+        raise
     except c.Refused as refusal:
         evidence.failed(str(refusal))
-        raise
-    except (AssertionError, KeyError, OSError, ValueError, RuntimeError, subprocess.TimeoutExpired):
-        evidence.failed("host_or_cleanup_failure")
-        raise
-    finally:
-        evidence.persist()
+    except (
+        AssertionError,
+        KeyError,
+        OSError,
+        ValueError,
+        RuntimeError,
+        subprocess.TimeoutExpired,
+    ) as error:
+        evidence.failed("host_or_cleanup_failure", error)
     print(
         json.dumps(
             {"cases": len(evidence.records), "qualified": True, "execution_authority": False}
@@ -603,10 +742,27 @@ def main():
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
+    except EvidenceFailure as failure:
+        print(json.dumps(failure.report, sort_keys=True), flush=True)
+        print("STOP: mandatory evidence failure; no further cases.", flush=True)
+        raise SystemExit(2) from None
     except c.Refused as refusal:
         # Refused is constructed only from fixed codes in trusted host source.
         print("STOP: " + str(refusal) + "; no further acceptance cases.", flush=True)
         raise SystemExit(2) from None
-    except (AssertionError, KeyError, OSError, ValueError, RuntimeError, subprocess.TimeoutExpired):
+    except (
+        AssertionError,
+        KeyError,
+        OSError,
+        ValueError,
+        RuntimeError,
+        subprocess.TimeoutExpired,
+    ) as error:
+        print(
+            json.dumps(
+                {"qualified": False, "evidence_retained": False, "error": error_identity(error)}
+            ),
+            flush=True,
+        )
         print("STOP: mandatory native acceptance failed; no further cases.", flush=True)
         raise SystemExit(2) from None

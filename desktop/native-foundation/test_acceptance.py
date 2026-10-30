@@ -7,7 +7,7 @@ from pathlib import Path
 
 import acceptance as a
 import contracts as c
-from evidence import Evidence, StreamHash, observed
+from evidence import Evidence, EvidenceFailure, StreamHash, observed
 
 
 class EvidenceTests(unittest.TestCase):
@@ -19,7 +19,7 @@ class EvidenceTests(unittest.TestCase):
 
     def test_failed_case_persisted_before_assertion(self):
         evidence = Evidence(self.root)
-        record = evidence.begin("cancel", "probe")
+        record = evidence.begin("producer", "producer")
         observed(
             record,
             [
@@ -32,8 +32,11 @@ class EvidenceTests(unittest.TestCase):
         try:
             a.cancellation(record)
         except c.Refused as error:
-            evidence.failed(str(error))
-        saved = json.loads((self.root / "results.json").read_bytes())
+            with self.assertRaises(EvidenceFailure):
+                evidence.failed(str(error))
+        saved = json.loads(next((self.root / "evidence").glob("failure-*.json")).read_bytes())[
+            "snapshot"
+        ]
         self.assertFalse(saved["qualified"])
         failed = saved["results"][0]
         self.assertEqual(failed["status"], "failed")
@@ -46,7 +49,7 @@ class EvidenceTests(unittest.TestCase):
 
     def test_unconfirmed_case_survives_interruption(self):
         evidence = Evidence(self.root)
-        evidence.begin("helper-death", "probe")
+        evidence.begin("producer", "producer")
         saved = json.loads((self.root / "results.json").read_bytes())
         self.assertEqual(saved["results"][0]["status"], "unconfirmed")
         self.assertEqual(saved["results"][0]["cleanup"], "unconfirmed")
@@ -54,13 +57,13 @@ class EvidenceTests(unittest.TestCase):
 
     def test_cleanup_cannot_be_assumed(self):
         evidence = Evidence(self.root)
-        record = evidence.begin("cancel", "probe")
+        record = evidence.begin("producer", "producer")
         with self.assertRaises(c.Refused):
-            evidence.passed(record)
+            evidence.passed(record, a.validate_final_case)
 
     def test_unknown_observation_text_is_not_persisted(self):
         evidence = Evidence(self.root)
-        record = evidence.begin("leak", "probe")
+        record = evidence.begin("producer", "producer")
         observed(
             record,
             [
@@ -68,8 +71,9 @@ class EvidenceTests(unittest.TestCase):
                 {"native": "child_exit", "value": "SYNTHETIC_SECRET"},
             ],
         )
-        evidence.failed("host_records_invalid")
-        saved = (self.root / "results.json").read_bytes()
+        with self.assertRaises(EvidenceFailure):
+            evidence.failed("host_records_invalid")
+        saved = next((self.root / "evidence").glob("failure-*.json")).read_bytes()
         self.assertNotIn(b"SYNTHETIC_SECRET", saved)
         self.assertIn("child_exit", record["invalid_or_duplicate_observations"])
 
