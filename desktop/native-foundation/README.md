@@ -1,8 +1,9 @@
-# M2.1A native foundation — blocked evidence checkpoint
+# M2.1A native foundation — candidate for Product acceptance
 
-**Maintainer-only. Do not ship or connect to Electron.** Cancellation is repaired;
-the final repeat stopped at evidence persistence after 54 passing cases. The
-implementation is not qualified. No further native launch followed the stop.
+**Maintainer-only. Do not ship or connect to Electron.** After the bounded
+persistence repair, two consecutive runs passed all 55 mandatory cases with
+independently verified evidence. M2.1A is a candidate for Product acceptance only;
+M2.1B and desktop execution remain separately gated.
 See [the validation record](../../docs/m2.1a-native-validation.md) and
 [security decision](../../docs/adr-003-bounded-native-foundation.md).
 
@@ -66,11 +67,21 @@ reason/latency and cleanup. Termination reasons are 0 normal/kernel exit,
 Unexpected stdout/stderr stays in bounded memory. Only validated response fields
 and enumerated expected probe outcomes may be persisted. No raw child logs exist.
 The runner saves an unconfirmed case before launch and sanitized observations
-before assertions, including actual values that fail checks and explicitly missing
-fields. The final repeat exposed a remaining persistence failure: the next case's
-`results.pending` survived but could not be published, and the failure marker was
-not saved. Both unqualified records and their hashes are retained. Do not infer
-completion from the earlier 55-case pass or manufacture missing measurements.
+before assertions. Fresh run/case identities and the exact 55-case manifest bind
+every result. Unique temporary files, immutable checkpoints, flush/fsync and exact
+readback protect publication. A separate unique failure file records the original
+errno/winerror and phase even when primary replacement fails; an unavailable
+failure record is reported honestly with an unsuccessful exit. No exception path
+or private filename is serialized. No publication is retried.
+
+Final qualification revalidates every required observation and all 55 cases. The
+result and completion receipt must be published and read back before removing the
+active marker. `evidence.read_qualified(root, acceptance.validate_final_case)` is
+the read-only verification entry point: a `qualified` field alone is insufficient.
+Active, pending, failed, malformed, conflicting or incomplete records cannot pass.
+An old run is never resumed. This is standalone maintainer evidence persistence,
+not M2.1B execution journalling or recovery. Historical `results.pending` files
+remain untouched, with both earlier repaired sequences retained in review evidence.
 
 ## Maintainer reproduction
 
@@ -86,8 +97,9 @@ python desktop/native-foundation/acceptance.py dist/m21a-review
 The cancellation gate requires exact complete LF/CRLF readiness, reason 4,
 successful job termination, retained-handle signalling and zero active processes.
 The suite records five attempts each for cancellation and helper/parent death.
-The final fifth parent-death case never launched because evidence publication
-failed. Stop on mandatory failure; no automatic rerun is performed. Historical
+Both new runs completed the fifth parent-death case. The historical 54-pass run
+never launched it and remains incomplete. Stop on mandatory failure; no automatic
+rerun is performed. Historical
 build attempts included an omitted C++17 flag and a
 PowerShell argument-array defect. Both failed compilation. A preliminary host
 launch then failed with error 203 before child creation because required standard
