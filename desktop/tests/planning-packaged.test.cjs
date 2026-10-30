@@ -24,7 +24,7 @@ async function approve(app,yes=true) {
   await app.evaluate(({dialog},yes)=>{dialog.showMessageBox=async(_win,options)=>{global.consent=options;return {response:yes?1:0};};},yes);
 }
 async function select(page,value=link){await page.locator('#source-link').fill(value);await page.getByRole('button',{name:'Review this source →'}).click();}
-async function importFinished(page){await page.locator('#import-plan').waitFor();await page.waitForFunction(()=>!document.getElementById('import-plan').disabled,{},{timeout:40000});}
+async function importFinished(page){await page.waitForFunction(()=>!document.getElementById('import-plan').disabled,{},{timeout:40000});}
 async function imported(page){await importFinished(page);assert.equal(await page.getByRole('heading',{name:'DAF · m12-distribution-readiness'}).isVisible(),true,await page.locator('#planning-message').textContent());}
 test('packaged planning API is narrow; no read without native consent; errors and keyboard work', {timeout:60000},async()=>{
   await fs.mkdir(output,{recursive:true});const profile=await fs.mkdtemp(path.join(output,'planning-profile-'));
@@ -97,6 +97,7 @@ test('untrusted full-source snapshot renders inertly through the actual bundled 
   const {app,page}=await launch(profile);
   try {
     await page.getByRole('button',{name:'daf-public-planning-example · m1-public-example'}).click();
+    await importFinished(page); // Saved history does not show the public-import form.
     await page.getByRole('heading',{name:'<script>window.injected=true</script>',exact:true}).waitFor();
     assert.equal(await page.locator('#plan-view img, #plan-view script, #plan-view iframe').count(),0);
     assert.equal(await page.evaluate(()=>window.injected),undefined);
