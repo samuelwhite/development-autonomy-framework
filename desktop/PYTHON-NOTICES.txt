@@ -1,0 +1,19 @@
+DAF M1.2 bundled Python runtime
+
+CPython 3.14.10 is distributed under the Python Software Foundation license and
+the historical notices reproduced in PYTHON-LICENSE.txt. Windows binaries are
+the official PSF embeddable distribution. Linux binaries are the Astral
+python-build-standalone 20261026 install-only stripped distribution.
+
+Source and exact archive checksums are recorded in python-runtime.json.
+CPython source: https://www.python.org/downloads/release/python-31410/
+Linux build/source: https://github.com/astral-sh/python-build-standalone/releases/tag/20261026
+Additional bundled-library license texts accompany CPython's PYTHON-LICENSE.txt.
+The third-party directory retains the official Windows SBOM and full upstream
+Linux build metadata/license set. Its README records checksums and public source
+availability for CPython, dependency build recipes and DAF.
+DAF does not claim authorship of Python or its bundled native libraries.
+
+No pip, user site packages, runtime installer or automatic updater is used.
+Only the named DAF validators and planning sidecar enter this package; DAF's
+execution engine, workers, receipt CLI and development tooling are excluded.

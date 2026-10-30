@@ -1,56 +1,86 @@
-DAF 0.2.1 — OFFLINE DESKTOP DEMO
+DAF M1.2 — DEMONSTRATION AND REAL READ-ONLY GITHUB PLANNING
 
-All assistants, tasks, checks, approvals and results are simulated.
-This is not a working AI development controller. No accounts or payment needed.
+This is a Product-review candidate, not an AI development controller.
+Imported tasks remain proposals. Nothing is executed, edited, approved or paid for.
 
 WINDOWS (Windows 11, Intel/AMD 64-bit)
-1. Save the DAF portable ZIP from the review candidate supplied by the maintainer.
+1. Save the portable ZIP supplied by the maintainer for review.
 2. In File Explorer, right-click the ZIP, choose Extract All, then Extract.
-3. Open the extracted folder and double-click DAF (DAF.exe).
-Keep every file in the folder together. Do not run DAF from inside the ZIP.
-You do not need Python, Node, Docker, WSL, a browser, administrator rights or
-an internet connection. The application includes its own runtime.
+3. Open the extracted DAF-win32-x64 folder and double-click DAF (DAF.exe).
+Keep every file together. Do not run from inside the ZIP or copy only DAF.exe.
+Electron and Python are included. No separate Python, Node, WSL, Docker, developer
+tools, terminal commands or administrator installation is needed.
 
-This review candidate is unsigned. Windows SmartScreen or organisational policy
-may block it or show an unknown publisher. Do not disable security controls or
-bypass the warning. Stop and request an approved signed build from the maintainer.
-Public distribution requires signing and clean-machine acceptance first.
+This candidate is unsigned. If SmartScreen or organisational policy blocks it,
+stop and request an approved signed build. Do not disable or bypass protections.
+Signing, clean Windows acceptance and screen-reader qualification remain gates
+before public distribution. No public release has been created.
 
-TRY THE DEMO
-Choose Let's get started, choose OpenAI Codex or Claude, try the demo connection,
-choose an example project and a permission level. Checks run automatically.
-Pick a suggested task and explore Mission Control. Independent mode asks you to
-approve a plan and review each milestone. Explore demo problems to try exceptions.
-Stop task stops the simulation. Ctrl+R (Demo menu) demonstrates an interruption;
-Check earlier work checks the same simulated attempt without starting another.
-Tab / Shift+Tab moves focus; arrow keys select choices; Space / Enter activate.
-View offers zoom controls. No real project or assistant is ever connected.
+TWO DISTINCT WORKSPACES
+Offline demonstration: the original assistant selection, three permission modes,
+tasks, milestones and stop/recovery examples remain simulated. No network read.
+Import from GitHub: real public source reads, only after your confirmation.
+Future execution: unavailable. No AI providers, credentials, repository changes,
+workers, automatic updates, telemetry or spending capability exists.
 
-CLOSE AND REMOVE
-Use the window's X or Demo > Exit DAF. Closing ends all demonstration activity;
-reopening starts fresh. Reload retains progress only in the current session.
-To remove, close DAF and delete its extracted folder and downloaded ZIP.
-Optional: in File Explorer enter %APPDATA% and delete only the DAF Offline Demo
-folder to remove Chromium preferences/cache. No service, startup entry, background
-worker, telemetry or automatic updater is installed.
+IMPORT A REAL PLAN
+1. Choose Import from GitHub in the left sidebar.
+2. Paste a GitHub JSON file link with a full 40-character commit, not a branch/tag.
+   Or enter owner/repository, exact commit and file path separately.
+3. Choose Review this source. Check the repository, commit and path shown.
+4. Choose Allow public GitHub read, then Read plan in the native confirmation.
+   Cancel is the default. DAF reads this file and its Git tree from api.github.com
+   over certificate-verified HTTPS, and saves its complete source on this device.
+5. Review the milestones, tasks, dependencies, acceptance criteria, permitted
+   paths and hashes. Source requirements are unverified claims. The source commit
+   and the plan's declared baseline may differ.
+6. Close and reopen DAF. Choose Import from GitHub, then a Saved import.
+   DAF revalidates the entire stored source locally; no GitHub request is made.
 
-IF SOMETHING GOES WRONG
-Missing files / blank window: close DAF, extract the entire ZIP into a new folder
-and try again. Do not copy only DAF.exe or run it from inside the ZIP.
-Windows blocks launch: stop and request an approved signed build. Do not turn off
-SmartScreen, antivirus, sandboxing or other security protections.
-Window stops responding: close and reopen. Only simulated progress is lost.
-Setup problem in the demo: read What to do, then use its named Fix this action.
-Earlier work needs checking: choose Check earlier work and follow its recovery
-instructions. Unknown results cannot be approved or restarted automatically.
+Only schema-1 DAF planning JSON is supported. Markdown and arbitrary repositories
+without a compatible plan cannot be translated into tasks. Private repositories,
+branches/tags, symlinks, submodules and unsafe paths are refused.
+The maintainer walkthrough provides a genuine DAF plan and exact example link.
+
+CANCEL AND RECOVER
+Cancel import stops the owned Python process. Closing/reloading also stops it.
+A complete snapshot may have been saved just before cancellation: explicitly
+refresh local history before retrying. Partial staging files are never shown as
+complete plans. Identical imports reuse existing bytes; conflicts never overwrite.
+Network errors require an explicit retry. DAF never asks for a token.
+
+Missing runtime / invalid response: close DAF and re-extract the complete ZIP in
+a new folder. Saved planning data is separate and remains on this device.
+GitHub unavailable / limited: check your connection or wait, then retry explicitly.
+TLS error: check the clock and trusted network; never disable verification.
+Invalid plan / rejected path: ask the maintainer to repair the source at a new
+commit. DAF refuses the whole import, not just one malformed task.
+
+Damaged snapshot / conflict: close DAF. In File Explorer enter:
+%APPDATA%\DAF Offline Demo\planning-v1
+Copy the identified 64-character .json file somewhere safe, then remove only
+that local file if you intend to reimport. Do not edit approval fields or hashes.
+Files beginning .incomplete- are interrupted staging files, not complete imports.
+Preserve them for investigation or remove them while DAF is closed.
+History is limited to 100 files / 32 MiB. DAF never deletes evidence automatically.
+Network drives and linked/junction profile folders are unsupported.
+
+KEYBOARD AND REMOVAL
+Tab / Shift+Tab moves focus; Space / Enter activates buttons and disclosures.
+Use Skip to content and View zoom. Screen-reader qualification is pending.
+The X or Demo > Exit DAF closes the app. Demo progress resets; imported plans stay.
+To remove DAF, close it and delete its extracted folder and downloaded ZIP.
+To remove saved plans/preferences too, delete only %APPDATA%\DAF Offline Demo
+after preserving any records you want. The legacy profile name is retained from
+v0.2.1. No service, startup entry or background updater is installed.
 
 LINUX
-An experimental x64 archive is validated on Ubuntu 24.04 in hosted CI. Extract it
-with the desktop archive manager and launch DAF from the extracted folder if your
-desktop permits executable files. GTK 3, NSS, ALSA and a graphical session are OS
-prerequisites. Sandboxing must be available; never launch with --no-sandbox or as
-root to work around a policy error. Other distributions and a graphical installer
-are not qualified. Windows is the primary target; Linux support remains planned.
+Experimental x64 package, validated on Ubuntu 24.04 with bundled Python. Requires
+a graphical session, GTK 3, NSS, ALSA, system CA certificates and a working Chromium
+sandbox. Extract with an archive manager and launch DAF if your desktop permits.
+Do not use --no-sandbox or run as root to bypass errors. Other distributions and
+consumer installation are not qualified. Data is normally under
+~/.config/DAF Offline Demo/planning-v1 (XDG configuration may vary).
 
-No public release has been created for this candidate.
-Licences: DAF-LICENSE, DAF-NOTICE, LICENSE and LICENSES.chromium.html.
+Licences: DAF-LICENSE, DAF-NOTICE, LICENSE, LICENSES.chromium.html and
+resources/planning/PYTHON-LICENSE.txt plus PYTHON-NOTICES.txt.

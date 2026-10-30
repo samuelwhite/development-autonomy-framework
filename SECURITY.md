@@ -21,6 +21,15 @@ identity/signing isolation and recovery have been reviewed together.
 
 The source-only M1.1 script reads one explicitly selected **public** GitHub file at a pinned commit using bounded fixed-host, unauthenticated GET requests with pinned tree-entry checks. It is not part of the packaged offline runtime and has no credential, provider execution, approval, worker or write-back path. The resulting local record is non-authoritative; the exact scope and idempotency contract are documented in [github-planning-ingestion.md](docs/github-planning-ingestion.md). Do not treat remote content or matching hashes as a verified owner signature.
 
+## Desktop planning boundary
+The separate M1.2 desktop candidate adds a narrow, versioned stdio bridge to a
+bundled Python planning sidecar. Only a native-confirmed public GitHub read can
+use the network. Local history revalidates complete source snapshots; stored
+claims are never authenticated approvals. The renderer has no generic native,
+filesystem or command capability. See [the desktop security decision](docs/adr-002-read-only-desktop-planning.md)
+for schemas, cancellation, persistence limits and remaining trust boundaries.
+Existing execution, cost, stop and evidence controls remain unchanged.
+
 ## Public CI boundary
 
 The `preview-quality` workflow targets standard GitHub-hosted Windows and Linux

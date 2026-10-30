@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>DAF · Read-only GitHub planning</title>
+  <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="planning.css">
+  <script defer src="planning.js"></script>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <aside class="sidebar">
+    <a class="brand" href="index.html"><span class="brand-mark">d.</span> DAF <span class="version">M1.2</span></a>
+    <p class="sidebar-caption">DEVELOPMENT AUTONOMY FRAMEWORK</p>
+    <div class="workspace"><span class="workspace-icon">G</span><div>GitHub planning<small>Read-only workspace</small></div></div>
+    <nav aria-label="Workspace"><a class="workspace-nav" href="planning.html" aria-current="page">Import from GitHub</a><a class="workspace-nav" href="index.html">Offline demonstration</a></nav>
+    <div class="sidebar-bottom"><span class="local-dot"></span> Your boundaries<p>Proposals stay proposals.<br>Execution is unavailable.</p></div>
+  </aside>
+  <div class="shell">
+    <header><span>Mission Control / Planning</span><span class="offline">REAL READ-ONLY PLANNING</span></header>
+    <div class="notice"><strong>Real source. No execution.</strong> Read a public plan from GitHub and review its proposals. Nothing is approved, run or paid for.</div>
+    <main id="content" tabindex="-1">
+      <p class="eyebrow">GITHUB IS THE PLANNING SOURCE</p>
+      <h1>Import from GitHub</h1>
+      <p>Bring a real development plan into view. DAF reads one exact revision, validates every task and keeps a local snapshot for you to revisit.</p>
+      <section class="panel" aria-labelledby="source-heading">
+        <h2 id="source-heading">Choose a pinned plan</h2>
+        <label class="field" for="source-link">GitHub file link<input id="source-link" type="text" maxlength="520" autocomplete="off" spellcheck="false" placeholder="https://github.com/owner/repository/blob/40-character-commit/plans/work.json"></label>
+        <p class="subnote">Use the full 40-character commit, not a branch or tag. DAF accepts schema-1 DAF planning JSON, not Markdown or an arbitrary web page.</p>
+        <details id="manual-source"><summary>Enter the repository, commit and path separately</summary>
+          <label class="field" for="repository">Public repository<input id="repository" maxlength="201" placeholder="owner/repository" autocomplete="off"></label>
+          <label class="field" for="commit">Exact commit<input id="commit" maxlength="40" placeholder="40 lowercase hexadecimal characters" autocomplete="off"></label>
+          <label class="field" for="plan-path">Plan file path<input id="plan-path" maxlength="240" placeholder="plans/work.json" autocomplete="off"></label>
+          <p class="subnote">Clear the file link to use these fields.</p>
+        </details>
+        <button id="review-source" class="primary">Review this source →</button>
+        <div id="read-review" hidden>
+          <h3>What DAF will read</h3><dl id="source-summary"></dl>
+          <p>With your permission, DAF will read this file and its Git tree from <strong>api.github.com</strong> over HTTPS. It will save the full source snapshot on this device. No account, linked files, repository changes or automatic refresh.</p>
+          <button id="import-plan" class="primary">Allow public GitHub read…</button>
+        </div>
+        <div id="import-progress" hidden><p id="progress-text" role="status">Reading the pinned source and validating the complete plan… This can take up to 30 seconds.</p><button id="cancel-import" class="secondary">Cancel import</button></div>
+      </section>
+      <p id="planning-message" role="status" aria-live="polite"></p>
+      <section id="history" class="panel" aria-labelledby="history-heading">
+        <div class="section-heading"><h2 id="history-heading">Saved imports</h2><button id="refresh-history" class="secondary">Refresh local history</button></div>
+        <p class="subnote">Read from this device and revalidated. Opening a saved import never contacts GitHub.</p><div id="history-items"></div>
+      </section>
+      <section id="plan-view" hidden aria-labelledby="plan-heading"></section>
+      <section class="panel"><h2>Future development work</h2><p>Execution is unavailable. Importing, reviewing a proposal or passing a validation check never grants approval or spending authority. The offline demonstration remains a separate simulated experience.</p></section>
+    </main>
+    <footer><span>DAF · M1.2 Product review</span><span>Saved snapshots stay local · No background updates</span></footer>
+  </div>
+</body>
+</html>

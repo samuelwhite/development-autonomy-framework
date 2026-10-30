@@ -1,0 +1,18 @@
+{
+  "version": "3.14.10",
+  "reviewed": "2026-10-30",
+  "win32": {
+    "url": "https://www.python.org/ftp/python/3.14.10/python-3.14.10-embed-amd64.zip",
+    "archive": "python-3.14.10-embed-amd64.zip",
+    "sha256": "90905e64a840557d8c1bc4f5b74db3d7ee85e3ffb217611cac1c7813acea4159",
+    "source": "https://www.python.org/downloads/release/python-31410/",
+    "provider": "Python Software Foundation"
+  },
+  "linux": {
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.14.10%2B20261026-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "archive": "python-3.14.10-linux.tar.gz",
+    "sha256": "4d3c16c59ed0802a3d1d34d8bce504b15ceeaff39d62dadecc6a9fa803412aed",
+    "source": "https://github.com/astral-sh/python-build-standalone/releases/tag/20261026",
+    "provider": "Astral python-build-standalone"
+  }
+}

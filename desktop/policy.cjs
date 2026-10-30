@@ -6,6 +6,9 @@ const assets = Object.freeze({
   '/style.css': 'text/css; charset=utf-8',
   '/simulation.js': 'text/javascript; charset=utf-8',
   '/app.js': 'text/javascript; charset=utf-8',
+  '/planning.html': 'text/html; charset=utf-8',
+  '/planning.js': 'text/javascript; charset=utf-8',
+  '/planning.css': 'text/css; charset=utf-8',
 });
 const home = 'daf://app/index.html';
 function assetFor(raw) {
@@ -17,6 +20,6 @@ function assetFor(raw) {
     return Object.hasOwn(assets, url.pathname) ? url.pathname : null;
   } catch { return null; }
 }
-function canNavigate(raw) { return assetFor(raw) === '/index.html'; }
+function canNavigate(raw) { return ['/index.html', '/planning.html'].includes(assetFor(raw)); }
 const csp = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; frame-ancestors 'none'; worker-src 'none'";
 module.exports = { assets, assetFor, canNavigate, home, csp };

@@ -1,0 +1,16 @@
+[hidden] { display:none !important; }
+.field input { display:block; width:100%; min-height:46px; padding:12px; border:1px solid #cbd7c8; border-radius:7px; margin:10px 0; color:var(--ink); background:white; }
+.field { margin:18px 0; }
+#review-source { margin-top:20px; }
+#read-review { border-top:1px solid var(--line); margin-top:24px; padding-top:12px; }
+#planning-message { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.7; }
+dl { display:grid; grid-template-columns:minmax(90px,140px) 1fr; gap:10px 14px; }
+dt { font-weight:600; } dd { margin:0; overflow-wrap:anywhere; }
+pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; line-height:1.6; background:#f4f6ef; border-radius:8px; padding:18px; }
+.source-text { white-space:pre-wrap; overflow-wrap:anywhere; }
+.import-entry { border-top:1px solid var(--line); padding:18px 0; }
+.import-entry button { text-align:left; }
+.proposal { border-left:4px solid #658875; }
+.proposed { color:#775521; background:#fff4d9; padding:6px 10px; border-radius:6px; display:inline-block; font-size:13px; }
+#plan-heading:focus { outline:none; }
+@media(max-width:760px) { dl { grid-template-columns:1fr; gap:6px; } dd { margin-bottom:12px; } }
