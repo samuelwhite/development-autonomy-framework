@@ -1,9 +1,11 @@
 'use strict';
 
-const { app, BrowserWindow, Menu, dialog, protocol, session } = require('electron');
+const { app, BrowserWindow, Menu, dialog, protocol, session, ipcMain } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { assets, assetFor, canNavigate, home, csp } = require('./policy.cjs');
+const {PlanningProcess} = require('./planning-process.cjs');
+const {installPlanningIPC} = require('./planning-ipc.cjs');
 
 app.setName('DAF Offline Demo');
 app.setAppUserModelId('org.daf.offline-demo');
@@ -16,6 +18,8 @@ app.commandLine.appendSwitch('force-webrtc-ip-handling-policy', 'disable_non_pro
 protocol.registerSchemesAsPrivileged([{ scheme: 'daf', privileges: { standard: true, secure: true } }]);
 
 let win;
+let cancelPlanning = async () => {};
+let exiting = false;
 let reportingFailure = false;
 function fail(message) {
   if (reportingFailure) return;
@@ -27,7 +31,8 @@ function fail(message) {
 async function start() {
   const assetRoot = path.join(__dirname, app.isPackaged ? 'ui' : '../prototype');
   // Check the complete UI up front so missing files cannot leave a blank window.
-  const files = new Map(Object.keys(assets).map(name => [name, fs.readFileSync(path.join(assetRoot, name.slice(1)))]));
+  const files = new Map(Object.keys(assets).map(name => [name, fs.readFileSync(path.join(
+    !app.isPackaged && name.startsWith('/planning.') ? __dirname : assetRoot, name.slice(1)))]));
   const offline = session.fromPartition('daf-offline', { cache: false });
   // Defence in depth: reject network at the session layer, even if UI CSP changes.
   offline.webRequest.onBeforeRequest((details, done) => done({ cancel: !assetFor(details.url) }));
@@ -44,13 +49,17 @@ async function start() {
   });
   win = new BrowserWindow({
     width: 1320, height: 940, minWidth: 680, minHeight: 520,
-    title: 'DAF 0.2.1 · Offline demo', backgroundColor: '#f6f7fb', show: false,
+    title: 'DAF · Demo and read-only planning', backgroundColor: '#f6f7fb', show: false,
     webPreferences: {
       session: offline, sandbox: true, contextIsolation: true, nodeIntegration: false,
       webSecurity: true, webviewTag: false, spellcheck: false,
-      // No preload and no IPC capability are exposed to the prototype.
+      preload: path.join(__dirname, 'preload.cjs'),
     },
   });
+  const resources = app.isPackaged ? path.join(process.resourcesPath, 'planning') : path.join(__dirname, '../dist/m1.2-runtime', process.platform);
+  const runner = new PlanningProcess(resources, path.join(app.getPath('userData'), 'planning-v1'));
+  cancelPlanning = installPlanningIPC({ipcMain, dialog, win, runner});
+  win.webContents.on('did-start-navigation', (_event, _url, _inPlace, mainFrame) => { if(mainFrame) void cancelPlanning(); });
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', (event, url) => { if (!canNavigate(url)) event.preventDefault(); });
   win.webContents.on('will-redirect', event => event.preventDefault());
@@ -67,8 +76,8 @@ async function start() {
     ] },
     { label: 'View', submenu: [{ role: 'zoomIn' }, { role: 'zoomOut' }, { role: 'resetZoom' }] },
     { label: 'Help', submenu: [{ label: 'About this offline demo', click: () => dialog.showMessageBox(win, {
-      type: 'info', title: 'DAF 0.2.1 · Offline demo', message: 'Everything in this application is simulated.',
-      detail: 'No AI connections, credentials, paid requests, project access, telemetry or automatic updates. Closing ends the demo and clears progress. Reload demonstrates interruption within this session. See START-HERE.txt beside DAF for installation and removal instructions.',
+      type: 'info', title: 'DAF · M1.2 review candidate', message: 'Offline demonstration and real read-only GitHub planning.',
+      detail: 'The demo remains simulated. Import from GitHub reads only a public, commit-pinned plan after your confirmation. Imported work stays proposed: no execution, AI providers, credentials or spending. Local snapshots survive closing; demo progress does not. See START-HERE.txt for installation, storage and removal.',
     }) }] },
   ]));
   await win.loadURL(home);
@@ -76,4 +85,10 @@ async function start() {
 }
 
 app.on('window-all-closed', () => app.quit());
-app.whenReady().then(start).catch(() => fail('Some application files are missing or cannot be read.'));
+app.on('before-quit', event => {
+  if(exiting) return;
+  event.preventDefault(); exiting = true;
+  void cancelPlanning().finally(() => app.quit());
+});
+if (!app.requestSingleInstanceLock()) app.quit();
+else app.whenReady().then(start).catch(() => fail('Some application files are missing or cannot be read.'));

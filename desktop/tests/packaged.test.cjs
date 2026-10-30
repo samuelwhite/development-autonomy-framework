@@ -13,15 +13,25 @@ test('package contains only the named host and approved UI assets', async () => 
   const { listPackage, extractFile } = await import('@electron/asar');
   const archive = path.join(path.dirname(executablePath), 'resources/app.asar');
   assert.deepEqual(listPackage(archive).map(name => name.replaceAll('\\', '/')).sort(), [
-    '/main.cjs', '/package.json', '/policy.cjs', '/ui', '/ui/app.js',
-    '/ui/index.html', '/ui/simulation.js', '/ui/style.css',
-  ]);
+    '/main.cjs', '/package.json', '/policy.cjs', '/preload.cjs', '/planning-contract.cjs',
+    '/planning-process.cjs', '/planning-ipc.cjs', '/planning-protocol.json', '/ui', '/ui/app.js',
+    '/ui/index.html', '/ui/simulation.js', '/ui/style.css', '/ui/planning.html', '/ui/planning.js', '/ui/planning.css',
+  ].sort());
   for (const file of ['app.js', 'simulation.js', 'style.css']) {
     assert.deepEqual(extractFile(archive, `ui/${file}`), await fs.readFile(path.resolve(__dirname, '../../prototype', file)));
   }
-  for (const file of ['main.cjs', 'policy.cjs']) {
+  for (const file of ['main.cjs', 'policy.cjs', 'preload.cjs', 'planning-contract.cjs', 'planning-process.cjs', 'planning-ipc.cjs', 'planning-protocol.json']) {
     assert.deepEqual(extractFile(archive, file), await fs.readFile(path.resolve(__dirname, '..', file)));
   }
+  for (const file of ['planning.html', 'planning.js', 'planning.css']) {
+    assert.deepEqual(extractFile(archive, `ui/${file}`), await fs.readFile(path.resolve(__dirname, '..', file)));
+  }
+  const planning = path.join(path.dirname(executablePath), 'resources/planning');
+  const modules = require('../bundle-python.cjs').modules;
+  assert.deepEqual((await fs.readdir(path.join(planning, 'controller/daf'))).sort(), [...modules].sort());
+  for (const file of modules) assert.deepEqual(await fs.readFile(path.join(planning, 'controller/daf', file)), await fs.readFile(path.resolve(__dirname, '../../src/daf', file)));
+  for (const file of ['entry.py', 'service.py']) assert.deepEqual(await fs.readFile(path.join(planning, 'controller', file)), await fs.readFile(path.resolve(__dirname, '../controller', file)));
+  for (const file of ['planning-protocol.json', 'python-runtime.json']) assert.deepEqual(await fs.readFile(path.join(planning, file)), await fs.readFile(path.resolve(__dirname, '..', file)));
   for (const file of ['LICENSE', 'LICENSES.chromium.html', 'DAF-LICENSE', 'DAF-NOTICE', 'START-HERE.txt']) {
     assert.ok((await fs.stat(path.join(path.dirname(executablePath), file))).size > 0);
   }

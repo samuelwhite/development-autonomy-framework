@@ -1,13 +1,18 @@
 # Third-party inventory
 
-The separate v0.2.1 desktop candidate bundles Electron 45.1.0 (MIT) and its
+The separate M1.2 desktop candidate bundles Electron 45.1.0 (MIT) and its
 Chromium/Node dependencies. Its complete upstream `LICENSE` and
 `LICENSES.chromium.html` ship beside `DAF-LICENSE` and `DAF-NOTICE`; retain them.
 Desktop build/test tools (`@electron/packager` 20.3.0, BSD-2-Clause;
 Playwright 1.64.1, Apache-2.0) and transitive dependencies are locked in
 `desktop/package-lock.json` and are not included in `app.asar`. Electron itself
 contains components under their own licences. DAF's Apache-2.0 notice does not
-relicense that runtime. The inventory below refers to the unchanged Python package.
+relicense that runtime. M1.2 additionally bundles CPython 3.14.10: the official
+PSF Windows embeddable archive and Astral's 20261026 Linux standalone archive.
+Exact URLs/hashes are in `desktop/python-runtime.json`. Each retains the upstream
+Python license plus desktop Python notices; these are separate from DAF's license.
+The inventory below describes the offline Python package, which has no third-party
+runtime dependencies. Bundled desktop runtimes are a separate packaging layer.
 
 The runtime uses Python's standard library (including its SQLite bindings).
 No third-party source, fonts, images, model weights, JavaScript bundles or SDKs
@@ -41,8 +46,8 @@ interpreter or tool bundle under the assumption that the DAF notice covers it.
 
 Review the resolved inventory and licences at release time. A successful vulnerability
 scan is not a complete licence or provenance review. Python's licence and bundled
-components remain governed by the Python distribution's notices; Python itself
-is not bundled here.
+components remain governed by the Python distribution's notices. Python is not
+embedded in the wheel; it is bundled in the separate desktop candidate.
 
 GitHub Actions checkout and setup-python are MIT-licensed upstream projects
 referenced at fixed commits; their code is not copied into this package. Recheck action provenance and advisories

@@ -1,16 +1,16 @@
 {
   "name": "daf-offline-desktop",
   "productName": "DAF",
-  "version": "0.2.1",
+  "version": "0.2.2-m1.2",
   "private": true,
-  "description": "DAF offline desktop demonstration — all work is simulated",
+  "description": "DAF offline demonstration and real read-only GitHub planning",
   "author": "Samuel James White",
   "license": "Apache-2.0",
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
     "build": "node build.cjs",
-    "test": "node --test tests/policy.test.cjs",
+    "test": "node --test tests/policy.test.cjs tests/planning.test.cjs",
     "test:desktop": "node tests/run.cjs"
   },
   "devDependencies": {

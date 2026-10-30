@@ -1,0 +1,513 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "source": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 201,
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "commit_sha": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240,
+          "pattern": "^[A-Za-z0-9_./-]+\\.json$"
+        }
+      },
+      "required": [
+        "repository",
+        "commit_sha",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 201,
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "commit_sha": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240,
+          "pattern": "^[A-Za-z0-9_./-]+\\.json$"
+        },
+        "git_blob_sha": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "content_sha256": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "plan_sha256": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "repository",
+        "commit_sha",
+        "path",
+        "git_blob_sha",
+        "content_sha256",
+        "plan_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "milestone": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "maxItems": 100
+        },
+        "deliverable": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "acceptance": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 100,
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "proposalId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "taskSHA256": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "instruction": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16000
+        },
+        "allowedPaths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "maxItems": 256
+        },
+        "checks": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        }
+      },
+      "required": [
+        "id",
+        "dependencies",
+        "deliverable",
+        "acceptance",
+        "proposalId",
+        "taskSHA256",
+        "instruction",
+        "allowedPaths",
+        "checks"
+      ],
+      "additionalProperties": false
+    },
+    "snapshot": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "status": {
+          "const": "pinned_plan_proposal"
+        },
+        "approval": {
+          "const": null
+        },
+        "executionAuthority": {
+          "const": false
+        },
+        "spendingAuthority": {
+          "const": false
+        },
+        "verification": {
+          "const": "local_source_observation_requirements_unverified"
+        },
+        "source": {
+          "$ref": "#/$defs/provenance"
+        },
+        "project": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "planId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000
+        },
+        "baseline": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "maxItems": 1000
+        },
+        "deliverables": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "maxItems": 1000
+        },
+        "requirements": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "milestones": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/milestone"
+          },
+          "maxItems": 100,
+          "minItems": 1
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "approval",
+        "executionAuthority",
+        "spendingAuthority",
+        "verification",
+        "source",
+        "project",
+        "planId",
+        "version",
+        "baseline",
+        "scope",
+        "deliverables",
+        "requirements",
+        "milestones"
+      ],
+      "additionalProperties": false
+    },
+    "request": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "protocol": {
+              "const": 1
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "pattern": "^[a-f0-9]{32}$"
+            },
+            "operation": {
+              "const": "planning.importPublicPlan"
+            },
+            "source": {
+              "$ref": "#/$defs/source"
+            }
+          },
+          "required": [
+            "protocol",
+            "requestId",
+            "operation",
+            "source"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "protocol": {
+              "const": 1
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "pattern": "^[a-f0-9]{32}$"
+            },
+            "operation": {
+              "const": "planning.listImports"
+            }
+          },
+          "required": [
+            "protocol",
+            "requestId",
+            "operation"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "protocol": {
+              "const": 1
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "pattern": "^[a-f0-9]{32}$"
+            },
+            "operation": {
+              "const": "planning.getImport"
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          "required": [
+            "protocol",
+            "requestId",
+            "operation",
+            "id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "response": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "protocol": {
+              "const": 1
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "pattern": "^[a-f0-9]{32}$"
+            },
+            "outcome": {
+              "enum": [
+                "imported",
+                "already_present",
+                "loaded"
+              ]
+            },
+            "snapshot": {
+              "$ref": "#/$defs/snapshot"
+            }
+          },
+          "required": [
+            "protocol",
+            "requestId",
+            "outcome",
+            "snapshot"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "protocol": {
+              "const": 1
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "pattern": "^[a-f0-9]{32}$"
+            },
+            "outcome": {
+              "const": "listed"
+            },
+            "imports": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "project": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "planId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "source": {
+                    "$ref": "#/$defs/provenance"
+                  }
+                },
+                "required": [
+                  "id",
+                  "project",
+                  "planId",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 100
+            },
+            "damaged": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "maxItems": 100
+            }
+          },
+          "required": [
+            "protocol",
+            "requestId",
+            "outcome",
+            "imports",
+            "damaged"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "protocol": {
+              "const": 1
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "pattern": "^[a-f0-9]{32}$"
+            },
+            "outcome": {
+              "const": "refused"
+            },
+            "error": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "enum": [
+                    "invalid_request",
+                    "invalid_plan",
+                    "invalid_source",
+                    "github_unavailable",
+                    "github_not_found",
+                    "github_rate_limited",
+                    "github_tls_failed",
+                    "github_timeout",
+                    "github_response_refused",
+                    "storage_unavailable",
+                    "storage_limit",
+                    "snapshot_conflict",
+                    "corrupted_snapshot",
+                    "runtime_unavailable",
+                    "invalid_response",
+                    "busy",
+                    "cancelled_check_history",
+                    "read_not_approved"
+                  ]
+                }
+              },
+              "required": [
+                "code"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "protocol",
+            "requestId",
+            "outcome",
+            "error"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

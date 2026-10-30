@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "plan": {
+    "schema_version": 1,
+    "project": "DAF",
+    "repository": "samuelwhite/development-autonomy-framework",
+    "plan_id": "m12-distribution-readiness",
+    "version": 1,
+    "supersedes": null,
+    "baseline_revision": "f0be721fb7bb4c92716c14f627b56ae79e61786b",
+    "scope": [
+      "Prepare evidence for the outstanding Windows and screen-reader distribution gates after Product review of M1.2. This is proposed follow-up work, not approval to execute, release or spend."
+    ],
+    "deliverables": [
+      "A clean Windows acceptance record for the portable application.",
+      "A keyboard and screen-reader qualification record tied to that candidate."
+    ],
+    "boundaries": {
+      "code_prefixes": [
+        "docs/acceptance/"
+      ],
+      "protected_prefixes": [
+        ".github/",
+        "src/",
+        "desktop/"
+      ],
+      "infrastructure": [],
+      "deployment_targets": [],
+      "security_restrictions": [
+        "No execution, repository mutation, AI providers, credentials, paid requests, release, merge or deployment is authorised by importing this plan."
+      ]
+    },
+    "validation": {
+      "validator": "product-distribution-evidence-review",
+      "required_checks": [
+        "tests",
+        "security"
+      ],
+      "workflow_path": ".github/workflows/ci.yml",
+      "workflow_sha256": "1033b8eb00de60c9c2a57941ee0087a8bd82be095da86d4f9a85c99655527ec1",
+      "protected_files": {
+        ".github/workflows/ci.yml": "1033b8eb00de60c9c2a57941ee0087a8bd82be095da86d4f9a85c99655527ec1",
+        "src/daf/contract.py": "e20b4655d1f37e1be39ddf34e45eb51b08146d66e5d15d5ad0825bfb3edd326a"
+      }
+    },
+    "budgets": {
+      "max_jobs": 2,
+      "max_cost_units": 2,
+      "cost_units_per_job": 1,
+      "max_tokens": 200,
+      "tokens_per_job": 100,
+      "max_elapsed_seconds": 60
+    },
+    "recovery": {
+      "max_attempts": 1,
+      "max_uncertain_polls": 1
+    },
+    "notifications": "durable-outbox",
+    "actions": {
+      "merge": false,
+      "deploy": false
+    },
+    "milestones": [
+      {
+        "id": "WINDOWS",
+        "depends_on": [],
+        "deliverable": "Record clean Windows acceptance and signing status",
+        "acceptance": {
+          "tests": "Record extraction, launch, native read confirmation, genuine pinned import, cancellation, offline reopen and removal on a clean supported Windows 11 x64 machine without developer tools.",
+          "security": "Keep unsigned/signing status explicit. Do not bypass SmartScreen, organisation policy, sandboxing or certificate verification. No public distribution before all gates are accepted."
+        }
+      },
+      {
+        "id": "ACCESSIBILITY",
+        "depends_on": [
+          "WINDOWS"
+        ],
+        "deliverable": "Qualify keyboard and screen-reader planning journeys",
+        "acceptance": {
+          "tests": "Record keyboard-only and screen-reader results for source review, native confirmation, progress, cancellation, task dependencies, errors and saved-history recovery on the candidate tested in WINDOWS.",
+          "security": "Keep simulated demonstrations, real read-only proposals and unavailable execution distinguishable in accessible names. No approval or spending authority may be inferred."
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "milestone_id": "WINDOWS",
+      "instruction": "After separate Product authorisation, perform clean-machine Windows acceptance for the M1.2 candidate and record the exact candidate hash, OS, prerequisites, results and unresolved signing gate in docs/acceptance/m1.2-windows.md. This import only proposes the work; it must not run or distribute anything.",
+      "allowed_paths": [
+        "docs/acceptance/m1.2-windows.md"
+      ],
+      "required_checks": [
+        {
+          "name": "tests",
+          "validator_id": "product-evidence-review",
+          "source": "github_actions",
+          "workflow_path": ".github/workflows/ci.yml",
+          "workflow_sha256": "1033b8eb00de60c9c2a57941ee0087a8bd82be095da86d4f9a85c99655527ec1",
+          "artifact_name": null
+        },
+        {
+          "name": "security",
+          "validator_id": "product-evidence-review",
+          "source": "github_actions",
+          "workflow_path": ".github/workflows/ci.yml",
+          "workflow_sha256": "1033b8eb00de60c9c2a57941ee0087a8bd82be095da86d4f9a85c99655527ec1",
+          "artifact_name": null
+        }
+      ]
+    },
+    {
+      "milestone_id": "ACCESSIBILITY",
+      "instruction": "After the WINDOWS evidence is available and separate Product authorisation is granted, qualify the same candidate with keyboard-only navigation and a Windows screen reader. Record observations, defects and remaining gates in docs/acceptance/m1.2-accessibility.md. This proposal grants no execution permission.",
+      "allowed_paths": [
+        "docs/acceptance/m1.2-accessibility.md"
+      ],
+      "required_checks": [
+        {
+          "name": "tests",
+          "validator_id": "product-evidence-review",
+          "source": "github_actions",
+          "workflow_path": ".github/workflows/ci.yml",
+          "workflow_sha256": "1033b8eb00de60c9c2a57941ee0087a8bd82be095da86d4f9a85c99655527ec1",
+          "artifact_name": null
+        },
+        {
+          "name": "security",
+          "validator_id": "product-evidence-review",
+          "source": "github_actions",
+          "workflow_path": ".github/workflows/ci.yml",
+          "workflow_sha256": "1033b8eb00de60c9c2a57941ee0087a8bd82be095da86d4f9a85c99655527ec1",
+          "artifact_name": null
+        }
+      ]
+    }
+  ]
+}

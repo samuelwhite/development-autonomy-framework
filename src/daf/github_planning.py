@@ -244,19 +244,11 @@ def validate_planning_document(document, repository):
     return plan, bundles
 
 
-def ingest_public_milestone(repository, commit_sha, source_path, milestone_id, *, get_json):
-    """Create a deterministic, non-authoritative proposal from pinned GitHub data.
-
-    Caller supplies an explicit public GitHub reader; this module never opens
-    network connections or accepts authority from the source document.
-    """
+def read_public_document(repository, commit_sha, source_path, *, get_json):
+    """Observe one complete pinned regular file through an explicit read-only reader."""
     validate_repository(repository)
     sha(commit_sha, 40)
     source_path = _source_path(source_path)
-    require(
-        isinstance(milestone_id, str) and _MILESTONE.fullmatch(milestone_id),
-        "invalid_milestone_identity",
-    )
     require(callable(get_json), "missing_read_only_source")
     prefix = f"/repos/{repository}"
     commit = get_json(f"{prefix}/git/commits/{commit_sha}")
@@ -270,8 +262,6 @@ def ingest_public_milestone(repository, commit_sha, source_path, milestone_id, *
     require(blob_sha == expected_blob, "github_tree_blob_mismatch")
     document = _document(content)
     plan, bundles = validate_planning_document(document, repository)
-    require(milestone_id in bundles, "unknown_planning_milestone")
-    bundle = bundles[milestone_id]
     source = {
         "repository": repository,
         "commit_sha": commit_sha,
@@ -280,11 +270,18 @@ def ingest_public_milestone(repository, commit_sha, source_path, milestone_id, *
         "content_sha256": hashlib.sha256(content).hexdigest(),
         "plan_sha256": digest(plan),
     }
+    return source, content, plan, bundles
+
+
+def propose_milestone(source, plan, bundles, milestone_id):
+    """Project an already validated complete source; never construct authority."""
+    require(milestone_id in bundles, "unknown_planning_milestone")
+    bundle = bundles[milestone_id]
     identity = digest(
         {
-            "repository": repository,
-            "commit_sha": commit_sha,
-            "path": source_path,
+            "repository": source["repository"],
+            "commit_sha": source["commit_sha"],
+            "path": source["path"],
             "milestone_id": milestone_id,
         }
     )
@@ -303,6 +300,18 @@ def ingest_public_milestone(repository, commit_sha, source_path, milestone_id, *
         "acceptance": next(x["acceptance"] for x in plan["milestones"] if x["id"] == milestone_id),
         "bundle": validate_bundle(bundle),
     }
+
+
+def ingest_public_milestone(repository, commit_sha, source_path, milestone_id, *, get_json):
+    """Create a deterministic proposal, without execution or approval authority."""
+    require(
+        isinstance(milestone_id, str) and _MILESTONE.fullmatch(milestone_id),
+        "invalid_milestone_identity",
+    )
+    source, _content, plan, bundles = read_public_document(
+        repository, commit_sha, source_path, get_json=get_json
+    )
+    return propose_milestone(source, plan, bundles, milestone_id)
 
 
 def validate_ingest_record(value):

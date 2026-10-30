@@ -27,6 +27,14 @@ def main():
         source = sources[0]
         assert (source / "scripts/smoke_wheel.py").is_file()
         assert (source / "src/daf/assets/app.js").is_file()
+        # Complete-source protocol tests must remain runnable from the source archive.
+        for relative in (
+            "desktop/controller/service.py",
+            "desktop/planning-protocol.json",
+            "desktop/tests/fixtures/untrusted-snapshot.json",
+            "desktop/tests/fixtures/untrusted-view.json",
+        ):
+            assert (source / relative).is_file(), "planning_test_dependency_missing"
         environment = dict(os.environ)
         environment.pop("PYTHONPATH", None)
         environment["PYTHONNOUSERSITE"] = "1"
