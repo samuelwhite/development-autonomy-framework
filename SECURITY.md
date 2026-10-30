@@ -17,6 +17,10 @@ checks. Arbitrary backup restoration is not proven rollback-resistant. Do not
 extend this preview with real workers until independent admission, provider caps,
 identity/signing isolation and recovery have been reviewed together.
 
+## Optional public planning ingestion boundary
+
+The source-only M1.1 script reads one explicitly selected **public** GitHub file at a pinned commit using bounded fixed-host, unauthenticated GET requests with pinned tree-entry checks. It is not part of the packaged offline runtime and has no credential, provider execution, approval, worker or write-back path. The resulting local record is non-authoritative; the exact scope and idempotency contract are documented in [github-planning-ingestion.md](docs/github-planning-ingestion.md). Do not treat remote content or matching hashes as a verified owner signature.
+
 ## Public CI boundary
 
 The `preview-quality` workflow targets standard GitHub-hosted Windows and Linux
