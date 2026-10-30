@@ -1,0 +1,1033 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "result": "BLOCKED",
+  "qualified": false,
+  "blockers": [
+    "ambient_shared_file_write"
+  ],
+  "execution_authority": false,
+  "spending_authority": false,
+  "baseline_commit": "5b6f5d4328854df66d7bc25ab7aa0504256e6e12",
+  "environment": {
+    "os": "Windows 11 Home",
+    "build": "26300.9711",
+    "display_version": "26H2",
+    "architecture": "x64",
+    "host_elevated": false,
+    "clean_machine": false,
+    "runtime": "PSF CPython 3.14.10 embeddable x64",
+    "msvc_toolset": "14.50.35717",
+    "windows_sdk": "10.0.26100.0"
+  },
+  "policy": {
+    "capabilities": [
+      "registryRead"
+    ],
+    "lpac": true,
+    "job_at_creation": true,
+    "child_process_policy": "restricted",
+    "job_active_process_limit": 1,
+    "process_memory_bytes": 134217728,
+    "process_user_cpu_seconds": 2,
+    "wall_seconds": 10,
+    "kill_on_job_close": true,
+    "breakaway_allowed": false,
+    "profile_sealed_after_creation_before_resume": true,
+    "ambient_fixture": "Synthetic low-integrity file, read/write for S-1-15-2-2; no attempt SID ACE"
+  },
+  "sha256": {
+    "desktop/isolation/feasibility.cpp": "f81adf20fa52f3a152f13a22d4663a7312eafc4a348ed3ab1034af3bec1cffe6",
+    "desktop/isolation/probe.py": "da9461d674cef93568a2109cf0b8ecfd9d2c44aca545c9b40844bb08a12e1856",
+    "desktop/isolation/build.ps1": "f3b663010d75ddb8e6e4c6cd5195bf0b433b456ab3b64c631d8cc5f23dfe4eff",
+    "desktop/isolation/run.py": "36491edbfe9ed6dbe6a1c3b7b40d2042c96191c559f8ee48092df8f98f2163de",
+    "local_evidence/feasibility.exe": "6f99ee09bb3b48272260d3de9fa3d7b471bd912761e2f3ce9ff1c6c69bca49c7",
+    "local_evidence/runtime/python.exe": "d718435b892db4ad5b547d12fec61be7baa7faf7a58d857ea58053be24c7a000",
+    "local_evidence/runtime/python314.dll": "d8a06cc6ca3348925ea29e343e1c5c5895fe0bb433ff913e1cee44caf358aa6a",
+    "local_evidence/gate-result.json": "ad8c20353bc89e15f49b0e88c77d16cf946ca4cd33a8ee58c5be92100e1382cc"
+  },
+  "cases": [
+    {
+      "case": "baseline",
+      "helper_exit": 0,
+      "elapsed_seconds": 0.438,
+      "ambient_before_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "ambient_after_sha256": "c16d2288c2ffb3baa7a3f1b37bc5568d115b426819c10b642d8a3bdbc308d76d",
+      "native": [
+        {
+          "native": "host_appcontainer",
+          "value": 0
+        },
+        {
+          "native": "host_elevated",
+          "value": 0
+        },
+        {
+          "native": "fixture_label_result",
+          "value": 0
+        },
+        {
+          "native": "job_limit_flags",
+          "value": 8458
+        },
+        {
+          "native": "job_process_limit",
+          "value": 1
+        },
+        {
+          "native": "job_memory_bytes",
+          "value": 134217728
+        },
+        {
+          "native": "job_cpu_100ns",
+          "value": 20000000
+        },
+        {
+          "native": "appcontainer",
+          "value": 1
+        },
+        {
+          "native": "lpac_token_query_error",
+          "value": 87
+        },
+        {
+          "native": "lpac_accesscheck_mask",
+          "value": 2
+        },
+        {
+          "native": "capability_count",
+          "value": 1
+        },
+        {
+          "native": "job_at_creation",
+          "value": 1
+        },
+        {
+          "native": "child_exit",
+          "value": 0
+        },
+        {
+          "native": "active_after_wait",
+          "value": 0
+        },
+        {
+          "native": "delete_synthetic_credential",
+          "value": 1
+        },
+        {
+          "native": "delete_synthetic_registry_key",
+          "value": 0
+        },
+        {
+          "native": "delete_owned_profile_hresult",
+          "value": 0
+        }
+      ],
+      "profile_acl_restore_results": [],
+      "probes": [
+        {
+          "probe": "read_allowed_fixture",
+          "status": "allowed",
+          "value": 37
+        },
+        {
+          "probe": "read_host_private_fixture",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_workspace",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_runtime",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_unapproved_ambient_shared_file",
+          "status": "allowed",
+          "value": true
+        },
+        {
+          "probe": "write_profile_root",
+          "status": "allowed",
+          "value": true
+        },
+        {
+          "probe": "write_profile_package_root",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_profile_temp",
+          "status": "allowed",
+          "value": true
+        },
+        {
+          "probe": "write_effective_temp",
+          "status": "allowed",
+          "value": true
+        },
+        {
+          "probe": "read_profile_sentinel",
+          "status": "allowed",
+          "value": 26
+        },
+        {
+          "probe": "append_profile_file",
+          "status": "allowed",
+          "value": true
+        },
+        {
+          "probe": "replace_profile_dacl",
+          "status": "not_run",
+          "reason": "Preserve the negative-control profile ACL"
+        },
+        {
+          "probe": "append_after_dacl_attempt",
+          "status": "allowed",
+          "value": true
+        },
+        {
+          "probe": "replace_profile_root_dacl",
+          "status": "not_run",
+          "reason": "Preserve negative-control ACL"
+        },
+        {
+          "probe": "replace_temp_dacl",
+          "status": "not_run",
+          "reason": "Preserve negative-control ACL"
+        },
+        {
+          "probe": "write_after_directory_dacl_attempt",
+          "status": "allowed",
+          "value": true
+        },
+        {
+          "probe": "write_host_profile",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_windows_temp",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "registry_machine_read",
+          "status": "allowed",
+          "value": "26300"
+        },
+        {
+          "probe": "read_host_private_registry_fixture",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "registry_user_write",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "registry_profile_write",
+          "status": "allowed",
+          "value": true
+        },
+        {
+          "probe": "registry_profile_write_dacl",
+          "status": "allowed",
+          "value": "WRITE_DAC granted"
+        },
+        {
+          "probe": "reinitialize_own_profile",
+          "status": "error",
+          "winerror": 87,
+          "errno": 22
+        },
+        {
+          "probe": "write_profile_after_reinitialize",
+          "status": "allowed",
+          "value": true
+        },
+        {
+          "probe": "write_temp_after_reinitialize",
+          "status": "allowed",
+          "value": true
+        },
+        {
+          "probe": "registry_write_after_reinitialize",
+          "status": "allowed",
+          "value": true
+        },
+        {
+          "probe": "host_credential_read",
+          "status": "error",
+          "winerror": 1702,
+          "errno": 22
+        },
+        {
+          "probe": "host_dpapi_decrypt",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "loopback_tcp",
+          "status": "denied",
+          "winerror": 10013,
+          "errno": 13
+        },
+        {
+          "probe": "loopback_udp",
+          "status": "denied",
+          "winerror": 10013,
+          "errno": 13
+        },
+        {
+          "probe": "external_tcp_testnet",
+          "status": "denied",
+          "winerror": 10013,
+          "errno": 13
+        },
+        {
+          "probe": "external_udp_testnet",
+          "status": "denied",
+          "winerror": 10013,
+          "errno": 13
+        },
+        {
+          "probe": "dns_resolution",
+          "status": "error",
+          "winerror": null,
+          "errno": 11003
+        },
+        {
+          "probe": "child_process",
+          "status": "denied",
+          "winerror": 367,
+          "errno": 22
+        },
+        {
+          "probe": "breakaway_child",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "probe_complete",
+          "status": "observed"
+        }
+      ]
+    },
+    {
+      "case": "sealed",
+      "helper_exit": 0,
+      "elapsed_seconds": 0.254,
+      "ambient_before_sha256": "c16d2288c2ffb3baa7a3f1b37bc5568d115b426819c10b642d8a3bdbc308d76d",
+      "ambient_after_sha256": "43c1bd9ed84516f8b26dcf3e7447173d0917749225cf6f7ca4af6d9f38ae70d1",
+      "native": [
+        {
+          "native": "host_appcontainer",
+          "value": 0
+        },
+        {
+          "native": "host_elevated",
+          "value": 0
+        },
+        {
+          "native": "fixture_label_result",
+          "value": 0
+        },
+        {
+          "native": "job_limit_flags",
+          "value": 8458
+        },
+        {
+          "native": "job_process_limit",
+          "value": 1
+        },
+        {
+          "native": "job_memory_bytes",
+          "value": 134217728
+        },
+        {
+          "native": "job_cpu_100ns",
+          "value": 20000000
+        },
+        {
+          "native": "appcontainer",
+          "value": 1
+        },
+        {
+          "native": "lpac_token_query_error",
+          "value": 87
+        },
+        {
+          "native": "lpac_accesscheck_mask",
+          "value": 2
+        },
+        {
+          "native": "capability_count",
+          "value": 1
+        },
+        {
+          "native": "job_at_creation",
+          "value": 1
+        },
+        {
+          "native": "child_exit",
+          "value": 0
+        },
+        {
+          "native": "active_after_wait",
+          "value": 0
+        },
+        {
+          "native": "restore_registry_acl",
+          "value": 0
+        },
+        {
+          "native": "delete_synthetic_credential",
+          "value": 1
+        },
+        {
+          "native": "delete_synthetic_registry_key",
+          "value": 0
+        },
+        {
+          "native": "delete_owned_profile_hresult",
+          "value": 0
+        }
+      ],
+      "profile_acl_restore_results": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probes": [
+        {
+          "probe": "read_allowed_fixture",
+          "status": "allowed",
+          "value": 37
+        },
+        {
+          "probe": "read_host_private_fixture",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_workspace",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_runtime",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_unapproved_ambient_shared_file",
+          "status": "allowed",
+          "value": true
+        },
+        {
+          "probe": "write_profile_root",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_profile_package_root",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_profile_temp",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_effective_temp",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "read_profile_sentinel",
+          "status": "allowed",
+          "value": 26
+        },
+        {
+          "probe": "append_profile_file",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "replace_profile_dacl",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "append_after_dacl_attempt",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "replace_profile_root_dacl",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "replace_temp_dacl",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "write_after_directory_dacl_attempt",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_host_profile",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_windows_temp",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "registry_machine_read",
+          "status": "allowed",
+          "value": "26300"
+        },
+        {
+          "probe": "read_host_private_registry_fixture",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "registry_user_write",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "registry_profile_write",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "registry_profile_write_dacl",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "reinitialize_own_profile",
+          "status": "error",
+          "winerror": 87,
+          "errno": 22
+        },
+        {
+          "probe": "write_profile_after_reinitialize",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "write_temp_after_reinitialize",
+          "status": "denied",
+          "winerror": null,
+          "errno": 13
+        },
+        {
+          "probe": "registry_write_after_reinitialize",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "host_credential_read",
+          "status": "error",
+          "winerror": 1702,
+          "errno": 22
+        },
+        {
+          "probe": "host_dpapi_decrypt",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "loopback_tcp",
+          "status": "denied",
+          "winerror": 10013,
+          "errno": 13
+        },
+        {
+          "probe": "loopback_udp",
+          "status": "denied",
+          "winerror": 10013,
+          "errno": 13
+        },
+        {
+          "probe": "external_tcp_testnet",
+          "status": "denied",
+          "winerror": 10013,
+          "errno": 13
+        },
+        {
+          "probe": "external_udp_testnet",
+          "status": "denied",
+          "winerror": 10013,
+          "errno": 13
+        },
+        {
+          "probe": "dns_resolution",
+          "status": "error",
+          "winerror": null,
+          "errno": 11003
+        },
+        {
+          "probe": "child_process",
+          "status": "denied",
+          "winerror": 367,
+          "errno": 22
+        },
+        {
+          "probe": "breakaway_child",
+          "status": "denied",
+          "winerror": 5,
+          "errno": 13
+        },
+        {
+          "probe": "probe_complete",
+          "status": "observed"
+        }
+      ]
+    },
+    {
+      "case": "memory",
+      "helper_exit": 0,
+      "elapsed_seconds": 0.196,
+      "ambient_before_sha256": "43c1bd9ed84516f8b26dcf3e7447173d0917749225cf6f7ca4af6d9f38ae70d1",
+      "ambient_after_sha256": "43c1bd9ed84516f8b26dcf3e7447173d0917749225cf6f7ca4af6d9f38ae70d1",
+      "native": [
+        {
+          "native": "host_appcontainer",
+          "value": 0
+        },
+        {
+          "native": "host_elevated",
+          "value": 0
+        },
+        {
+          "native": "fixture_label_result",
+          "value": 0
+        },
+        {
+          "native": "job_limit_flags",
+          "value": 8458
+        },
+        {
+          "native": "job_process_limit",
+          "value": 1
+        },
+        {
+          "native": "job_memory_bytes",
+          "value": 134217728
+        },
+        {
+          "native": "job_cpu_100ns",
+          "value": 20000000
+        },
+        {
+          "native": "appcontainer",
+          "value": 1
+        },
+        {
+          "native": "lpac_token_query_error",
+          "value": 87
+        },
+        {
+          "native": "lpac_accesscheck_mask",
+          "value": 2
+        },
+        {
+          "native": "capability_count",
+          "value": 1
+        },
+        {
+          "native": "job_at_creation",
+          "value": 1
+        },
+        {
+          "native": "child_exit",
+          "value": 0
+        },
+        {
+          "native": "active_after_wait",
+          "value": 0
+        },
+        {
+          "native": "restore_registry_acl",
+          "value": 0
+        },
+        {
+          "native": "delete_synthetic_credential",
+          "value": 1
+        },
+        {
+          "native": "delete_synthetic_registry_key",
+          "value": 0
+        },
+        {
+          "native": "delete_owned_profile_hresult",
+          "value": 0
+        }
+      ],
+      "profile_acl_restore_results": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probes": [
+        {
+          "probe": "memory_limit",
+          "status": "denied"
+        }
+      ]
+    },
+    {
+      "case": "cpu",
+      "helper_exit": 1,
+      "elapsed_seconds": 6.997,
+      "ambient_before_sha256": "43c1bd9ed84516f8b26dcf3e7447173d0917749225cf6f7ca4af6d9f38ae70d1",
+      "ambient_after_sha256": "43c1bd9ed84516f8b26dcf3e7447173d0917749225cf6f7ca4af6d9f38ae70d1",
+      "native": [
+        {
+          "native": "host_appcontainer",
+          "value": 0
+        },
+        {
+          "native": "host_elevated",
+          "value": 0
+        },
+        {
+          "native": "fixture_label_result",
+          "value": 0
+        },
+        {
+          "native": "job_limit_flags",
+          "value": 8458
+        },
+        {
+          "native": "job_process_limit",
+          "value": 1
+        },
+        {
+          "native": "job_memory_bytes",
+          "value": 134217728
+        },
+        {
+          "native": "job_cpu_100ns",
+          "value": 20000000
+        },
+        {
+          "native": "appcontainer",
+          "value": 1
+        },
+        {
+          "native": "lpac_token_query_error",
+          "value": 87
+        },
+        {
+          "native": "lpac_accesscheck_mask",
+          "value": 2
+        },
+        {
+          "native": "capability_count",
+          "value": 1
+        },
+        {
+          "native": "job_at_creation",
+          "value": 1
+        },
+        {
+          "native": "child_exit",
+          "value": 3221225540
+        },
+        {
+          "native": "active_after_wait",
+          "value": 0
+        },
+        {
+          "native": "restore_registry_acl",
+          "value": 0
+        },
+        {
+          "native": "delete_synthetic_credential",
+          "value": 1
+        },
+        {
+          "native": "delete_synthetic_registry_key",
+          "value": 0
+        },
+        {
+          "native": "delete_owned_profile_hresult",
+          "value": 0
+        }
+      ],
+      "profile_acl_restore_results": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probes": [
+        {
+          "probe": "cpu_ready",
+          "status": "observed"
+        }
+      ]
+    },
+    {
+      "case": "hold",
+      "helper_exit": 1,
+      "elapsed_seconds": 10.147,
+      "ambient_before_sha256": "43c1bd9ed84516f8b26dcf3e7447173d0917749225cf6f7ca4af6d9f38ae70d1",
+      "ambient_after_sha256": "43c1bd9ed84516f8b26dcf3e7447173d0917749225cf6f7ca4af6d9f38ae70d1",
+      "native": [
+        {
+          "native": "host_appcontainer",
+          "value": 0
+        },
+        {
+          "native": "host_elevated",
+          "value": 0
+        },
+        {
+          "native": "fixture_label_result",
+          "value": 0
+        },
+        {
+          "native": "job_limit_flags",
+          "value": 8458
+        },
+        {
+          "native": "job_process_limit",
+          "value": 1
+        },
+        {
+          "native": "job_memory_bytes",
+          "value": 134217728
+        },
+        {
+          "native": "job_cpu_100ns",
+          "value": 20000000
+        },
+        {
+          "native": "appcontainer",
+          "value": 1
+        },
+        {
+          "native": "lpac_token_query_error",
+          "value": 87
+        },
+        {
+          "native": "lpac_accesscheck_mask",
+          "value": 2
+        },
+        {
+          "native": "capability_count",
+          "value": 1
+        },
+        {
+          "native": "job_at_creation",
+          "value": 1
+        },
+        {
+          "native": "wall_timeout",
+          "value": 1
+        },
+        {
+          "native": "child_exit",
+          "value": 125
+        },
+        {
+          "native": "active_after_wait",
+          "value": 0
+        },
+        {
+          "native": "restore_registry_acl",
+          "value": 0
+        },
+        {
+          "native": "delete_synthetic_credential",
+          "value": 1
+        },
+        {
+          "native": "delete_synthetic_registry_key",
+          "value": 0
+        },
+        {
+          "native": "delete_owned_profile_hresult",
+          "value": 0
+        }
+      ],
+      "profile_acl_restore_results": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probes": [
+        {
+          "probe": "hold_ready",
+          "status": "observed"
+        }
+      ]
+    },
+    {
+      "case": "helper_death",
+      "child_terminated": true,
+      "elapsed_seconds": 0.007,
+      "native": [],
+      "probes": []
+    },
+    {
+      "case": "parent_death",
+      "child_and_helper_terminated": true,
+      "elapsed_seconds": 0.028,
+      "native": [
+        {
+          "native": "host_appcontainer",
+          "value": 0
+        },
+        {
+          "native": "host_elevated",
+          "value": 0
+        },
+        {
+          "native": "fixture_label_result",
+          "value": 0
+        },
+        {
+          "native": "job_limit_flags",
+          "value": 8458
+        },
+        {
+          "native": "job_process_limit",
+          "value": 1
+        },
+        {
+          "native": "job_memory_bytes",
+          "value": 134217728
+        },
+        {
+          "native": "job_cpu_100ns",
+          "value": 20000000
+        },
+        {
+          "native": "appcontainer",
+          "value": 1
+        },
+        {
+          "native": "lpac_token_query_error",
+          "value": 87
+        },
+        {
+          "native": "lpac_accesscheck_mask",
+          "value": 2
+        },
+        {
+          "native": "capability_count",
+          "value": 1
+        },
+        {
+          "native": "job_at_creation",
+          "value": 1
+        },
+        {
+          "native": "parent_death",
+          "value": 1
+        },
+        {
+          "native": "child_exit",
+          "value": 125
+        },
+        {
+          "native": "active_after_wait",
+          "value": 0
+        },
+        {
+          "native": "restore_registry_acl",
+          "value": 0
+        },
+        {
+          "native": "delete_synthetic_credential",
+          "value": 1
+        },
+        {
+          "native": "delete_synthetic_registry_key",
+          "value": 0
+        },
+        {
+          "native": "delete_owned_profile_hresult",
+          "value": 0
+        }
+      ],
+      "profile_acl_restore_results": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probes": []
+    }
+  ]
+}
