@@ -1,4 +1,4 @@
-// A3 feasibility only. No resume, policy mutation, memory capture or admission.
+// Suspended inspection only. No resume, policy mutation, memory capture or admission.
 #pragma once
 #include "identity.h"
 #include <processsnapshot.h>
@@ -21,6 +21,8 @@ struct State {
     std::atomic<unsigned> published{0}, stage{0};
     std::atomic<bool> stop{false}, done{false};
     bool passed = false;
+    bool inventoryComplete = false;
+    unsigned failure = 0;
     DWORD pid = 0, tid = 0;
     ULONGLONG creation = 0;
     HANDLE process = nullptr, thread = nullptr;
@@ -39,7 +41,7 @@ struct State {
         published.store(n + 1, std::memory_order_release);
     }
     void require(bool ok, unsigned code) {
-        if (!ok) { put("failure", code); throw Failed{}; }
+        if (!ok) { failure = code; put("failure", code); throw Failed{}; }
         if (stop.load()) throw Failed{};
     }
 };
@@ -101,7 +103,7 @@ struct Snapshot {
 struct Inventory {
     std::vector<uintptr_t> values;
     std::vector<std::unique_ptr<prelaunch::Handle>> retained;
-    std::vector<DWORD> pipes;
+    std::vector<DWORD> pipes, hostile;
 };
 inline Inventory snapshot(State& s, unsigned round) {
     const auto p = "s" + std::to_string(round) + "_";
@@ -160,7 +162,7 @@ inline Inventory snapshot(State& s, unsigned round) {
             if (same) { if (ref < 5) hostile |= 1u << ref; else pipes |= 1u << (ref - 5); }
         }
         s.put(e + "checked", checked); s.put(e + "hostile", hostile); s.put(e + "pipes", pipes);
-        s.require(checked == 255, 113); found.pipes.push_back(pipes);
+        s.require(checked == 255, 113); found.pipes.push_back(pipes); found.hostile.push_back(hostile);
         // Complete the bounded table before interpreting unknown/hostile objects.
     }
     s.put(p + "handle_end", end); s.put(p + "entries", found.values.size());
@@ -170,6 +172,12 @@ inline Inventory snapshot(State& s, unsigned round) {
         afterOK && before == after, 114);
     snap.release(s, p);
     policy(s, p);
+    return found;
+}
+inline void requireAccepted(State& s, const Inventory& found) {
+    // Identity refusal precedes count refusal, after COMPLETE inventories. There
+    // is no fixture exception: the accepted-object policy remains three pipes.
+    for (DWORD mask : found.hostile) s.require(mask == 0, 201);
     // Any unknown object or extra alias is refused, even when it has reduced rights.
     s.require(found.values.size() == 3, 115);
     std::set<DWORD> pipeSet;
@@ -185,7 +193,6 @@ inline Inventory snapshot(State& s, unsigned round) {
             s.require(!same && GetLastError() == ERROR_NOT_SAME_OBJECT, 119);
         }
     }
-    return found;
 }
 inline void inspect(std::shared_ptr<State> s) {
     try {
@@ -198,6 +205,8 @@ inline void inspect(std::shared_ptr<State> s) {
             s->require(CompareObjectHandles(first.retained[i]->h, second.retained[at]->h), 121);
         }
         identity(*s, "final_"); s->put("inventories_consistent", 1);
+        s->inventoryComplete = true;
+        requireAccepted(*s, first); requireAccepted(*s, second);
         s->passed = true;
     } catch (const Failed&) { /* Refusal is retained; never a successful observation. */ }
       catch (...) { s->put("failure", 199); }

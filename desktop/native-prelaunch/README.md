@@ -1,4 +1,18 @@
-# M2.1B prelaunch qualification — stopped, not qualified
+# A4 diagnostic controls
+
+A4 uses the separate `fixture-host.cpp` / `build-fixture.ps1` launcher only.
+The normal candidate's three-handle allowlist is unchanged. The shared inspector
+completes both inventories before applying the same three-pipe policy, and reports
+hostile object identity as refusal 201 before any count-only refusal.
+
+Only A4-01 (direct synthetic readable file) and A4-02 (its alternate alias) are
+authorized, once each and in that order. A4-02 requires A4-01's immutable independent
+readback receipt. The fixture always terminates the suspended child; it cannot
+resume it. Successful controls establish initial detector sensitivity only.
+See the [A4 report](../../docs/m2.1b-a4-controls.md) for scope, identities and results.
+The earlier native authorizations below are consumed; their records are historical.
+
+# M2.1B prelaunch qualification â€” stopped, not qualified
 
 **A3 feasibility follow-up:** the separate Product authorization permits only
 `a3_qualify.py --a3-case-01 BUILD WORKERS FRESH_EVIDENCE`. The new native entry
