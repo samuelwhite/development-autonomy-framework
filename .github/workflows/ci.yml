@@ -28,6 +28,8 @@ jobs:
       - run: python -m ruff check .
       - run: python -m ruff format --check .
       - run: python -m pytest --cov=daf --cov-report=term-missing
+      - name: Portable native foundation contracts (not Windows isolation acceptance)
+        run: python -m unittest discover -s desktop/native-foundation -p "test_*.py" -v
       - run: python scripts/check_distribution.py
       - run: python -m build
       - run: python scripts/smoke_wheel.py
