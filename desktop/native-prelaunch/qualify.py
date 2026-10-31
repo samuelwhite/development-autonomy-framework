@@ -1,4 +1,4 @@
-"""One-shot standalone Windows gate qualification; no desktop execution path.
+"""A1 single-case diagnostic only; no desktop execution or Gate B progression.
 
 Immutable start/result records retain a failed gate. No automatic retry, resume,
 relabeling, raw child-output persistence, or worker publication is supported.
@@ -12,13 +12,15 @@ import time
 import uuid
 from pathlib import Path
 
+import handle_observations as diagnostic
+
 FOUNDATION = Path(__file__).resolve().parents[1] / "native-foundation"
 sys.path.insert(0, str(FOUNDATION))
 import acceptance as a  # noqa: E402
 import contracts as c  # noqa: E402
 from cleanup import cleanup  # noqa: E402
 
-CASES = (
+HISTORICAL_CASES = (
     ("handles", "probe", None),
     ("positive", "producer", None),
     ("positive", "verifier", None),
@@ -40,6 +42,7 @@ CASES = (
     ("path-short", "producer", "path_syntax"),
     ("path-hardlink", "producer", "hard_link"),
 )
+CASES = (("handles", "probe", None),)
 WORKERS = {
     "producer": "be7b85e698f278e74cf94138385ba9d0990d8045eae2e8d833d580de245b6ed0",
     "verifier": "34bd5f3612790adb40155c9dde74785bf4527382a15be15e076315d7584f1850",
@@ -92,6 +95,7 @@ def check_rows(record, refusal):
         "retained_process_handle_signalled": 1,
         "worker_output_rejected": 0,
         "child_exit": 0,
+        "termination_reason": 0,
     }.items():
         c.require(value(key) == expected, "security_observation")
     c.require(a.value(rows, "native_ambient_write", "allowed") is False, "ambient_write")
@@ -102,9 +106,21 @@ def check_rows(record, refusal):
         == a.value(rows, "final_child_restricted_sids", "sid"),
         "attempt_identity",
     )
+    c.require(value("wall_elapsed_ms") < 10000, "wall_deadline")
+    for name in (
+        "restore_registry_acl",
+        "delete_explicitly_created_registry_storage",
+        "delete_synthetic_registry_key",
+        "delete_owned_profile_hresult",
+    ):
+        c.require(value(name) == 0, "native_cleanup")
+    c.require(value("delete_synthetic_credential") == 1, "credential_cleanup")
+    restored = [r["value"] for r in rows if r["native"] == "restore_profile_acl"]
+    c.require(bool(restored) and all(v == 0 for v in restored), "profile_acl_cleanup")
 
 
 def run_case(build, workers, output, sequence, case, role, refusal):
+    c.require((case, role, refusal) == CASES[0] and sequence == 1, "a1_single_case_only")
     attempt = output / f"{sequence:02d}-{case}-{role}"
     attempt.mkdir()
     (attempt / "runtime").mkdir()
@@ -180,47 +196,26 @@ def run_case(build, workers, output, sequence, case, role, refusal):
         }
     )
     try:
-        c.require(not out.overflow and not err.overflow, "bounded_capture")
-        c.require(not out.thread.is_alive() and not err.thread.is_alive(), "capture_complete")
-        record["observations"] = a.observations(bytes(err.data))
         if (attempt / "owned-profile.txt").exists():
             cleanup(attempt)
         elif not case.startswith("path-"):
             raise c.Refused("missing_profile_marker")
         record["cleanup"] = "confirmed"
+        c.require(not out.overflow and not err.overflow, "bounded_capture")
+        c.require(not out.thread.is_alive() and not err.thread.is_alive(), "capture_complete")
+        record["observations"] = a.observations(bytes(err.data))
+        # Closed numeric progress is saved before exit/outcome checks, including
+        # incomplete observations on a timeout. Unknown output is never saved.
+        record["probes"] = diagnostic.parse(bytes(out.data))
         c.require(not record.get("parent_deadline_exceeded"), "parent_deadline")
         for leaf in ("ambient-shared.txt", "smuggled-read.txt", "smuggled-write.txt"):
             c.require((attempt / leaf).read_bytes() == fixtures[leaf], "unauthorized_write")
+        record["synthetic_resources_unchanged"] = True
         check_rows(record, refusal)
         if role == "probe":
-            probes = [c.load(line, 256) for line in bytes(out.data).splitlines()]
-            c.require(all(set(p) == {"probe", "value"} for p in probes), "probe_fields")
-            values = {p["probe"]: p["value"] for p in probes}
-            c.require(len(values) == len(probes), "duplicate_probe")
-            expected = {
-                "pid": a.value(record["observations"], "child_pid"),
-                "stdin_pipe": 1,
-                "stdout_pipe": 1,
-                "stderr_pipe": 1,
-                "extra_read_succeeded": 0,
-                "extra_read_bytes": 0,
-                "extra_write_succeeded": 0,
-                "extra_write_bytes": 0,
-                "extra_mapping_succeeded": 0,
-                "extra_event_succeeded": 0,
-                "extra_process_pid": 0,
-                "extra_duplicate_succeeded": 0,
-            }
-            c.require(values == expected, "hostile_handle_bypass")
-            c.require(
-                a.value(record["observations"], "hostile_handles_inheritable") == 5,
-                "hostile_controls",
+            record["handle_determinations"] = diagnostic.validate(
+                record["probes"], record["observations"]
             )
-            c.require(
-                a.value(record["observations"], "hostile_positive_controls") == 1,
-                "positive_controls",
-            )
-            record["probes"] = values
         elif not refusal:
             record["response"], _ = c.response(
                 bytes(out.data),
@@ -231,14 +226,20 @@ def run_case(build, workers, output, sequence, case, role, refusal):
         else:
             c.require(not out.data, "refused_output")
         record["status"] = "passed"
-    except (c.Refused, AssertionError, OSError, RuntimeError) as error:
+    except (
+        c.Refused,
+        diagnostic.InvalidObservation,
+        AssertionError,
+        OSError,
+        RuntimeError,
+    ) as error:
         record["status"] = "failed"
         record["failure"] = {
             "type": type(error).__name__,
             "errno": getattr(error, "errno", None),
             "winerror": getattr(error, "winerror", None),
         }
-        if isinstance(error, c.Refused):
+        if isinstance(error, (c.Refused, diagnostic.InvalidObservation)):
             record["failure"]["stage"] = str(error)
     record["stdout"] = {
         "sha256": c.sha(bytes(out.data)),
@@ -255,7 +256,8 @@ def run_case(build, workers, output, sequence, case, role, refusal):
 
 
 def main():
-    build, workers, output = [Path(p).resolve() for p in sys.argv[1:]]
+    c.require(len(sys.argv) == 5 and sys.argv[1] == "--a1-single", "a1_single_invocation_required")
+    build, workers, output = [Path(p).resolve() for p in sys.argv[2:]]
     repo = FOUNDATION.parents[1]
     c.require(output.is_relative_to(repo / "dist") and not output.exists(), "fresh_evidence_root")
     output.mkdir()
@@ -269,15 +271,34 @@ def main():
         c.require(
             c.sha((workers / (role + ".exe")).read_bytes()) == expected, "accepted_worker_identity"
         )
+    for leaf in (
+        "qualify.py",
+        "handle_observations.py",
+        "handle-probe.cpp",
+        "handle-diagnostic.h",
+        "gate-host.cpp",
+        "identity.h",
+        "build.ps1",
+    ):
+        expected = manifest["files"]["source/native-prelaunch/" + leaf]
+        c.require(
+            c.sha(Path(__file__).with_name(leaf).read_bytes()) == expected["sha256"],
+            "tested_source_identity",
+        )
     initial = {
-        "schema": "daf-prelaunch-qualification/v1",
+        "schema": "daf-a1-targeted-diagnostic/v1",
         "run": uuid.uuid4().hex,
         "build_manifest": c.sha((build / "build-manifest.json").read_bytes()),
         "qualifier": c.sha(Path(__file__).read_bytes()),
         "cases": CASES,
         "retries": 0,
+        "historical_failure": "3193d12765bb063ca394d7bbd92e01face4c787ed62ca103a6ccbd856fd529f3",
+        "gate_b": "unqualified_not_executed",
     }
     publish(output / "started.json", initial)
+    # A task-local one-execution guard, not production admission or authority.
+    # Retained permanently even if preparation, execution or recording fails.
+    publish(repo / "dist" / "m21b-a1-single-execution-claimed.json", initial)
     records = []
     for sequence, (case, role, refusal) in enumerate(CASES, 1):
         record = run_case(build, workers, output, sequence, case, role, refusal)
@@ -300,11 +321,17 @@ def main():
         output / "completion.json",
         {
             **initial,
-            "qualified": complete,
+            "qualified": False,
+            "targeted_diagnostic_passed": complete,
+            "result_label": "Targeted Gate A diagnostic passed provisionally."
+            if complete
+            else "Targeted Gate A diagnostic failed.",
             "records": records,
-            "unrun_cases": len(CASES) - len(records),
+            "other_native_cases_executed": 0,
         },
     )
+    if complete:
+        print("Targeted Gate A diagnostic passed provisionally.", flush=True)
     return 0 if complete else 1
 
 

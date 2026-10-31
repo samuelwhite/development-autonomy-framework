@@ -1,6 +1,7 @@
 // Maintainer-only instrumentation of the byte-unchanged accepted M2.1A host.
 // Not linked to Electron; diagnostic cases cannot become execution admission.
 #include "identity.h"
+#include "handle-diagnostic.h"
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -9,8 +10,56 @@ namespace pg = prelaunch;
 static std::wstring gateCase;
 static std::unique_ptr<pg::ImagePin> imagePin;
 static std::vector<std::unique_ptr<pg::Handle>> hostile;
+static HANDLE diagnosticHandles[5]{}, permittedHandles[3]{};
+static DWORD attributeMask = 0, attributeCount = 0;
 static void gateEvent(const char* key, unsigned long long value) {
     std::cerr << "{\"native\":\"" << key << "\",\"value\":" << value << "}\n";
+}
+static void controlEvent(unsigned i, const char* key, unsigned long long value) {
+    const auto label = std::string("a1_control_h") + std::to_string(i) + "_" + key;
+    gateEvent(label.c_str(), value);
+}
+static BOOL WINAPI watchedAttribute(LPPROC_THREAD_ATTRIBUTE_LIST list, DWORD flags, DWORD_PTR key,
+    PVOID value, SIZE_T bytes, PVOID previous, PSIZE_T returned) {
+    BOOL ok = UpdateProcThreadAttribute(list, flags, key, value, bytes, previous, returned);
+    if (!ok) return FALSE;
+    const DWORD_PTR keys[]{PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES,
+        PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY, PROC_THREAD_ATTRIBUTE_JOB_LIST,
+        PROC_THREAD_ATTRIBUTE_HANDLE_LIST, PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY};
+    for (unsigned i = 0; i < 5; ++i) if (key == keys[i]) { attributeMask |= 1u << i; ++attributeCount; }
+    if (key == PROC_THREAD_ATTRIBUTE_HANDLE_LIST) {
+        if (bytes != sizeof(permittedHandles)) { SetLastError(ERROR_INVALID_DATA); return FALSE; }
+        memcpy(permittedHandles, value, bytes);
+    }
+    return TRUE;
+}
+static void auditInherited(HANDLE child, LPSTARTUPINFOW start) {
+    HANDLE streams[]{start->hStdInput, start->hStdOutput, start->hStdError};
+    for (unsigned i = 0; i < 3; ++i) {
+        HANDLE copy = nullptr;
+        pg::require(DuplicateHandle(child, streams[i], GetCurrentProcess(), &copy, 0, FALSE, DUPLICATE_SAME_ACCESS), "audit_standard_duplicate");
+        pg::Handle retained(copy);
+        pg::require(CompareObjectHandles(copy, streams[i]), "audit_standard_identity");
+        gateEvent(("a1_standard_" + std::to_string(i)).c_str(), (uintptr_t)streams[i]);
+    }
+    for (unsigned i = 0; i < 5; ++i) {
+        const auto prefix = "a1_audit_h" + std::to_string(i) + "_";
+        HANDLE copy = nullptr;
+        BOOL ok = DuplicateHandle(child, diagnosticHandles[i], GetCurrentProcess(), &copy, 0, FALSE, DUPLICATE_SAME_ACCESS);
+        DWORD error = ok ? 0 : GetLastError(); pg::Handle retained(copy);
+        gateEvent((prefix + "raw").c_str(), (uintptr_t)diagnosticHandles[i]);
+        gateEvent((prefix + "valid").c_str(), ok != FALSE); gateEvent((prefix + "error").c_str(), error);
+        DWORD hostileMask = 0, standardMask = 0;
+        if (ok) {
+            for (unsigned j = 0; j < 5; ++j) if (CompareObjectHandles(copy, diagnosticHandles[j])) hostileMask |= 1u << j;
+            for (unsigned j = 0; j < 3; ++j) if (CompareObjectHandles(copy, streams[j])) standardMask |= 1u << j;
+        }
+        gateEvent((prefix + "hostile_mask").c_str(), hostileMask);
+        gateEvent((prefix + "standard_mask").c_str(), standardMask);
+        pg::require(ok || error == ERROR_INVALID_HANDLE, "audit_unconfirmed");
+        pg::require(!hostileMask, "unexpected_inherited_object");
+    }
+    gateEvent("a1_suspended_handle_audit_complete", 1);
 }
 static void failureEvent(const pg::Failure& e) {
     std::cerr << "{\"native\":\"gate_refusal_" << e.stage << "\",\"value\":" << e.error << "}\n";
@@ -32,6 +81,11 @@ static BOOL WINAPI checkedCreate(HANDLE token, LPCWSTR application, LPWSTR comma
     LPPROCESS_INFORMATION process) {
     try {
         pg::require(inherit && (flags & CREATE_SUSPENDED) && (flags & EXTENDED_STARTUPINFO_PRESENT), "creation_flags");
+        pg::require(attributeMask == 31 && attributeCount == 5, "original_five_attributes");
+        pg::require(permittedHandles[0] == startup->hStdInput && permittedHandles[1] == startup->hStdOutput &&
+            permittedHandles[2] == startup->hStdError, "original_three_handles");
+        gateEvent("a1_attribute_mask", attributeMask); gateEvent("a1_attribute_count", attributeCount);
+        gateEvent("a1_inheritance_count", 3);
         const std::filesystem::path path(application), root = path.parent_path();
         const auto leaf = path.filename().wstring();
         const char* expected = leaf == L"producer.exe" ?
@@ -82,6 +136,10 @@ static BOOL WINAPI checkedCreate(HANDLE token, LPCWSTR application, LPWSTR comma
             std::wstring binding = std::wstring(key) + L"=" + std::to_wstring((uintptr_t)h);
             env.insert(env.end(), binding.begin(), binding.end()); env.push_back(0);
         };
+        auto addNumber = [&](const std::wstring& key, ULONGLONG value) {
+            auto binding = key + L"=" + std::to_wstring(value);
+            env.insert(env.end(), binding.begin(), binding.end()); env.push_back(0);
+        };
         if (leaf == L"probe.exe") {
             auto read = keep(CreateFileW((root / "smuggled-read.txt").c_str(), GENERIC_READ,
                 FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0, nullptr));
@@ -90,13 +148,32 @@ static BOOL WINAPI checkedCreate(HANDLE token, LPCWSTR application, LPWSTR comma
             auto mapping = keep(CreateFileMappingW(write, &sa, PAGE_READWRITE, 0, 0, nullptr));
             auto event = keep(CreateEventW(&sa, TRUE, FALSE, nullptr));
             auto parent = keep(OpenProcess(PROCESS_DUP_HANDLE | PROCESS_QUERY_LIMITED_INFORMATION, TRUE, GetCurrentProcessId()));
-            char sample[32]{}; DWORD got = 0; LARGE_INTEGER zero{};
-            pg::require(ReadFile(read, sample, sizeof(sample), &got, nullptr) && got == sizeof(sample), "read_positive_control");
-            pg::require(SetFilePointerEx(read, zero, nullptr, FILE_BEGIN), "read_control_rewind");
-            pg::require(WriteFile(write, "S", 1, &got, nullptr) && got == 1, "write_positive_control");
-            pg::require(SetFilePointerEx(write, zero, nullptr, FILE_BEGIN), "write_control_rewind");
-            void* view = MapViewOfFile(mapping, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 32);
-            pg::require(view != nullptr, "mapping_positive_control"); UnmapViewOfFile(view);
+            HANDLE values[]{read, write, mapping, event, parent}; memcpy(diagnosticHandles, values, sizeof(values));
+            hd::Expected expected{}; expected.read = pg::identity(read); expected.write = pg::identity(write);
+            expected.readHandle = read; expected.hostPid = GetCurrentProcessId();
+            FILETIME creation{}, exit{}, kernel{}, user{};
+            pg::require(GetProcessTimes(GetCurrentProcess(), &creation, &exit, &kernel, &user), "host_creation");
+            expected.hostCreation = hd::filetime(creation);
+            for (unsigned i = 0; i < 5; ++i) {
+                auto result = hd::inspect(i, values[i], expected, values[i], controlEvent);
+                pg::require(result.outcome == hd::Access && result.attempted && result.ok, "shared_probe_positive_control");
+            }
+            LARGE_INTEGER zero{}; char changed[32]{}; DWORD count = 0;
+            pg::require(SetFilePointerEx(write, zero, nullptr, FILE_BEGIN) &&
+                ReadFile(write, changed, 32, &count, nullptr) && count == 32 && changed[0] == '!' && changed[1] == 'M', "control_modifications_observed");
+            pg::require(WaitForSingleObject(event, 0) == WAIT_OBJECT_0 && ResetEvent(event), "event_control_observed");
+            memset(changed, 'S', sizeof(changed));
+            pg::require(SetFilePointerEx(write, zero, nullptr, FILE_BEGIN) &&
+                WriteFile(write, changed, 32, &count, nullptr) && count == 32 && FlushFileBuffers(write), "restore_only_control_fixture");
+            gateEvent("a1_control_effects_verified_and_restored", 1);
+            const FILE_ID_INFO ids[]{expected.read, expected.write};
+            const wchar_t* prefixes[]{L"DAF_GATE_READ_ID", L"DAF_GATE_WRITE_ID"};
+            for (unsigned i = 0; i < 2; ++i) {
+                ULONGLONG low = 0, high = 0; memcpy(&low, ids[i].FileId.Identifier, 8); memcpy(&high, ids[i].FileId.Identifier + 8, 8);
+                addNumber(std::wstring(prefixes[i]) + L"_VOLUME", ids[i].VolumeSerialNumber);
+                addNumber(std::wstring(prefixes[i]) + L"_LOW", low); addNumber(std::wstring(prefixes[i]) + L"_HIGH", high);
+            }
+            addNumber(L"DAF_GATE_HOST_PID", expected.hostPid); addNumber(L"DAF_GATE_HOST_CREATION", expected.hostCreation);
             addHandle(L"DAF_GATE_READ", read); addHandle(L"DAF_GATE_WRITE", write);
             addHandle(L"DAF_GATE_MAPPING", mapping); addHandle(L"DAF_GATE_EVENT", event);
             addHandle(L"DAF_GATE_PROCESS", parent);
@@ -111,9 +188,11 @@ static BOOL WINAPI checkedCreate(HANDLE token, LPCWSTR application, LPWSTR comma
             threadSA, inherit, flags, env.data(), cwd, startup, process);
         if (!ok) { gateEvent("gate_create_error", GetLastError()); return FALSE; }
         gateEvent("gate_created_suspended", 1);
+        gateEvent("a1_suspended_child_pid", process->dwProcessId);
         try {
             imagePin->verifySuspended(process->hProcess);
             gateEvent("launched_image_independently_verified", 1);
+            if (leaf == L"probe.exe") auditInherited(process->hProcess, startup);
             if (gateCase == L"post-create-write") attemptWrite(path, "post_create_write_error");
         } catch (...) {
             pg::require(TerminateProcess(process->hProcess, 127), "suspended_termination");
@@ -128,13 +207,17 @@ static BOOL WINAPI checkedCreate(HANDLE token, LPCWSTR application, LPWSTR comma
     }
 }
 #define CreateProcessAsUserW checkedCreate
+#define UpdateProcThreadAttribute watchedAttribute
 #define wmain accepted_harness_main
 #include "../native-foundation/harness.cpp"
 #undef wmain
 #undef CreateProcessAsUserW
+#undef UpdateProcThreadAttribute
 int wmain(int argc, wchar_t** argv) {
     if (argc != 3) return 64;
     gateCase = argv[1];
+    // A1 authorizes only this single diagnostic case, never the remaining suite.
+    if (gateCase != L"handles" || std::wstring(argv[2]) != L"probe") return 64;
     const std::vector<std::wstring> cases{L"handles", L"positive", L"substitute", L"modified",
         L"existing-writer", L"existing-mapping", L"write-race", L"rename-race",
         L"parent-rename-race", L"hardlink-race", L"wrong-launched-image", L"post-create-write"};
@@ -157,7 +240,12 @@ int wmain(int argc, wchar_t** argv) {
     }
     if (std::find(cases.begin(), cases.end(), gateCase) == cases.end()) return 64;
     wchar_t mode[] = L"sealed"; wchar_t* arguments[]{argv[0], mode, argv[2]};
-    const int code = accepted_harness_main(3, arguments);
+    int code = accepted_harness_main(3, arguments);
+    if (diagnosticHandles[3]) {
+        const DWORD state = WaitForSingleObject(diagnosticHandles[3], 0);
+        gateEvent("a1_hostile_event_after_child", state);
+        if (state != WAIT_TIMEOUT) code = 1;
+    }
     imagePin.reset(); hostile.clear();
     return code;
 }
