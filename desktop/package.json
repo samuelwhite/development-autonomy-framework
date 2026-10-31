@@ -10,12 +10,18 @@
   "scripts": {
     "start": "electron .",
     "build": "node build.cjs",
-    "test": "node --test tests/policy.test.cjs tests/planning.test.cjs",
+    "test": "node --test tests/policy.test.cjs tests/planning.test.cjs tests/packaging.test.cjs",
     "test:desktop": "node tests/run.cjs"
   },
   "devDependencies": {
     "@electron/packager": "20.3.0",
     "electron": "45.1.0",
     "playwright": "1.64.1"
+  },
+  "overrides": {
+    "@electron/asar@4.3.1": {
+      "glob": "14.0.3",
+      "minimatch": "11.0.3"
+    }
   }
 }
