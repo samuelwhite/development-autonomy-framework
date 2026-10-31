@@ -1,5 +1,15 @@
 # M2.1B prelaunch qualification — stopped, not qualified
 
+**A3 feasibility follow-up:** the separate Product authorization permits only
+`a3_qualify.py --a3-case-01 BUILD WORKERS FRESH_EVIDENCE`. The new native entry
+point accepts only `case-01 probe`. Case 01 inspects the suspended process and
+terminates it without resume. A five-second inspection supervisor and a
+three-second termination wait are separate from the unchanged runtime watchdog;
+the helper has a 30-second outer attempt limit and cleanup shares a 35-second
+parent budget. The A1 claim, validator, source snapshots and failed evidence are
+retained. No other matrix case or execution authority is enabled. See the
+[A3 report](../../docs/m2.1b-a3-feasibility.md).
+
 **A1 diagnostic follow-up:** separate Product authorization permits a bounded
 probe repair and exactly one fresh `handles` / `probe` case. See the
 [A1 design and evidence report](../../docs/m2.1b-a1-diagnostic.md). Both entry
