@@ -1,4 +1,17 @@
-# A4 diagnostic controls
+# A5 diagnostic breadth controls
+
+The current separate fixture accepts only A5-03, 04, 05, 06, 08, 09, 10 and 11,
+in that order: direct writable file/mapping/event/process, then their aliases.
+One fresh native execution per case, zero retries. Each case requires all earlier
+independent receipts; any failure consumes the remaining allowance. The normal
+three-pipe policy and shared inspector are unchanged. The child is never resumed.
+See the [A5 report](../../docs/m2.1b-a5-breadth.md) for exact scope and evidence.
+These are diagnostic controls only; Gate A and production execution remain gated.
+
+# Historical A4 diagnostic controls
+
+The authorization described in this section is consumed. Its exact source,
+binaries and receipts are preserved; the current fixture is the A5 extension.
 
 A4 uses the separate `fixture-host.cpp` / `build-fixture.ps1` launcher only.
 The normal candidate's three-handle allowlist is unchanged. The shared inspector

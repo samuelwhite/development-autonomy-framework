@@ -13,7 +13,7 @@ $env:PATH = "$vc\bin\Hostx64\x64;" + $env:PATH
 $env:INCLUDE = "$output;$repoRoot\desktop\native-foundation;$vc\include;$sdk\Include\$sdkVersion\ucrt;$sdk\Include\$sdkVersion\shared;$sdk\Include\$sdkVersion\um"
 $env:LIB = "$vc\lib\x64;$sdk\Lib\$sdkVersion\ucrt\x64;$sdk\Lib\$sdkVersion\um\x64"
 New-Item -ItemType Directory -Path $output | Out-Null
-& python -B (Join-Path $PSScriptRoot 'instrument_fixture.py') (Join-Path $repoRoot 'desktop/native-foundation/harness.cpp') (Join-Path $output 'a4-fixture-harness.h')
+& python -B (Join-Path $PSScriptRoot 'instrument_a5.py') (Join-Path $repoRoot 'desktop/native-foundation/harness.cpp') (Join-Path $output 'a5-fixture-harness.h')
 if ($LASTEXITCODE -ne 0) { throw 'Accepted harness identity/instrumentation failed.' }
 foreach ($name in @('handle-probe', 'fixture-host')) {
     & "$vc\bin\Hostx64\x64\cl.exe" /nologo /std:c++17 /W4 /O1 /MT /GS /guard:cf /sdl /EHsc `
@@ -42,8 +42,8 @@ Get-ChildItem -LiteralPath $output -File -Recurse | Where-Object { $_.FullName -
 }
 $windows = Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
 [ordered]@{
-    schema='daf-a4-fixture-build/v1'; git_parent=(& git -C $repoRoot rev-parse HEAD)
-    note='Exact source hashes identify working-tree input. Separate A4 detector-control fixture only, never desktop execution.'
+    schema='daf-a5-fixture-build/v1'; git_parent=(& git -C $repoRoot rev-parse HEAD)
+    note='Exact source hashes identify working-tree input. Separate A5 detector-control fixture only, never desktop execution.'
     compiler=@{toolset='14.50.35717'; sdk=$sdkVersion; sha256=(Get-FileHash "$vc\bin\Hostx64\x64\cl.exe").Hash.ToLowerInvariant()}
     flags='/std:c++17 /W4 /O1 /MT /GS /guard:cf /sdl /EHsc /DYNAMICBASE /HIGHENTROPYVA /NXCOMPAT /INCREMENTAL:NO'
     environment=@{build="$($windows.CurrentBuildNumber).$($windows.UBR)"; edition=$windows.EditionID; architecture='x64'; clean_machine=$false}

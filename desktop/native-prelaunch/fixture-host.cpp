@@ -1,4 +1,4 @@
-// A4 diagnostic-only fixture launcher. Never used by the normal candidate or desktop.
+// A5 diagnostic-only fixture launcher. Never used by the normal candidate or desktop.
 #include "identity.h"
 #include "handle-diagnostic.h"
 #include "fixture-inspection.h"
@@ -54,10 +54,16 @@ static BOOL WINAPI checkedCreate(HANDLE token, LPCWSTR application, LPWSTR comma
             permittedHandles[2] == startup->hStdError, "original_three_handles");
         a3::emit("attribute_mask", attributeMask); a3::emit("attribute_count", attributeCount);
         a3::emit("inheritance_count", 4);
-        a4::emit("case", a4::caseNumber);
-        a4::emit("normal_inheritance_count", 3);
+        a5::emit("case", a5::caseNumber);
+        a5::emit("sequence", a5::sequence); a5::emit("reference_index", a5::referenceIndex);
+        a5::emit("alias", a5::aliasCase);
+        a5::emit("write_file_access", GENERIC_READ | GENERIC_WRITE);
+        a5::emit("mapping_protection", PAGE_READWRITE);
+        a5::emit("event_manual_reset", 1); a5::emit("event_initial_state", 0);
+        a5::emit("process_access", PROCESS_DUP_HANDLE | PROCESS_QUERY_LIMITED_INFORMATION);
+        a5::emit("normal_inheritance_count", 3);
         const std::filesystem::path path(application), root = path.parent_path();
-        pg::require(path.filename() == L"probe.exe", "a4_fixed_probe_only");
+        pg::require(path.filename() == L"probe.exe", "a5_fixed_probe_only");
         imagePin = std::make_unique<pg::ImagePin>(path.wstring(), PROBE_SHA256, PROBE_BYTES);
         gateEvent("prelaunch_image_verified", 1);
         SECURITY_ATTRIBUTES sa{sizeof(sa), nullptr, TRUE};
@@ -98,38 +104,43 @@ static BOOL WINAPI checkedCreate(HANDLE token, LPCWSTR application, LPWSTR comma
             a3::state->pipeValues[i] = (uintptr_t)permittedHandles[i];
         }
         gateEvent("hostile_handles_inheritable", 5); gateEvent("hostile_positive_controls", 1);
-        a4::originalValue = (uintptr_t)read;
-        a4::originalId = pg::identity(read);
-        HANDLE inherited = read;
-        if (a4::caseNumber == 2) {
+        HANDLE original = diagnosticHandles[a5::referenceIndex];
+        a5::originalValue = (uintptr_t)original;
+        a5::originalId = pg::identity(write);
+        if (a5::referenceIndex == 2) a5::backingName = pg::name(write, VOLUME_NAME_NT);
+        a5::hostPid = GetCurrentProcessId(); a5::hostCreation = expected.hostCreation;
+        HANDLE inherited = original;
+        if (a5::aliasCase) {
             HANDLE alias = nullptr;
-            pg::require(DuplicateHandle(GetCurrentProcess(), read, GetCurrentProcess(), &alias,
-                0, TRUE, DUPLICATE_SAME_ACCESS), "a4_local_alias");
+            pg::require(DuplicateHandle(GetCurrentProcess(), original, GetCurrentProcess(), &alias,
+                0, TRUE, DUPLICATE_SAME_ACCESS), "a5_local_alias");
             inherited = keep(alias);
-            pg::require(alias != read && CompareObjectHandles(alias, read), "a4_alias_object");
+            pg::require(alias != original && CompareObjectHandles(alias, original), "a5_alias_object");
         }
         DWORD originalFlags = 0, inheritedFlags = 0;
-        pg::require(GetHandleInformation(read, &originalFlags) && originalFlags == HANDLE_FLAG_INHERIT &&
+        pg::require(GetHandleInformation(original, &originalFlags) && originalFlags == HANDLE_FLAG_INHERIT &&
             GetHandleInformation(inherited, &inheritedFlags) && inheritedFlags == HANDLE_FLAG_INHERIT,
-            "a4_inheritance_eligibility");
-        pg::require(CompareObjectHandles(inherited, read) && pg::equal(pg::identity(inherited), a4::originalId),
-            "a4_inherited_identity");
-        a4::inheritedValue = (uintptr_t)inherited;
+            "a5_inheritance_eligibility");
+        pg::require(CompareObjectHandles(inherited, original),
+            "a5_inherited_identity");
+        a5::inheritedValue = (uintptr_t)inherited;
         memcpy(fixtureHandles, permittedHandles, sizeof(permittedHandles)); fixtureHandles[3] = inherited;
-        for (unsigned i = 0; i < 3; ++i) pg::require(fixtureHandles[i] != inherited, "a4_distinct_pipe");
-        if (a4::caseNumber == 2) for (HANDLE h : fixtureHandles) pg::require(h != read, "a4_original_excluded");
+        for (unsigned i = 0; i < 3; ++i) pg::require(fixtureHandles[i] != inherited, "a5_distinct_pipe");
+        if (a5::aliasCase) for (HANDLE h : fixtureHandles) pg::require(h != original, "a5_original_excluded");
         auto extended = reinterpret_cast<STARTUPINFOEXW*>(startup);
-        pg::require(fixtureAttributes && fixtureAttributes == extended->lpAttributeList, "a4_attribute_binding");
+        pg::require(fixtureAttributes && fixtureAttributes == extended->lpAttributeList, "a5_attribute_binding");
         pg::require(UpdateProcThreadAttribute(fixtureAttributes, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
-            fixtureHandles, sizeof(fixtureHandles), nullptr, nullptr), "a4_fixture_handle_list");
-        a4::emit("original_handle", (uintptr_t)read); a4::emit("inherited_handle", (uintptr_t)inherited);
-        a4::emit("original_flags", originalFlags); a4::emit("inherited_flags", inheritedFlags);
-        a4::emit("parent_same_object", 1); a4::emit("original_in_list", a4::caseNumber == 1);
-        unsigned long long halves[2]{}; memcpy(halves, a4::originalId.FileId.Identifier, sizeof(halves));
-        a4::emit("original_volume", a4::originalId.VolumeSerialNumber);
-        a4::emit("original_file_low", halves[0]); a4::emit("original_file_high", halves[1]);
-        a4::emit("fixture_list_installed", 1);
-        for (unsigned i = 0; i < 4; ++i) a4::emit(("inherit_" + std::to_string(i)).c_str(), (uintptr_t)fixtureHandles[i]);
+            fixtureHandles, sizeof(fixtureHandles), nullptr, nullptr), "a5_fixture_handle_list");
+        a5::emit("original_handle", (uintptr_t)original); a5::emit("inherited_handle", (uintptr_t)inherited);
+        a5::emit("original_flags", originalFlags); a5::emit("inherited_flags", inheritedFlags);
+        a5::emit("parent_same_object", 1); a5::emit("original_in_list", !a5::aliasCase);
+        if (a5::referenceIndex <= 2) {
+            unsigned long long halves[2]{}; memcpy(halves, a5::originalId.FileId.Identifier, sizeof(halves));
+            a5::emit("original_volume", a5::originalId.VolumeSerialNumber);
+            a5::emit("original_file_low", halves[0]); a5::emit("original_file_high", halves[1]);
+        }
+        a5::emit("fixture_list_installed", 1);
+        for (unsigned i = 0; i < 4; ++i) a5::emit(("inherit_" + std::to_string(i)).c_str(), (uintptr_t)fixtureHandles[i]);
         imagePin->recheck();
         // The other four attributes, environment, token and Job pass through unchanged.
         BOOL ok = CreateProcessAsUserW(token, application, command, processSA,
@@ -164,15 +175,13 @@ static BOOL WINAPI checkedCreate(HANDLE token, LPCWSTR application, LPWSTR comma
 #define wmain accepted_harness_main
 // Generated from the hash-pinned accepted harness using exactly two insertions:
 // inspection before the unreachable resume; a typed expected-refusal cleanup path.
-#include "a4-fixture-harness.h"
+#include "a5-fixture-harness.h"
 #undef wmain
 #undef CreateProcessAsUserW
 #undef UpdateProcThreadAttribute
 int wmain(int argc, wchar_t** argv) {
     if (argc != 3 || std::wstring(argv[2]) != L"probe") return 64;
-    if (std::wstring(argv[1]) == L"A4-01") a4::caseNumber = 1;
-    else if (std::wstring(argv[1]) == L"A4-02") a4::caseNumber = 2;
-    else return 64;
+    if (!a5::select(argv[1])) return 64;
     wchar_t mode[] = L"sealed"; wchar_t* arguments[]{argv[0], mode, argv[2]};
     int code = accepted_harness_main(3, arguments);
     if (diagnosticHandles[3]) {
