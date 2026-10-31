@@ -151,6 +151,19 @@ and failed two round-trip assertions. The probe was corrected to use the native
 path format expected by ASAR, then run against both graphs. That diagnostic
 mistake is not a dependency failure or a passing baseline advisory test.
 
+The first hosted run at `36a8a26ed008a0821f7ed6c6384f8e7eba69f509`
+passed npm ci and both audits but failed the new bundled-Glob constructor probe
+on both Node 22 runners. The test imported a `require.resolve()` CommonJS path
+using dynamic import; Node 22 did not synthesize the `Glob` named export that
+local Node 24 exposed. ASAR itself uses the ESM import condition. The test was
+corrected to use the same ESM imports, retaining every assertion. Dependencies,
+lockfile, application code and workflow are unchanged by that correction.
+The failed [desktop run 41190940810](https://github.com/samuelwhite/development-autonomy-framework/actions/runs/41190940810)
+remains recorded; its skipped builds/journeys are not passing evidence.
+The exact official Node 22.23.4 Windows archive was checksum-verified against
+nodejs.org. Locally it reproduced the original test failure (4/5 passing), then
+passed all 5 corrected tests. Node 24 also passes all 14 boundary/packaging tests.
+
 ## Reproduction and validation boundary
 
 The lockfile was generated in an isolated copy of the exact baseline lock using

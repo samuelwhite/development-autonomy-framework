@@ -6,14 +6,13 @@ const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
-const { pathToFileURL } = require('node:url');
 const { createHash } = require('node:crypto');
-const { createRequire } = require('node:module');
-const asarEntry = require.resolve('@electron/asar');
-const asarRequire = createRequire(asarEntry);
-const asarModule = import(pathToFileURL(asarEntry).href);
-const globModule = import(pathToFileURL(asarRequire.resolve('glob')).href);
-const minimatchModule = import(pathToFileURL(asarRequire.resolve('minimatch')).href);
+// Use the import condition, as ASAR does. Importing a require.resolve() path
+// instead loads the CJS bundle, whose inferred named exports vary by Node version.
+// The reviewed lockfile has one shared copy of each of these packages.
+const asarModule = import('@electron/asar');
+const globModule = import('glob');
+const minimatchModule = import('minimatch');
 
 async function fixture(t) {
   const root = await fsp.mkdtemp(path.join(os.tmpdir(), 'daf-packaging-'));

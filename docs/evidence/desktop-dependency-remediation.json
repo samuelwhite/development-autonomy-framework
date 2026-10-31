@@ -2800,5 +2800,42 @@
     "windows_packaged_journeys": 14,
     "skips": 0
   },
-  "local_candidate_zip_sha256": "739626e75782d2ff832febdf1a85dd6619aa28ebd6f51d6e645c96039f2490f2"
+  "local_candidate_zip_sha256": "739626e75782d2ff832febdf1a85dd6619aa28ebd6f51d6e645c96039f2490f2",
+  "historical_hosted_attempts": [
+    {
+      "commit": "36a8a26ed008a0821f7ed6c6384f8e7eba69f509",
+      "desktop_run": 41190940810,
+      "jobs": [
+        124507436684,
+        124507436824
+      ],
+      "result": "failure",
+      "node": "22.23.4",
+      "npm": "10.9.9",
+      "clean_ci": "passed",
+      "moderate_audit": "passed; zero vulnerabilities",
+      "tests_per_job": {
+        "passed": 13,
+        "failed": 1,
+        "skipped": 0
+      },
+      "failure": "Glob is not a constructor in newly added test: dynamic import of require.resolve CJS path used Node-version-dependent synthetic named exports.",
+      "builds_and_packaged_journeys": "skipped",
+      "repair": "Test uses the ESM import condition as ASAR does; every assertion retained. No dependency/application/workflow change."
+    }
+  ],
+  "test_import_correction_verification": {
+    "node": "22.23.4",
+    "official_archive_sha256": "cbc74b5e0982c9dbb41525fd8fb5dcd32fbee237863f7829072f4639a1ce5f20",
+    "results": [
+      {
+        "test": "original",
+        "exit_code": 1
+      },
+      {
+        "test": "corrected",
+        "exit_code": 0
+      }
+    ]
+  }
 }
