@@ -90,7 +90,7 @@ inline void verifyWitness(a3::State& s, HANDLE pinnedIntended) {
             }
             s.put(w + "checked", checked); s.put(w + "hostile", hostile);
             s.put(w + "pipes", pipes); s.put(w + "intended", matched);
-            s.require(checked == 511 && !hostile && pipes == mask && matched == isExtra, 221);
+            s.require(checked == 511 && !hostile && pipes == mask && matched == (isExtra ? 1u : 0u), 221);
             DWORD actualKind = objectKind(s, out, w); s.put(w + "kind", actualKind);
             s.require(actualKind == (isExtra ? kind : 7), 222);
             if (isExtra && caseNumber == 12) {
