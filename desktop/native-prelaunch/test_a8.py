@@ -53,7 +53,7 @@ def fixture(case="A8-C0"):
     end = 6001000 if stall else 1025000
     audit = {
         "rows_bounded": 1,
-        "private_rows": 42 if stall else 47,
+        "private_rows": 44 if stall else 49,
         "case": int(stall),
         "sequence": 2 if stall else 1,
         "gate_initial": int(not stall),
@@ -71,6 +71,8 @@ def fixture(case="A8-C0"):
         "stop": int(stall),
         "inspector_cut": 3 if stall else 8,
         "observer_cut": 5,
+        "inspector_final": 3 if stall else 8,
+        "observer_final": 5,
         "shared_cut": 51 if stall else 107,
         "kill_qpc": end + 1,
         "terminated_qpc": end + 2000,
@@ -363,6 +365,7 @@ class A8Preflight(unittest.TestCase):
             "a8_qpc_frequency": 0,
             "a8_observer_thread_wait": 258,
             "a8_inspector_cut": 8,
+            "a8_inspector_final": 8,
             "a8_shared_emit": 52,
             "a8_rows_bounded": 0,
             "a8_inspector_tid": 201,

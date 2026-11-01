@@ -14,7 +14,7 @@ observer_start_tick supervisor_tid start_tick start_qpc wait_error wait_qpc
 raw_deadline done stop inspector_cut observer_cut shared_cut kill_qpc terminated_qpc
 shared_emit witness_wait witness_exit_ok witness_exit witness_pid witness_times_ok
 witness_creation witness_tid witness_thread_ok witness_thread_exit witness_job_ok
-witness_active witness_qpc observer_thread_wait""".split()
+witness_active witness_qpc observer_thread_wait inspector_final observer_final""".split()
 INSPECTOR = (
     "inspector_tid boundary_ready call_qpc call_return call_error return_qpc ack_wait ack_qpc"
 ).split()
@@ -117,6 +117,8 @@ def validate_private(record, host, stall, pid, tid, creation):
         "stop": int(stall),
         "inspector_cut": 3 if stall else 8,
         "observer_cut": 5,
+        "inspector_final": 3 if stall else 8,
+        "observer_final": 5,
         "shared_cut": state_rows,
         "shared_emit": state_rows,
         "witness_wait": 0,

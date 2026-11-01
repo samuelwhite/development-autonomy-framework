@@ -169,6 +169,10 @@ template<unsigned N> inline void emitRows(const Rows<N>& rows, unsigned count) {
     if (observer.joinable()) {
         if (observerWait == WAIT_OBJECT_0) observer.join(); else observer.detach();
     }
+    // Detect publication after the original frozen prefix without reading live
+    // non-atomic inspection flags. Later rows never repair the original result.
+    c->supervisor.put("inspector_final", c->inspector.count.load(std::memory_order_acquire));
+    c->supervisor.put("observer_final", c->observer.count.load(std::memory_order_acquire));
     unsigned count = c->supervisor.count.load(std::memory_order_acquire);
     bool bounded = count + c->inspectorCut + c->observerCut + 2 <= 64 &&
         count + c->inspectorCut + c->observerCut + c->sharedEmit <= 384 &&
