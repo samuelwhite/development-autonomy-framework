@@ -11,6 +11,9 @@ from qualify import a, c, publish
 
 NAMES = ("A8-C0", "A8-S1")
 HELPER_SECONDS, KILL_SECONDS, OUTER_SECONDS = 30, 3, 35
+# Source-controlled Product decision, never a CLI/environment/test override.
+# Changing this requires separate Product authorisation and a fresh frozen build.
+NATIVE_BUDGET_RELEASED = False
 
 
 def stop(output, case, failure, mode):
@@ -32,10 +35,11 @@ def stop(output, case, failure, mode):
     return value
 
 
-def prerequisites(output, case, build_hash, mode):
+def prerequisites(output, case, build_hash, mode, exercise=None, *, verifying=False):
     c.require(case in NAMES and mode in ("native", "simulated"), "a8_case_mode")
     c.require(not (output / "STOP.json").exists(), "irreversible_stop")
-    c.require(not (output / f"{case}-claimed.json").exists(), "attempt_consumed")
+    if not verifying:
+        c.require(not (output / f"{case}-claimed.json").exists(), "attempt_consumed")
     prior = []
     for previous in NAMES[: NAMES.index(case)]:
         receipt_raw = (output / f"{previous}-independent.json").read_bytes()
@@ -55,7 +59,7 @@ def prerequisites(output, case, build_hash, mode):
         c.require(
             receipt
             == {
-                "schema": "daf-a8-independent/v1",
+                "schema": "daf-a8-independent/v2",
                 "case": previous,
                 "mode": mode,
                 "build_manifest": build_hash,
@@ -64,7 +68,8 @@ def prerequisites(output, case, build_hash, mode):
                 "qualified": False,
                 "execution_authority": False,
                 "control": checked,
-                "native_processes_launched": 0,
+                "independent_readback_processes_launched": 0,
+                **({"exercise": exercise} if exercise is not None else {}),
             },
             "previous_independent_receipt",
         )
@@ -74,6 +79,34 @@ def prerequisites(output, case, build_hash, mode):
             and result["build_manifest"] == build_hash,
             "previous_result",
         )
+        if exercise is not None:
+            c.require(result.get("exercise") == exercise, "previous_exercise")
+            expected_claim = {
+                "case": previous,
+                "mode": mode,
+                "build_manifest": build_hash,
+                "prior": prior,
+                "retries": 0,
+                "exercise": exercise,
+            }
+            for suffix in ("claimed", "started"):
+                c.require(
+                    c.load((output / f"{previous}-{suffix}.json").read_bytes(), 100000)
+                    == expected_claim,
+                    "previous_claim_binding",
+                )
+            for suffix, field in (("stdout.capture", "stdout"), ("stderr.jsonl", "stderr")):
+                raw = (output / f"{previous}-{suffix}").read_bytes()
+                identity = result["evidence"][field]
+                c.require(
+                    len(raw) == identity["bytes"] and c.sha(raw) == identity["sha256"],
+                    "previous_original_bytes",
+                )
+            c.require(
+                a.observations((output / f"{previous}-stderr.jsonl").read_bytes())
+                == result["evidence"]["observations"],
+                "previous_original_observations",
+            )
         prior.append({"case": previous, "sha256": c.sha(receipt_raw)})
     return prior
 
@@ -140,15 +173,16 @@ def record_attempt(output, case, build_hash, mode, collect):
     return _record_attempt(output, case, build_hash, mode, collect)
 
 
-def _record_attempt(output, case, build_hash, mode, collect):
+def _record_attempt(output, case, build_hash, mode, collect, exercise=None):
     c.require(mode in ("simulated", "native"), "a8_record_mode")
-    prior = prerequisites(output, case, build_hash, mode)
+    prior = prerequisites(output, case, build_hash, mode, exercise)
     initial = {
         "case": case,
         "mode": mode,
         "build_manifest": build_hash,
         "prior": prior,
         "retries": 0,
+        **({"exercise": exercise} if exercise is not None else {}),
     }
     publish(output / f"{case}-claimed.json", initial)
     publish(output / f"{case}-started.json", initial)
@@ -223,6 +257,26 @@ def _record_attempt(output, case, build_hash, mode, collect):
     return result
 
 
+def verify_frozen_sources(build, repo, manifest):
+    expected = {
+        "source/" + path.relative_to(repo / "desktop").as_posix(): path
+        for directory in ("native-prelaunch", "native-foundation")
+        for path in (repo / "desktop" / directory).iterdir()
+        if path.is_file()
+    }
+    c.require(
+        {k for k in manifest["files"] if k.startswith("source/")} == set(expected),
+        "complete_frozen_sources",
+    )
+    for name, path in expected.items():
+        raw = path.read_bytes()
+        c.require(raw == (build / name).read_bytes(), "current_source")
+        c.require(
+            manifest["files"][name] == {"bytes": len(raw), "sha256": c.sha(raw)},
+            "frozen_source_identity",
+        )
+
+
 def verify_build(build, workers):
     """Exact future collector inputs. This is read-only and never starts a case."""
     from a7_qualify import HISTORY as prior
@@ -235,9 +289,14 @@ def verify_build(build, workers):
     manifest = c.load(raw, 250000)
     c.require(
         manifest["schema"] == "daf-a8-compile-only/v1"
-        and manifest["status"] == "COMPILED_NOT_EXECUTED",
+        and manifest["status"] == "COMPILED_NOT_EXECUTED"
+        and manifest["native_executions"] == 0
+        and manifest["qualified"] is False
+        and manifest["execution_authority"] is False
+        and manifest["cases"] == {name: "NOT RUN" for name in NAMES},
         "compile_identity",
     )
+    verify_frozen_sources(build, repo, manifest)
     for name, expected in manifest["files"].items():
         path = (build / name).resolve()
         c.require(path.is_relative_to(build), "manifest_path")
@@ -385,49 +444,130 @@ def _native_collect(staged, attempt, build, workers, case):
             )
 
 
-def native_entry(case, build, workers, output):
-    """Fully defined future two-case adapter; activation is intentionally refused."""
-    require_native_release()
-    from qualify import FOUNDATION
+def owned_paths(repo, build, workers, output):
+    paths = (build, workers, output)
+    for path in paths:
+        c.require(path == path.resolve() and path.is_relative_to(repo / "dist"), "owned_path")
+    c.require(len(set(paths)) == 3, "distinct_exercise_paths")
+    c.require(
+        all(not left.is_relative_to(right) for left in paths for right in paths if left != right),
+        "disjoint_exercise_paths",
+    )
 
-    repo = FOUNDATION.parents[1]
-    c.require(case in NAMES and output.is_relative_to(repo / "dist"), "native_owned_case")
-    build_hash = verify_build(build, workers)
-    binding = {
-        "schema": "daf-a8-exercise/v1",
+
+def exercise_binding(repo, build, workers, output, mode, build_hash, source_hash):
+    """Closed identity shared by entry, predecessor checks and independent readback."""
+    c.require(mode in ("native", "simulated"), "exercise_mode")
+    owned_paths(repo, build, workers, output)
+    c.hex_value(build_hash)
+    c.hex_value(source_hash)
+    return {
+        "schema": "daf-a8-exercise/v2",
+        "mode": mode,
         "output": output.relative_to(repo).as_posix(),
         "build_directory": build.relative_to(repo).as_posix(),
+        "workers_directory": workers.relative_to(repo).as_posix(),
         "build_manifest": build_hash,
+        "source_identity": source_hash,
         "cases": list(NAMES),
         "retries": 0,
         "qualified": False,
+        "execution_authority": False,
     }
-    exercise = repo / "dist/m21b-a8-exercise-claimed.json"
+
+
+def frozen_source_identity(build):
+    manifest = c.load((build / "build-manifest.json").read_bytes(), 250000)
+    sources = {k: v for k, v in manifest["files"].items() if k.startswith("source/")}
+    c.require(bool(sources), "missing_frozen_sources")
+    return c.sha(c.canonical(sources))
+
+
+class NativeExecution:
+    """Fixed native effects. Never accepts injected collectors or readback adapters."""
+
+    mode = "native"
+
+    def __init__(self):
+        from qualify import FOUNDATION
+
+        self.repo = FOUNDATION.parents[1]
+
+    def check(self, build, workers):
+        return verify_build(build, workers), frozen_source_identity(build)
+
+    def collect(self, staged, output, build, workers, case):
+        _native_collect(staged, output / case, build, workers, case)
+
+
+def exercise_entry(case, build, workers, output, effects):
+    """One entry state machine; portable fakes have simulated evidence/claims only.
+
+    Native callers cannot inject effects or bypass the source-controlled release.
+    Tests exercise the same ordering and claim decisions with explicit fakes.
+    """
+    c.require(case in NAMES, "a8_case_binding")
+    mode, repo = effects.mode, effects.repo
+    c.require(mode in ("native", "simulated"), "entry_mode")
+    if mode == "native":
+        require_native_release(case)
+        c.require(type(effects) is NativeExecution, "fixed_native_effects")
+    else:
+        c.require(not isinstance(effects, NativeExecution), "simulation_effects")
+    # All source/build/path prerequisites run before any exercise/case claim.
+    owned_paths(repo, build, workers, output)
+    build_hash, source_hash = effects.check(build, workers)
+    binding = exercise_binding(repo, build, workers, output, mode, build_hash, source_hash)
+    prefix = "m21b-a8" if mode == "native" else "m21b-a8-simulated"
+    exercise = repo / "dist" / f"{prefix}-exercise-claimed.json"
+    claim = repo / "dist" / f"{prefix}-{case}-execution-claimed.json"
+    c.require(not claim.exists(), "global_attempt_consumed")
+    c.require(not (output / "STOP.json").exists(), "irreversible_stop")
     if case == NAMES[0]:
         c.require(not output.exists(), "fresh_exercise")
         publish(exercise, binding)
-        output.mkdir()
     else:
         c.require(c.load(exercise.read_bytes(), 100000) == binding, "same_exercise")
-    prerequisites(output, case, build_hash, "native")
-    # Global exclusive claim survives result/STOP persistence failures.
-    publish(repo / "dist" / f"m21b-a8-{case}-execution-claimed.json", {**binding, "case": case})
     try:
+        if case == NAMES[0]:
+            output.mkdir()
+        prerequisites(output, case, build_hash, mode, binding)
+        if case == NAMES[1]:
+            predecessor = repo / "dist" / f"{prefix}-{NAMES[0]}-execution-claimed.json"
+            c.require(
+                c.load(predecessor.read_bytes(), 100000) == {**binding, "case": NAMES[0]},
+                "previous_global_claim",
+            )
+        # Global exclusive claim survives result/STOP persistence failures.
+        publish(claim, {**binding, "case": case})
+        # Recheck before calling any collector, including changes during claiming.
+        c.require(
+            effects.check(build, workers) == (build_hash, source_hash), "frozen_before_launch"
+        )
         return _record_attempt(
             output,
             case,
             build_hash,
-            "native",
-            lambda staged: _native_collect(staged, output / case, build, workers, case),
+            mode,
+            lambda staged: effects.collect(staged, output, build, workers, case),
+            binding,
         )
     except Exception as error:
-        stop(output, case, {"stage": "native_entry", "type": type(error).__name__}, "native")
+        if output.is_dir():
+            stop(output, case, {"stage": "entry", "type": type(error).__name__}, mode)
         raise
 
 
-def require_native_release():
-    # No flag/environment/digest or test result releases a Product allowance.
-    raise PermissionError("A8 native execution allowance remains unreleased")
+def require_native_release(case):
+    c.require(case in NAMES, "a8_case_binding")
+    if NATIVE_BUDGET_RELEASED is not True:
+        raise PermissionError("A8 native execution allowance remains unreleased")
+
+
+def native_entry(case, build, workers, output):
+    """Explicit two-case entry. Product has NOT released its native budget."""
+    require_native_release(case)
+    return exercise_entry(case, build, workers, output, NativeExecution())
 
 
 def main():

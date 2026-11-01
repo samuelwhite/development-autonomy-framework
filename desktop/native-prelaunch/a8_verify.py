@@ -4,7 +4,15 @@ import ctypes as C
 from ctypes import wintypes as W
 
 import a8_observations as diagnostic
-from a8_qualify import require_native_release, stop, verify_build
+from a8_qualify import (
+    NAMES,
+    exercise_binding,
+    frozen_source_identity,
+    prerequisites,
+    require_native_release,
+    stop,
+    verify_build,
+)
 from qualify import a, c, publish
 
 
@@ -86,13 +94,14 @@ def native_resource_readback(attempt, record):
 
 def verify(output, case, resource_readback=None):
     """Independent readback. Native activation remains explicitly refused."""
+    c.require(case in NAMES, "a8_case_binding")
     c.require(not (output / "STOP.json").exists(), "irreversible_stop")
     result_raw = (output / f"{case}-result.json").read_bytes()
     result = c.load(result_raw, 100000)
     mode = result["mode"]
     c.require(result["case"] == case and mode in ("simulated", "native"), "readback_binding")
     if mode == "native":
-        require_native_release()
+        require_native_release(case)
         from qualify import FOUNDATION
 
         repo = FOUNDATION.parents[1]
@@ -102,11 +111,20 @@ def verify(output, case, resource_readback=None):
         )
         binding = c.load((repo / "dist/m21b-a8-exercise-claimed.json").read_bytes(), 100000)
         build = (repo / binding["build_directory"]).resolve()
+        workers = (repo / binding["workers_directory"]).resolve()
         c.require(
-            binding["output"] == output.relative_to(repo).as_posix()
-            and verify_build(build, repo / "dist/m21a-persistence-01")
-            == result["build_manifest"]
-            == binding["build_manifest"],
+            binding == result.get("exercise")
+            and binding
+            == exercise_binding(
+                repo,
+                build,
+                workers,
+                output,
+                mode,
+                verify_build(build, workers),
+                frozen_source_identity(build),
+            )
+            and binding["build_manifest"] == result["build_manifest"],
             "native_readback_build",
         )
         claim = c.load(
@@ -147,8 +165,26 @@ def verify(output, case, resource_readback=None):
         )
         for key, value in claim.items():
             c.require(result[key] == value, "result_binding")
+        exercise = result.get("exercise")
+        if exercise is not None:
+            c.require(exercise["mode"] == mode, "readback_exercise_mode")
+            # Verify the predecessor again without treating this case's own claim
+            # as a duplicate. C0 has no predecessor; S1 must bind the same C0 receipt.
+            if case == NAMES[1]:
+                c.require(
+                    result["prior"]
+                    == prerequisites(
+                        output,
+                        case,
+                        result["build_manifest"],
+                        mode,
+                        exercise,
+                        verifying=True,
+                    ),
+                    "readback_predecessor",
+                )
         receipt = {
-            "schema": "daf-a8-independent/v1",
+            "schema": "daf-a8-independent/v2",
             "case": case,
             "mode": mode,
             "build_manifest": result["build_manifest"],
@@ -157,7 +193,10 @@ def verify(output, case, resource_readback=None):
             "qualified": False,
             "execution_authority": False,
             "control": checked,
-            "native_processes_launched": 0,
+            # Readback launches no ADDITIONAL process. This is not a claim that
+            # the diagnostic runner/host launched zero processes for a native case.
+            "independent_readback_processes_launched": 0,
+            **({"exercise": exercise} if exercise is not None else {}),
         }
         publish(output / f"{case}-independent.json", receipt)
         return receipt
