@@ -205,7 +205,7 @@ def save_prior(root):
 class A7Contracts(unittest.TestCase):
     def test_actual_dependency_and_preprocessed_source_review_fail_closed(self):
         with tempfile.TemporaryDirectory() as directory:
-            build = Path(directory)
+            build = Path(directory).resolve()
             baseline = Path(__file__).with_name("suspended-inspection.h").read_bytes()
             (build / "a7-inspector-baseline.h").write_bytes(baseline)
             generated = build / "a7-suspended-inspection.generated.h"
