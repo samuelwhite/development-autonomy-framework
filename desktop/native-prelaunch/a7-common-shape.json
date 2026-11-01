@@ -1,0 +1,1428 @@
+[
+  {
+    "native": "CreateProcessAsUser_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "CreateRestrictedToken_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "CreateRestrictedToken_flags",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_effects_verified_and_restored",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_before_duplicate",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_before_metadata",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_before_operation",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_begin",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_complete",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_duplicate_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_duplicate_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_file_high",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_file_low",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_file_type",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_file_type_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_flags",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_id_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_id_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_info_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_info_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_intended_identity",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_known_reference",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_operation_attempted",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_operation_bytes",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_operation_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_operation_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_outcome",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_raw",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_read_marker",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_regular_32_bytes",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_standard_mask",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_type",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_type_status",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h0_volume",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_before_duplicate",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_before_metadata",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_before_operation",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_begin",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_complete",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_duplicate_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_duplicate_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_file_high",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_file_low",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_file_type",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_file_type_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_flags",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_id_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_id_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_info_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_info_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_intended_identity",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_known_reference",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_operation_attempted",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_operation_bytes",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_operation_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_operation_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_outcome",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_raw",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_regular_32_bytes",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_standard_mask",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_type",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_type_status",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h1_volume",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_before_duplicate",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_before_metadata",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_before_operation",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_begin",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_complete",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_duplicate_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_duplicate_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_file_type",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_file_type_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_flags",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_info_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_info_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_intended_identity",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_known_reference",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_mapping_flush_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_mapping_flush_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_mapping_unmap_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_operation_attempted",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_operation_bytes",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_operation_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_operation_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_outcome",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_raw",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_standard_mask",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_type",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h2_type_status",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_before_duplicate",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_before_metadata",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_before_operation",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_begin",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_complete",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_duplicate_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_duplicate_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_file_type",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_file_type_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_flags",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_info_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_info_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_intended_identity",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_known_reference",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_operation_attempted",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_operation_bytes",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_operation_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_operation_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_outcome",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_raw",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_standard_mask",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_type",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h3_type_status",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_before_duplicate",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_before_metadata",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_before_operation",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_begin",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_complete",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_duplicate_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_duplicate_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_duplicated_read_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_duplicated_read_identity",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_duplicated_read_marker",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_file_type",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_file_type_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_flags",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_info_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_info_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_intended_identity",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_known_reference",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_operation_attempted",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_operation_bytes",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_operation_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_operation_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_outcome",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_process_creation",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_process_pid",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_process_pid_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_process_times_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_process_times_ok",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_raw",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_standard_mask",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_type",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "a1_control_h4_type_status",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "accesscheck_all_apps_with_task_read",
+    "fields": {
+      "allowed": "bool",
+      "granted": "int",
+      "requested": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "accesscheck_all_restricted_with_task_read",
+    "fields": {
+      "allowed": "bool",
+      "granted": "int",
+      "requested": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "accesscheck_ambient_write",
+    "fields": {
+      "allowed": "bool",
+      "granted": "int",
+      "requested": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "accesscheck_both_read",
+    "fields": {
+      "allowed": "bool",
+      "granted": "int",
+      "requested": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "accesscheck_both_write",
+    "fields": {
+      "allowed": "bool",
+      "granted": "int",
+      "requested": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "accesscheck_lpac_without_task_read",
+    "fields": {
+      "allowed": "bool",
+      "granted": "int",
+      "requested": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "accesscheck_lpac_without_task_write",
+    "fields": {
+      "allowed": "bool",
+      "granted": "int",
+      "requested": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "accesscheck_task_without_lpac_write",
+    "fields": {
+      "allowed": "bool",
+      "granted": "int",
+      "requested": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "appcontainer",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "capability_count",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "child_pid",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "create_owned_desktop_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "creation_time_100ns",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "delete_explicitly_created_registry_storage",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "delete_owned_profile_hresult",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "delete_synthetic_credential",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "delete_synthetic_registry_key",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "dual_fixture_label_result",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "final_appcontainer_sid",
+    "fields": {
+      "attributes": "int",
+      "sid": "str"
+    },
+    "count": 1
+  },
+  {
+    "native": "final_child_IsTokenRestricted",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "final_child_process_policy",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "final_child_restricted_sids",
+    "fields": {
+      "attributes": "int",
+      "sid": "str"
+    },
+    "count": 1
+  },
+  {
+    "native": "final_child_restricted_sids",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "final_elevated",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "final_integrity_sid",
+    "fields": {
+      "attributes": "int",
+      "sid": "str"
+    },
+    "count": 1
+  },
+  {
+    "native": "final_privilege_attributes",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "final_privilege_count",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "final_privilege_luid",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "final_registry_read_capability",
+    "fields": {
+      "attributes": "int",
+      "sid": "str"
+    },
+    "count": 1
+  },
+  {
+    "native": "fixture_label_result",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "helper_pid",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "host_appcontainer",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "host_available_commit_bytes",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "host_elevated",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "hostile_handles_inheritable",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "hostile_positive_controls",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "image_identity_checked",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "input_restricted_sids",
+    "fields": {
+      "attributes": "int",
+      "sid": "str"
+    },
+    "count": 1
+  },
+  {
+    "native": "input_restricted_sids",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "job_at_creation",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "job_cpu_100ns",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "job_limit_flags",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "job_memory_bytes",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "job_process_limit",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "launched_image_independently_verified",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "lpac_accesscheck_mask",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "lpac_token_query_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "native_ambient_write",
+    "fields": {
+      "allowed": "bool",
+      "bytes_written": "int",
+      "error": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "native_explicit_dual_write",
+    "fields": {
+      "allowed": "bool",
+      "bytes_written": "int",
+      "error": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "open_existing_registry_storage_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "open_or_create_owned_registry_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "owned_registry_disposition",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "prelaunch_image_verified",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "requested_attempt_sid",
+    "fields": {
+      "attributes": "int",
+      "sid": "str"
+    },
+    "count": 1
+  },
+  {
+    "native": "restore_profile_acl",
+    "fields": {
+      "value": "int"
+    },
+    "count": 7
+  },
+  {
+    "native": "restore_registry_acl",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  },
+  {
+    "native": "set_generated_token_default_dacl_error",
+    "fields": {
+      "value": "int"
+    },
+    "count": 1
+  }
+]
