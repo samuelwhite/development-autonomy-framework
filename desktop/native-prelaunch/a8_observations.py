@@ -22,7 +22,8 @@ OBSERVER = "observer_tid entered_wait entered_error gate_wait observed_qpc".spli
 RECORD_FIELDS = set(
     """schema case sequence role mode qualified execution_authority
 capture_complete forced_outer_termination parent_deadline_exceeded cleanup helper_exit
-elapsed_ms synthetic_resources_unchanged stdout stderr observations independent_cleanup
+elapsed_ms outer_elapsed_ms synthetic_resources_unchanged stdout stderr observations
+independent_cleanup
 helper_identity""".split()
 )
 
@@ -64,6 +65,11 @@ def validate_shape(record, stall):
             "capture_hash",
         )
     require(record["parent_deadline_exceeded"] is False, "parent_deadline")
+    require(
+        type(record["outer_elapsed_ms"]) is int
+        and record["elapsed_ms"] <= record["outer_elapsed_ms"] < 35000,
+        "outer_cleanup_bound",
+    )
     helper = record["helper_identity"]
     require(set(helper) == {"pid", "creation", "query_ok", "error"}, "helper_identity_shape")
     require(

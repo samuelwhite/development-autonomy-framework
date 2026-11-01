@@ -129,6 +129,7 @@ def fixture(case="A8-C0"):
         "cleanup": "confirmed",
         "helper_exit": int(stall),
         "elapsed_ms": 6000 if stall else 100,
+        "outer_elapsed_ms": 6100 if stall else 110,
         "synthetic_resources_unchanged": True,
         "observations": rows,
         "independent_cleanup": cleanup,
@@ -155,6 +156,42 @@ def collected(record):
 
 
 class A8Preflight(unittest.TestCase):
+    def test_native_readback_pid_reuse_and_survivors_fail_closed_using_fakes(self):
+        for reused in (True, False):
+            record = fixture()
+            kernel = Mock()
+            kernel.OpenProcess.return_value = 100
+            kernel.WaitForSingleObject.return_value = 258
+
+            def times(handle, creation, exited, cpu, user, mismatch=reused):
+                creation._obj.dwLowDateTime = 999 if mismatch else 1000
+                return 1
+
+            kernel.GetProcessTimes.side_effect = times
+            with (
+                patch.object(verifier.C, "WinDLL", return_value=kernel, create=True),
+                patch.object(verifier.C, "get_last_error", return_value=0, create=True),
+            ):
+                with self.assertRaises(runner.c.Refused):
+                    verifier.native_resource_readback(Path("owned-synthetic"), record)
+            kernel.OpenProcess.assert_called_once_with(0x101000, False, 90)
+            kernel.CloseHandle.assert_called_once_with(100)
+
+    def test_capture_is_durable_before_collector_cleanup_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+
+            def collect(staged):
+                staged.update(collected(fixture()))
+                staged["persist"]()
+                self.assertTrue((output / "A8-C0-stderr.jsonl").exists())
+                raise RuntimeError("synthetic cleanup failure after raw persistence")
+
+            result = runner.record_attempt(output, "A8-C0", "build", "simulated", collect)
+            self.assertEqual(result["status"], "INCONCLUSIVE")
+            self.assertIn("partial_evidence", result)
+            self.assertTrue((output / "STOP.json").exists())
+
     def test_actual_input_review_rejects_unreviewed_dependencies_and_tokens(self):
         with tempfile.TemporaryDirectory() as directory:
             build = Path(directory).resolve()
@@ -413,6 +450,8 @@ class A8Preflight(unittest.TestCase):
             output = Path(directory)
             with self.assertRaises(PermissionError):
                 runner.main()
+            with self.assertRaises(PermissionError):
+                runner.native_entry("A8-C0", output, output, output)
             with self.assertRaises(runner.c.Refused):
                 runner.record_attempt(output, "A8-C0", "build", "native", Mock())
             self.assertEqual(list(output.iterdir()), [])

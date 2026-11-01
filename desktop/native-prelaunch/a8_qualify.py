@@ -3,6 +3,7 @@
 import hashlib
 import os
 import subprocess
+import threading
 import time
 
 import a8_observations as diagnostic
@@ -127,6 +128,11 @@ def record_attempt(output, case, build_hash, mode, collect):
     separate observation/readback metadata, never an inferred successful timeout.
     """
     c.require(mode == "simulated", "a8_native_allowance_not_released")
+    return _record_attempt(output, case, build_hash, mode, collect)
+
+
+def _record_attempt(output, case, build_hash, mode, collect):
+    c.require(mode in ("simulated", "native"), "a8_record_mode")
     prior = prerequisites(output, case, build_hash, mode)
     initial = {
         "case": case,
@@ -139,20 +145,39 @@ def record_attempt(output, case, build_hash, mode, collect):
     publish(output / f"{case}-started.json", initial)
     result = {**initial, "status": "INCONCLUSIVE", "qualified": False, "execution_authority": False}
     collected = {"stdout": b"", "stderr": b""}
+
+    def persist():
+        metadata = {}
+        for field, suffix, limit in (
+            ("stdout", "stdout.capture", c.MAX_OUTPUT),
+            ("stderr", "stderr.jsonl", 32768),
+        ):
+            path = output / f"{case}-{suffix}"
+            raw = collected[field]
+            if "capture_meta" in collected:
+                c.require(path.read_bytes() == raw[:limit], "capture_changed_after_persistence")
+                metadata[field] = collected["capture_meta"][field]
+            else:
+                metadata[field] = retain_capture(path, raw, limit)
+        collected["capture_meta"] = metadata
+        return metadata
+
+    collected["persist"] = persist
     raw_out, raw_err = b"", b""
     try:
         collect(collected)
         raw_out, raw_err = collected["stdout"], collected["stderr"]
         # These are the UNCHANGED accepted A3/A7 capture limits. The success
         # validator additionally requires empty stdout; no child work is allowed.
-        out = retain_capture(output / f"{case}-stdout.capture", raw_out, c.MAX_OUTPUT)
-        err = retain_capture(output / f"{case}-stderr.jsonl", raw_err, 32768)
+        metadata = persist()
+        out, err = metadata["stdout"], metadata["stderr"]
         evidence = {
             **collected["evidence"],
             "stdout": out,
             "stderr": err,
             "observations": a.observations(raw_err),
         }
+        c.require(evidence["mode"] == mode and evidence["case"] == case, "collector_binding")
         result["evidence"] = evidence
         result["control"] = diagnostic.validate(evidence)
         result["status"] = "expected_control_observed"
@@ -164,6 +189,10 @@ def record_attempt(output, case, build_hash, mode, collect):
         # The collector stages immutable byte prefixes before operations that may
         # fail, so an exception cannot discard already captured failure evidence.
         raw_out, raw_err = collected["stdout"], collected["stderr"]
+        if result["status"] != "expected_control_observed":
+            for name in ("evidence", "supervision"):
+                if name in collected:
+                    result["partial_" + name] = collected[name]
         for suffix, raw, limit in (
             ("stdout.capture", raw_out, c.MAX_OUTPUT),
             ("stderr.jsonl", raw_err, 32768),
@@ -177,8 +206,219 @@ def record_attempt(output, case, build_hash, mode, collect):
                     result["persistence_failure"] = type(error).__name__
         if result["status"] != "expected_control_observed":
             stop(output, case, result.get("failure", {"stage": "persistence"}), mode)
-        publish(output / f"{case}-result.json", result)
+        try:
+            publish(output / f"{case}-result.json", result)
+        except Exception:
+            stop(output, case, {"stage": "result_persistence"}, mode)
+            raise
     return result
+
+
+def verify_build(build, workers):
+    """Exact future collector inputs. This is read-only and never starts a case."""
+    from a7_qualify import HISTORY as prior
+    from a8_build_review import review
+    from qualify import FOUNDATION, WORKERS
+
+    repo = FOUNDATION.parents[1]
+    c.require(build.is_relative_to(repo / "dist"), "owned_build")
+    raw = (build / "build-manifest.json").read_bytes()
+    manifest = c.load(raw, 250000)
+    c.require(
+        manifest["schema"] == "daf-a8-compile-only/v1"
+        and manifest["status"] == "COMPILED_NOT_EXECUTED",
+        "compile_identity",
+    )
+    for name, expected in manifest["files"].items():
+        path = (build / name).resolve()
+        c.require(path.is_relative_to(build), "manifest_path")
+        data = path.read_bytes()
+        c.require(
+            len(data) == expected["bytes"] and c.sha(data) == expected["sha256"], "build_bytes"
+        )
+        if name.startswith("source/"):
+            c.require(
+                (repo / "desktop" / name.removeprefix("source/")).read_bytes() == data,
+                "current_source",
+            )
+    c.require(
+        review(build, compiled=True)
+        == c.load((build / "a8-build-review.json").read_bytes(), 250000),
+        "compiled_input_review",
+    )
+    for role, expected in WORKERS.items():
+        c.require(c.sha((workers / (role + ".exe")).read_bytes()) == expected, "accepted_workers")
+    history = {
+        **prior,
+        "docs/evidence/m2.1b-a7-mutation-windows.json": (
+            "a0c68c524b677094a0f65edeba508bef4d652d6bf24ba2514f042ab9106a3b88"
+        ),
+    }
+    for name, expected in history.items():
+        c.require(c.sha((repo / name).read_bytes()) == expected, "preserved_history")
+    return c.sha(raw)
+
+
+def bounded_readback(attempt, record, deadline):
+    """No fresh allowance for cleanup. Daemon lifetime never implies success."""
+    from a8_verify import native_resource_readback
+    from qualify import cleanup
+
+    result = {}
+
+    def work():
+        try:
+            cleanup(attempt)
+            result["value"] = native_resource_readback(attempt, record)
+        except Exception as error:
+            result["error"] = error
+
+    thread = threading.Thread(target=work, daemon=True)
+    thread.start()
+    thread.join(timeout=max(0, deadline - time.monotonic()))
+    c.require(not thread.is_alive(), "cleanup_deadline_unconfirmed")
+    if "error" in result:
+        raise result["error"]
+    c.require("value" in result, "missing_cleanup")
+    return result["value"]
+
+
+def _native_collect(staged, attempt, build, workers, case):
+    """Dormant native adapter. Only the separately gated native_entry calls it."""
+    from a7_qualify import helper_identity
+
+    attempt.mkdir()
+    (attempt / "runtime").mkdir()
+    publish(attempt / "started.json", {"case": case, "mode": "native", "qualified": False})
+    for target, source in {
+        "harness.exe": build / "a8-fixture-host.exe",
+        "probe.exe": build / "handle-probe.exe",
+        "producer.exe": workers / "producer.exe",
+        "verifier.exe": workers / "verifier.exe",
+    }.items():
+        with (attempt / target).open("xb") as stream:
+            stream.write(source.read_bytes())
+    a.preparation(attempt)
+    fixtures = {
+        "allowed.txt": b"Explicitly readable synthetic fixture",
+        "private.txt": b"Host-private synthetic fixture",
+        "ambient-shared.txt": b"Synthetic resource shared with all LPACs",
+        "dual-grant.txt": b"Explicit dual-grant synthetic fixture",
+        "protected.bin": b"",
+        "fixture-root.marker": b"DAF M2.1A owned acceptance fixture",
+        "request.bin": b"",
+        "smuggled-read.txt": b"R" * 32,
+        "smuggled-write.txt": b"S" * 32,
+    }
+    for name, data in fixtures.items():
+        with (attempt / name).open("xb") as stream:
+            stream.write(data)
+    began = time.monotonic()
+    process = subprocess.Popen(
+        [str(attempt / "harness.exe"), case, "probe"],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        creationflags=0x08000000,
+    )
+    out = err = None
+    try:
+        out, err = a.Capture(process.stdout, c.MAX_OUTPUT), a.Capture(process.stderr, 32768)
+        outcome = supervise(process, began, (out, err))
+        # Freeze copies before parsing, metadata queries or cleanup can fail.
+        staged["stdout"], staged["stderr"] = bytes(out.data), bytes(err.data)
+        staged["supervision"] = outcome
+        staged["persist"]()
+        identity = helper_identity(process)
+        rows = a.observations(staged["stderr"])
+        record = {
+            "schema": "daf-a8-case/v1",
+            "case": case,
+            "sequence": NAMES.index(case) + 1,
+            "role": "probe",
+            "mode": "native",
+            "qualified": False,
+            "execution_authority": False,
+            "capture_complete": outcome["capture_complete"],
+            "forced_outer_termination": outcome["forced_outer_termination"],
+            "parent_deadline_exceeded": outcome["parent_deadline_exceeded"],
+            "helper_exit": outcome["helper_exit"],
+            "elapsed_ms": outcome["elapsed_ms"],
+            "outer_elapsed_ms": 35000,
+            "helper_identity": identity,
+            "observations": rows,
+            "cleanup": "unconfirmed",
+            "synthetic_resources_unchanged": False,
+            "independent_cleanup": {},
+        }
+        staged["evidence"] = record
+        c.require(
+            not outcome["errors"]
+            and outcome["outer_bound_met"]
+            and not out.overflow
+            and not err.overflow,
+            "native_supervision_incomplete",
+        )
+        record["independent_cleanup"] = bounded_readback(attempt, record, began + OUTER_SECONDS)
+        record["cleanup"] = "confirmed"
+        record["synthetic_resources_unchanged"] = True
+        record["outer_elapsed_ms"] = round((time.monotonic() - began) * 1000)
+    finally:
+        if out is not None:
+            staged["stdout"] = bytes(out.data)
+        if err is not None:
+            staged["stderr"] = bytes(err.data)
+        if process.poll() is None:
+            # Only this retained owned helper; any fallback makes the case fail.
+            process.kill()
+            process.wait(
+                timeout=max(0, min(KILL_SECONDS, began + OUTER_SECONDS - time.monotonic()))
+            )
+
+
+def native_entry(case, build, workers, output):
+    """Fully defined future two-case adapter; activation is intentionally refused."""
+    require_native_release()
+    from qualify import FOUNDATION
+
+    repo = FOUNDATION.parents[1]
+    c.require(case in NAMES and output.is_relative_to(repo / "dist"), "native_owned_case")
+    build_hash = verify_build(build, workers)
+    binding = {
+        "schema": "daf-a8-exercise/v1",
+        "output": output.relative_to(repo).as_posix(),
+        "build_directory": build.relative_to(repo).as_posix(),
+        "build_manifest": build_hash,
+        "cases": list(NAMES),
+        "retries": 0,
+        "qualified": False,
+    }
+    exercise = repo / "dist/m21b-a8-exercise-claimed.json"
+    if case == NAMES[0]:
+        c.require(not output.exists(), "fresh_exercise")
+        publish(exercise, binding)
+        output.mkdir()
+    else:
+        c.require(c.load(exercise.read_bytes(), 100000) == binding, "same_exercise")
+    prerequisites(output, case, build_hash, "native")
+    # Global exclusive claim survives result/STOP persistence failures.
+    publish(repo / "dist" / f"m21b-a8-{case}-execution-claimed.json", {**binding, "case": case})
+    try:
+        return _record_attempt(
+            output,
+            case,
+            build_hash,
+            "native",
+            lambda staged: _native_collect(staged, output / case, build, workers, case),
+        )
+    except Exception as error:
+        stop(output, case, {"stage": "native_entry", "type": type(error).__name__}, "native")
+        raise
+
+
+def require_native_release():
+    # No flag/environment/digest or test result releases a Product allowance.
+    raise PermissionError("A8 native execution allowance remains unreleased")
 
 
 def main():
