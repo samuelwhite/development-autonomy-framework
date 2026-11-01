@@ -61,11 +61,6 @@ def dependencies(build, unit, phase):
         or data.get("PCH")
     ):
         raise ValueError("a8_unexpected_module_or_pch")
-    # MSVC /P legitimately repeats SDK packing headers (pshpack*/poppack).
-    # Preserve the raw dependency files; require project headers exactly once.
-    local = [name for name in includes if Path(name).resolve().is_relative_to(SOURCE.parents[1])]
-    if len(set(map(normalized, local))) != len(local):
-        raise ValueError("a8_duplicate_include")
     required = (
         {
             build / "a8-suspended-inspection.generated.h",
@@ -83,6 +78,13 @@ def dependencies(build, unit, phase):
     if not {normalized(p) for p in required}.issubset(set(map(normalized, includes))):
         raise ValueError("a8_actual_includes_missing")
     approved_local = {normalized(p) for p in required}
+    # SDK packing headers legitimately repeat. Generated project headers remain
+    # unique even when the diagnostic build lives outside the source checkout.
+    resolved = [normalized(Path(name).resolve()) for name in includes]
+    if any(resolved.count(name) != 1 for name in approved_local):
+        raise ValueError("a8_duplicate_or_missing_project_include")
+    if normalized(source) in resolved:
+        raise ValueError("a8_compilation_unit_cannot_be_an_include")
     inventory = {}
     for name in [data["Source"], *includes]:
         path = Path(name).resolve()

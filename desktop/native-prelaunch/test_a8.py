@@ -234,60 +234,83 @@ class A8Preflight(unittest.TestCase):
     def test_actual_input_review_rejects_unreviewed_dependencies_and_tokens(self):
         with tempfile.TemporaryDirectory() as directory:
             build = Path(directory).resolve()
-            baseline = Path(__file__).with_name("suspended-inspection.h").read_bytes()
-            generated = build / "a8-suspended-inspection.generated.h"
-            generated.write_bytes(instrument.inspector(baseline))
-            (build / "a8-inspector-baseline.h").write_bytes(baseline)
-            harness = review.SOURCE.parent / "native-foundation/harness.cpp"
-            (build / "a8-fixture-harness.h").write_bytes(
-                instrument.instrument(harness.read_bytes())
-            )
-            (build / "probe-identity.h").write_text("// portable synthetic input\n")
-            for unit, header in (
-                ("a8-fixture-host", generated),
-                ("a8-preprocess-baseline", build / "a8-inspector-baseline.h"),
+            # Explicitly separate the synthetic source checkout from its build.
+            # This exercises external temporary builds on Windows AND Linux.
+            source = build / "checkout/desktop/native-prelaunch"
+            foundation = source.parent / "native-foundation"
+            source.mkdir(parents=True)
+            foundation.mkdir()
+            original_source = review.SOURCE
+            for name in (
+                "a7-fixture-host.cpp",
+                "a8-fixture-host.cpp",
+                "a8-stall-control.h",
+                "identity.h",
+                "handle-diagnostic.h",
+                "suspended-inspection.h",
             ):
-                (build / (unit + ".i")).write_text(
-                    f"#line 1 {json.dumps(str(header))}\n" + header.read_text(), encoding="utf-8"
+                (source / name).write_bytes((original_source / name).read_bytes())
+            for name in ("harness.cpp", "readiness.h", "sha256.h"):
+                (foundation / name).write_bytes(
+                    (original_source.parent / "native-foundation" / name).read_bytes()
                 )
-            includes = [
-                generated,
-                build / "a8-fixture-harness.h",
-                build / "probe-identity.h",
-                review.SOURCE / "a8-stall-control.h",
-                review.SOURCE / "identity.h",
-                review.SOURCE / "handle-diagnostic.h",
-                harness.parent / "readiness.h",
-                harness.parent / "sha256.h",
-            ]
-            dependency = {
-                "Data": {
-                    "Source": str(review.SOURCE / "a8-fixture-host.cpp"),
-                    "Includes": list(map(str, includes)),
-                }
-            }
-            path = build / "a8-fixture-host.preprocess.json"
-            path.write_text(json.dumps(dependency), encoding="utf-8")
-            self.assertTrue(review.review(build)["inspect_and_supervisor_token_inverse_exact"])
-            for wrong in (
-                [],
-                [*includes, includes[0]],
-                [*includes, build / "unreviewed.h"],
-                [*includes, review.SOURCE / "suspended-inspection.h"],
-            ):
-                dependency["Data"]["Includes"] = list(map(str, wrong))
-                path.write_text(json.dumps(dependency), encoding="utf-8")
-                with self.assertRaises(ValueError):
-                    review.review(build)
-            dependency["Data"]["Includes"] = list(map(str, includes))
-            path.write_text(json.dumps(dependency), encoding="utf-8")
-            preprocessed = build / "a8-fixture-host.i"
-            preprocessed.write_text(
-                preprocessed.read_text().replace("latency <= TerminationMs", "latency <= 9000"),
-                encoding="utf-8",
+            with patch.object(review, "SOURCE", source):
+                self.check_input_review(build)
+
+    def check_input_review(self, build):
+        baseline = Path(__file__).with_name("suspended-inspection.h").read_bytes()
+        generated = build / "a8-suspended-inspection.generated.h"
+        generated.write_bytes(instrument.inspector(baseline))
+        (build / "a8-inspector-baseline.h").write_bytes(baseline)
+        harness = review.SOURCE.parent / "native-foundation/harness.cpp"
+        (build / "a8-fixture-harness.h").write_bytes(instrument.instrument(harness.read_bytes()))
+        (build / "probe-identity.h").write_text("// portable synthetic input\n")
+        for unit, header in (
+            ("a8-fixture-host", generated),
+            ("a8-preprocess-baseline", build / "a8-inspector-baseline.h"),
+        ):
+            (build / (unit + ".i")).write_text(
+                f"#line 1 {json.dumps(str(header))}\n" + header.read_text(), encoding="utf-8"
             )
+        includes = [
+            generated,
+            build / "a8-fixture-harness.h",
+            build / "probe-identity.h",
+            review.SOURCE / "a8-stall-control.h",
+            review.SOURCE / "identity.h",
+            review.SOURCE / "handle-diagnostic.h",
+            harness.parent / "readiness.h",
+            harness.parent / "sha256.h",
+        ]
+        dependency = {
+            "Data": {
+                "Source": str(review.SOURCE / "a8-fixture-host.cpp"),
+                "Includes": list(map(str, includes)),
+            }
+        }
+        path = build / "a8-fixture-host.preprocess.json"
+        path.write_text(json.dumps(dependency), encoding="utf-8")
+        self.assertTrue(review.review(build)["inspect_and_supervisor_token_inverse_exact"])
+        for wrong in (
+            [],
+            [*includes, includes[0]],
+            [*includes, build / "unreviewed.h"],
+            [*includes, review.SOURCE / "suspended-inspection.h"],
+            [*includes, review.SOURCE / "a8-fixture-host.cpp"],
+        ):
+            dependency["Data"]["Includes"] = list(map(str, wrong))
+            path.write_text(json.dumps(dependency), encoding="utf-8")
             with self.assertRaises(ValueError):
                 review.review(build)
+        dependency["Data"]["Includes"] = list(map(str, includes))
+        path.write_text(json.dumps(dependency), encoding="utf-8")
+        preprocessed = build / "a8-fixture-host.i"
+        preprocessed.write_text(
+            preprocessed.read_text().replace("latency <= TerminationMs", "latency <= 9000"),
+            encoding="utf-8",
+        )
+        with self.assertRaises(ValueError):
+            review.review(build)
 
     def test_collector_failure_retains_already_staged_prefix_and_stop(self):
         with tempfile.TemporaryDirectory() as directory:
