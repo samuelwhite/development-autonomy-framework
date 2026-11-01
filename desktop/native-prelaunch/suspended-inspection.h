@@ -178,12 +178,12 @@ inline void requireAccepted(State& s, const Inventory& found) {
     // Identity refusal precedes count refusal, after COMPLETE inventories. There
     // is no fixture exception: the accepted-object policy remains three pipes.
     for (DWORD mask : found.hostile) s.require(mask == 0, 201);
+    for (DWORD mask : found.pipes) s.require(mask == 1 || mask == 2 || mask == 4, 116);
     // Any unknown object or extra alias is refused, even when it has reduced rights.
     s.require(found.values.size() == 3, 115);
     std::set<DWORD> pipeSet;
     for (unsigned n = 0; n < found.values.size(); ++n) {
         DWORD mask = found.pipes[n];
-        s.require(mask == 1 || mask == 2 || mask == 4, 116);
         s.require(pipeSet.insert(mask).second, 117);
         unsigned stream = mask == 1 ? 0 : mask == 2 ? 1 : 2;
         s.require(found.values[n] == s.pipeValues[stream], 118);
