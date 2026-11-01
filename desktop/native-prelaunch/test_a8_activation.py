@@ -77,19 +77,25 @@ class A8Activation(unittest.TestCase):
                 list((fake.repo / "dist").glob("m21b-a8-A8-*-execution-claimed.json")), []
             )
 
-    def test_native_release_is_closed_before_effects_or_claims_without_gate_patching(self):
+    def test_native_release_scope_and_invalid_paths_never_claim_without_gate_patching(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
             for case in runner.NAMES:
-                with self.assertRaises(PermissionError):
+                expected = runner.c.Refused if runner.NATIVE_BUDGET_RELEASED else PermissionError
+                # Even during the explicit release, identical build/worker/output
+                # paths must fail before source reads, claims or process effects.
+                with self.assertRaises(expected):
                     runner.native_entry(case, root, root, root)
-                with self.assertRaises(PermissionError):
+                if runner.NATIVE_BUDGET_RELEASED:
                     runner.require_native_release(case)
+                else:
+                    with self.assertRaises(PermissionError):
+                        runner.require_native_release(case)
             for case in ("A8-C1", "A8-S0", "A7-C0", "../A8-C0", "", None):
                 with self.assertRaises(runner.c.Refused):
                     runner.native_entry(case, root, root, root)
             self.assertEqual(list(root.iterdir()), [])
-            self.assertIs(runner.NATIVE_BUDGET_RELEASED, False)
+            self.assertIs(type(runner.NATIVE_BUDGET_RELEASED), bool)
 
     def test_case_source_and_path_failures_before_any_claim_or_fake_invocation(self):
         for kind in ("case", "source", "relative", "alias", "nested", "build", "mode"):

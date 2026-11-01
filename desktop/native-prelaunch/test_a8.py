@@ -513,7 +513,8 @@ class A8Preflight(unittest.TestCase):
             output = Path(directory)
             with self.assertRaises(PermissionError):
                 runner.main()
-            with self.assertRaises(PermissionError):
+            expected = runner.c.Refused if runner.NATIVE_BUDGET_RELEASED else PermissionError
+            with self.assertRaises(expected):
                 runner.native_entry("A8-C0", output, output, output)
             with self.assertRaises(runner.c.Refused):
                 runner.record_attempt(output, "A8-C0", "build", "native", Mock())

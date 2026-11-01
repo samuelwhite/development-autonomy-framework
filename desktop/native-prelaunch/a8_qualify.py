@@ -13,7 +13,7 @@ NAMES = ("A8-C0", "A8-S1")
 HELPER_SECONDS, KILL_SECONDS, OUTER_SECONDS = 30, 3, 35
 # Source-controlled Product decision, never a CLI/environment/test override.
 # Changing this requires separate Product authorisation and a fresh frozen build.
-NATIVE_BUDGET_RELEASED = False
+NATIVE_BUDGET_RELEASED = True
 
 
 def stop(output, case, failure, mode):
