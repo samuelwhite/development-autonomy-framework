@@ -42,6 +42,15 @@ def prerequisites(output, case, build_hash, mode):
         receipt = c.load(receipt_raw, 100000)
         result_raw = (output / f"{previous}-result.json").read_bytes()
         result = c.load(result_raw, 100000)
+        c.require(
+            result["case"] == previous
+            and result["evidence"]["case"] == previous
+            and result["prior"] == prior
+            and result["retries"] == 0
+            and result["qualified"] is False
+            and result["execution_authority"] is False,
+            "previous_result_binding",
+        )
         checked = diagnostic.validate(result["evidence"])
         c.require(
             receipt

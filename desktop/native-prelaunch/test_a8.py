@@ -158,6 +158,43 @@ def collected(record):
 
 
 class A8Preflight(unittest.TestCase):
+    def test_independent_failures_and_contradictory_prior_receipt_block_next_case(self):
+        for failure in ("raw", "cleanup", "prior_case"):
+            with tempfile.TemporaryDirectory() as directory:
+                output = Path(directory)
+                record = fixture()
+                runner.record_attempt(
+                    output,
+                    "A8-C0",
+                    "build",
+                    "simulated",
+                    lambda staged, value=record: staged.update(collected(value)),
+                )
+                if failure == "raw":
+                    with (output / "A8-C0-stderr.jsonl").open("ab") as stream:
+                        stream.write(b"unexpected\n")
+                cleanup = copy.deepcopy(record["independent_cleanup"])
+                if failure == "cleanup":
+                    cleanup["profile_absent"] = False
+                if failure != "prior_case":
+                    with self.assertRaises((runner.c.Refused, d.InvalidObservation)):
+                        verifier.verify(output, "A8-C0", lambda value=cleanup: value)
+                    self.assertTrue((output / "STOP.json").exists())
+                else:
+                    verifier.verify(output, "A8-C0", lambda value=cleanup: value)
+                    path = output / "A8-C0-result.json"
+                    result = json.loads(path.read_bytes())
+                    result["case"] = "A8-S1"
+                    path.write_text(json.dumps(result), encoding="utf-8")
+                    path = output / "A8-C0-independent.json"
+                    receipt = json.loads(path.read_bytes())
+                    receipt["result_sha256"] = runner.c.sha(
+                        (output / "A8-C0-result.json").read_bytes()
+                    )
+                    path.write_text(json.dumps(receipt), encoding="utf-8")
+                with self.assertRaises(runner.c.Refused):
+                    runner.prerequisites(output, "A8-S1", "build", "simulated")
+
     def test_native_readback_pid_reuse_and_survivors_fail_closed_using_fakes(self):
         for reused in (True, False):
             record = fixture()
