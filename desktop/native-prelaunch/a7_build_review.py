@@ -24,7 +24,9 @@ def section(text, path):
     for line in text.splitlines():
         directive = re.fullmatch(r'\s*#(?:line)?\s+\d+\s+"(.*)"\s*', line)
         if directive:
-            selected = normalized(directive[1]) == normalized(path)
+            # MSVC emits C string escaping in #line paths. Decode only doubled
+            # backslashes; never treat arbitrary escapes as equivalent paths.
+            selected = normalized(directive[1].replace("\\\\", "\\")) == normalized(path)
         elif selected:
             lines.append(line)
     if not lines:

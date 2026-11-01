@@ -215,7 +215,7 @@ class A7Contracts(unittest.TestCase):
                 ("a7-preprocess-baseline.i", build / "a7-inspector-baseline.h"),
             ):
                 (build / leaf).write_text(
-                    f'#line 1 "{header}"\n' + header.read_text(), encoding="utf-8"
+                    f"#line 1 {json.dumps(str(header))}\n" + header.read_text(), encoding="utf-8"
                 )
             dependencies = {
                 "Data": {
