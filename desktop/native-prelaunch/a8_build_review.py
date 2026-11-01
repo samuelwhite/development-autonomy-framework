@@ -61,7 +61,10 @@ def dependencies(build, unit, phase):
         or data.get("PCH")
     ):
         raise ValueError("a8_unexpected_module_or_pch")
-    if len(set(map(normalized, includes))) != len(includes):
+    # MSVC /P legitimately repeats SDK packing headers (pshpack*/poppack).
+    # Preserve the raw dependency files; require project headers exactly once.
+    local = [name for name in includes if Path(name).resolve().is_relative_to(SOURCE.parents[1])]
+    if len(set(map(normalized, local))) != len(local):
         raise ValueError("a8_duplicate_include")
     required = (
         {
