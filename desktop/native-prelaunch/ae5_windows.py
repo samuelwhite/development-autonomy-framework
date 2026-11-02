@@ -533,7 +533,10 @@ class WindowsCustody:
         result = bytearray()
         while len(result) < length:
             data, count = C.create_string_buffer(length - len(result)), W.DWORD()
-            self.check(self.k.ReadFile(self.control_read, data, len(data), C.byref(count), None))
+            ok = self.k.ReadFile(self.control_read, data, len(data), C.byref(count), None)
+            if not ok and C.get_last_error() == 109:
+                return bytes(result)  # Preserve a truncated frame after helper death.
+            self.check(ok)
             if not count.value:
                 break
             result.extend(data.raw[: count.value])
@@ -544,6 +547,15 @@ class WindowsCustody:
         data, count = C.create_string_buffer(raw), W.DWORD()
         self.check(self.k.WriteFile(self.control_write, data, len(raw), C.byref(count), None))
         return count.value
+
+    def read_stderr(self, length):
+        require(0 < length <= 4096, "stderr_read_bound")
+        data, count = C.create_string_buffer(length), W.DWORD()
+        ok = self.k.ReadFile(self.stderr_read, data, length, C.byref(count), None)
+        if not ok and C.get_last_error() == 109:  # Broken pipe is EOF, not process-exit proof.
+            return b""
+        self.check(ok)
+        return data.raw[: count.value]
 
     def release_recovery_handles(self):
         for item in self.acls:

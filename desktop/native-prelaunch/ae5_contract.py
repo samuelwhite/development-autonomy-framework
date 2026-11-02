@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 INSPECTION_MS, TERMINATION_MS, RUNTIME_MS = 5000, 3000, 10000
 HELPER_MS, OUTER_MS = 30000, 35000
 MAX_FRAME, MAX_RECORDS, MAX_DESCRIPTOR = 32768, 256, 8192
+MAX_CONTROL, MAX_STDERR = 65624, 32768  # Preserve existing helper capture byte ceilings.
 MAGIC = 0x35454144
 ACK = struct.Struct("<IIQQQ32s")
 CASES = tuple(f"TC-{i}" for i in range(9))

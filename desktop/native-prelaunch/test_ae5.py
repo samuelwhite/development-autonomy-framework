@@ -143,6 +143,48 @@ def evidence():
 
 
 class CustodyTests(unittest.TestCase):
+    def test_stderr_drains_independently_and_preserves_overflow_prefix(self):
+        r, _ = parent()
+        chunks = iter([b"x" * 4096] * 9)
+        r.capture_stderr(lambda _n: next(chunks))
+        self.assertEqual(bytes(r.stderr), b"x" * c.MAX_STDERR)
+        self.assertTrue(r.stderr_overflow)
+        self.assertFalse(r.stderr_complete)
+        self.assertEqual(r.decision.reason, "stderr_overflow")
+        r, _ = parent()
+        chunks = iter([b"original partial evidence", b""])
+        r.capture_stderr(lambda _n: next(chunks))
+        self.assertEqual(bytes(r.stderr), b"original partial evidence")
+        self.assertTrue(r.stderr_complete)
+        self.assertFalse(r.stderr_overflow)
+
+    def test_control_aggregate_bound_precedes_payload_allocation(self):
+        r, _ = parent()
+        r.control_bytes = c.MAX_CONTROL - 3
+        reads = []
+
+        def read(length):
+            reads.append(length)
+            return (100).to_bytes(4, "little")
+
+        r.read_frames(read, len)
+        self.assertEqual(reads, [4])
+        self.assertEqual(r.decision.state, "STOP")
+        self.assertEqual(bytes(r.control_capture), (100).to_bytes(4, "little"))
+        self.assertTrue(r.control_overflow)
+
+    def test_truncated_frame_and_ack_preserve_original_bytes(self):
+        r, _ = parent()
+        chunks = iter([(20).to_bytes(4, "little"), b"truncated"])
+        r.read_frames(lambda _n: next(chunks), len)
+        self.assertEqual(bytes(r.control_capture), (20).to_bytes(4, "little") + b"truncated")
+        self.assertEqual(len(r.ack_capture), 64)
+        self.assertEqual(r.decision.state, "STOP")
+        r, _ = parent()
+        with self.assertRaises(ValueError):
+            r.write_ack(lambda _raw: 2, b"original")
+        self.assertEqual(bytes(r.ack_capture), b"or")
+
     def test_setup_supervision_does_not_reset_on_handoff(self):
         backend = Fake()
         guard = p.SetupGuard(backend, 1000, lambda: backend.now)

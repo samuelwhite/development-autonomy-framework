@@ -19,6 +19,7 @@ struct Ack {
 static_assert(sizeof(Ack) == 64, "closed acknowledgement size");
 inline Ack initial{};
 inline DWORD sequence = 0;
+inline DWORD controlBytes = 0;
 inline HANDLE incoming = nullptr, outgoing = nullptr;
 inline bool initialized = false;
 inline void need(bool ok) { if (!ok) throw std::runtime_error("A-E5 custody refused"); }
@@ -66,6 +67,7 @@ inline void initialize() {
     need(GetFileType(incoming) == FILE_TYPE_PIPE && GetFileType(outgoing) == FILE_TYPE_PIPE);
     need(SetHandleInformation(incoming, HANDLE_FLAG_INHERIT, 0));
     need(SetHandleInformation(outgoing, HANDLE_FLAG_INHERIT, 0));
+    need(SetHandleInformation(GetStdHandle(STD_ERROR_HANDLE), HANDLE_FLAG_INHERIT, 0));
     receive(0);
 }
 inline void rpc(const char* kind, const std::string& data) {
@@ -73,6 +75,8 @@ inline void rpc(const char* kind, const std::string& data) {
     const auto message = "{\"v\":1,\"exercise\":\"" + std::string(initial.exercise, 32) +
         "\",\"seq\":" + number(++sequence) + ",\"kind\":\"" + kind + "\",\"data\":" + data + "}";
     need(message.size() <= 32768);
+    need(controlBytes + 4 + message.size() <= 65624);
+    controlBytes += 4 + (DWORD)message.size();
     DWORD length = (DWORD)message.size(), written = 0;
     need(WriteFile(outgoing, &length, sizeof(length), &written, nullptr) && written == sizeof(length));
     need(WriteFile(outgoing, message.data(), length, &written, nullptr) && written == length);

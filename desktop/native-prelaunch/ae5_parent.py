@@ -13,8 +13,10 @@ from ae5_contract import (
     ACK,
     HELPER_MS,
     MAGIC,
+    MAX_CONTROL,
     MAX_FRAME,
     MAX_RECORDS,
+    MAX_STDERR,
     OUTER_MS,
     Decision,
     Ledger,
@@ -92,6 +94,51 @@ class Custodian:
         self.lanes = {}
         self.safety_done = threading.Event()
         self.protocol_lock = threading.Lock()  # Safety never acquires it.
+        self.stderr = bytearray()
+        self.stderr_complete = False
+        self.stderr_overflow = False
+        self.control_bytes = 0
+        self.control_capture = bytearray()
+        self.ack_capture = bytearray()
+        self.control_overflow = False
+        self.started_lanes = False
+
+    def start(self):
+        if self.started_lanes or self.decision.state != "HELD":
+            self.stop("duplicate_supervision_start")
+            raise ValueError("duplicate_supervision_start")
+        self.started_lanes = True
+        lanes = (
+            threading.Thread(target=self.supervise, daemon=True),
+            threading.Thread(
+                target=self.read_frames,
+                args=(self.backend.read_control, self.backend.write_control),
+                daemon=True,
+            ),
+            threading.Thread(
+                target=self.capture_stderr, args=(self.backend.read_stderr,), daemon=True
+            ),
+        )
+        for lane in lanes:
+            lane.start()
+        return lanes
+
+    def capture_stderr(self, read):
+        try:
+            while True:
+                raw = read(4096)
+                require(type(raw) is bytes and len(raw) <= 4096, "stderr_read_bound")
+                if not raw:
+                    self.stderr_complete = True
+                    return
+                remaining = MAX_STDERR - len(self.stderr)
+                self.stderr.extend(raw[:remaining])
+                if len(raw) > remaining:
+                    self.stderr_overflow = True
+                    self.stop("stderr_overflow")
+                    return
+        except Exception:
+            self.stop("stderr_capture_failed")
 
     def stop(self, reason):
         self.decision.stop(reason, self.clock())
@@ -222,21 +269,37 @@ class Custodian:
                 self.backend.parent_creation,
                 self.exercise.encode("ascii"),
             )
-            require(write(initial) == len(initial), "initial_ack_write")
+            self.write_ack(write, initial)
             for _ in range(MAX_RECORDS):
                 header = read(4)
+                require(type(header) is bytes and len(header) <= 4, "control_header_bound")
+                self.control_capture.extend(header[: MAX_CONTROL - len(self.control_capture)])
                 require(len(header) == 4, "control_eof")
                 length = int.from_bytes(header, "little")
                 require(0 < length <= MAX_FRAME, "control_frame_size")
+                self.control_bytes += 4 + length
+                self.control_overflow = self.control_bytes > MAX_CONTROL
+                require(self.control_bytes <= MAX_CONTROL, "aggregate_control_output_bound")
                 payload = read(length)
+                require(type(payload) is bytes and len(payload) <= length, "control_payload_bound")
+                self.control_capture.extend(payload)
                 require(len(payload) == length, "control_short_read")
                 reply = self.message(payload)
                 # Check again after all potentially blocking work; helper also checks.
                 require(self.decision.state != "STOP", "revoked_before_ack_write")
-                require(write(reply) == len(reply), "ack_short_write")
+                self.write_ack(write, reply)
             raise ValueError("control_frame_count")
         except Exception:
             self.lost_communication()
+
+    def write_ack(self, write, raw):
+        require(
+            len(self.ack_capture) + len(raw) <= (MAX_RECORDS + 1) * ACK.size, "ack_capture_bound"
+        )
+        count = write(raw)
+        require(type(count) is int and 0 <= count <= len(raw), "ack_write_count")
+        self.ack_capture.extend(raw[:count])
+        require(count == len(raw), "ack_short_write")
 
 
 if __name__ == "__main__":
