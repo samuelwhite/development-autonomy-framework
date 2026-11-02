@@ -64,9 +64,13 @@ class SetupGuard:
         self.handed_over.set()
 
 
-def native_entry(*_args):
-    # No dynamic adapter import, claim, process creation, path preparation or IO.
-    raise PermissionError("A-E5 native budget is unreleased; compile-only preflight")
+def native_entry(package=None):
+    # Source-only release; checked before imports, claims, preparation or IO.
+    if NATIVE_RELEASE is not True:
+        raise PermissionError("A-E5 native budget is unreleased; compile-only preflight")
+    from ae51_tc0 import execute_tc0
+
+    return execute_tc0(package)
 
 
 def append_exclusive(root, sequence, raw):
@@ -102,6 +106,9 @@ class Custodian:
         self.ack_capture = bytearray()
         self.control_overflow = False
         self.started_lanes = False
+        self.control_complete = False
+        self.cleanup_ack_written = False
+        self.timeline = []
 
     def start(self):
         if self.started_lanes or self.decision.state != "HELD":
@@ -176,6 +183,7 @@ class Custodian:
                     self.decision.establish(observed, self.clock())
                     self.observed = observed
                     deadline = self.decision.arm(self.clock())
+                    self.timeline.append({"event": "custody_verified", "ms": self.clock()})
                     self.sequence += 1
                     return self.ack(deadline)
                 else:
@@ -185,6 +193,7 @@ class Custodian:
                     require(self.decision.state == "INSPECTING", "cleanup_state")
                     self.decision.cleanup_phase(self.clock())
                     self.backend.release_recovery_handles()
+                    self.timeline.append({"event": "cleanup_ack_ready", "ms": self.clock()})
                 self.sequence += 1
                 return self.ack(self.decision.started + HELPER_MS)
         except BaseException:
@@ -273,6 +282,11 @@ class Custodian:
             for _ in range(MAX_RECORDS):
                 header = read(4)
                 require(type(header) is bytes and len(header) <= 4, "control_header_bound")
+                if header == b"" and self.cleanup_ack_written:
+                    # Child is already signalled. EOF is not proof of helper exit;
+                    # the independent 30/35-second watchdog remains armed.
+                    self.control_complete = True
+                    return
                 self.control_capture.extend(header[: MAX_CONTROL - len(self.control_capture)])
                 require(len(header) == 4, "control_eof")
                 length = int.from_bytes(header, "little")
@@ -296,10 +310,16 @@ class Custodian:
         require(
             len(self.ack_capture) + len(raw) <= (MAX_RECORDS + 1) * ACK.size, "ack_capture_bound"
         )
+        cleanup_ack = self.decision.state == "DRAINING"
         count = write(raw)
         require(type(count) is int and 0 <= count <= len(raw), "ack_write_count")
         self.ack_capture.extend(raw[:count])
         require(count == len(raw), "ack_short_write")
+        if cleanup_ack:
+            self.cleanup_ack_written = True
+        self.timeline.append(
+            {"event": "ack_written", "ms": self.clock(), "sequence": ACK.unpack(raw)[1]}
+        )
 
 
 if __name__ == "__main__":

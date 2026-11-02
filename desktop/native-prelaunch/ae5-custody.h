@@ -7,6 +7,10 @@
 #include <string>
 #include <iostream>
 namespace ae5 {
+// x64 SDK layout contract used by the independent Python PSS reader. No contexts.
+static_assert(sizeof(PSS_HANDLE_ENTRY) == 136, "PSS handle layout");
+static_assert(sizeof(PSS_THREAD_ENTRY) == 120 && offsetof(PSS_THREAD_ENTRY, SuspendCount) == 108,
+    "PSS thread layout");
 // Volatile read retains dormant code for compiler/import review. Read-only source
 // constant, not a command-line, environment, IPC or exported activation switch.
 inline volatile const LONG NativeRelease = 0;
@@ -22,6 +26,8 @@ inline DWORD sequence = 0;
 inline DWORD controlBytes = 0;
 inline HANDLE incoming = nullptr, outgoing = nullptr;
 inline bool initialized = false;
+struct FixtureAcl { HANDLE handle; DWORD information; PSECURITY_DESCRIPTOR original; };
+inline std::vector<FixtureAcl> fixtureAcls;
 inline void need(bool ok) { if (!ok) throw std::runtime_error("A-E5 custody refused"); }
 inline std::string number(unsigned long long value) { return std::to_string(value); }
 inline std::string quote(const std::wstring& input) {
@@ -103,7 +109,9 @@ inline void commit(bool ok, bool created = false) {
     rpc("commit", std::string("{\"ok\":") + (ok ? "true" : "false") + ",\"created\":" + (created ? "true" : "false") + "}");
 }
 inline HANDLE aclBegin(const std::wstring& path, DWORD information = DACL_SECURITY_INFORMATION) {
-    HANDLE handle = CreateFileW(path.c_str(), READ_CONTROL | WRITE_DAC,
+    need(fixtureAcls.size() < 64);
+    HANDLE handle = CreateFileW(path.c_str(), READ_CONTROL | WRITE_DAC |
+        (information == LABEL_SECURITY_INFORMATION ? WRITE_OWNER : 0),
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, nullptr);
     need(handle != INVALID_HANDLE_VALUE);
@@ -111,18 +119,47 @@ inline HANDLE aclBegin(const std::wstring& path, DWORD information = DACL_SECURI
     need(GetSecurityInfo(handle, SE_FILE_OBJECT, information, nullptr, nullptr, nullptr, nullptr, &sd) == ERROR_SUCCESS);
     try { intent("acl", path, handle, SE_FILE_OBJECT, information, sd); }
     catch (...) { LocalFree(sd); CloseHandle(handle); throw; }
-    LocalFree(sd); return handle;
+    // Only grant/label fixtures enter aclBegin; profile sealing uses intent directly.
+    // Keep each original descriptor until the ordinary helper cleanup finishes.
+    fixtureAcls.push_back({handle, information, sd}); return handle;
 }
-inline void aclEnd(HANDLE handle) { commit(true); need(CloseHandle(handle)); }
+inline void aclEnd(HANDLE handle) {
+    need(!fixtureAcls.empty() && fixtureAcls.back().handle == handle); commit(true);
+}
+inline void finishFixtureCleanup() {
+    bool ok = true;
+    for (auto i = fixtureAcls.rbegin(); i != fixtureAcls.rend(); ++i) {
+        PACL acl = nullptr; BOOL present = FALSE, defaulted = FALSE;
+        SECURITY_DESCRIPTOR_CONTROL control{}; DWORD revision = 0;
+        bool label = i->information == LABEL_SECURITY_INFORMATION;
+        BOOL read = label ? GetSecurityDescriptorSacl(i->original, &present, &acl, &defaulted) :
+            GetSecurityDescriptorDacl(i->original, &present, &acl, &defaulted);
+        BOOL flags = GetSecurityDescriptorControl(i->original, &control, &revision);
+        DWORD information = i->information;
+        if (!label) information |= (control & SE_DACL_PROTECTED) ?
+            PROTECTED_DACL_SECURITY_INFORMATION : UNPROTECTED_DACL_SECURITY_INFORMATION;
+        DWORD result = read && flags ? SetSecurityInfo(i->handle, SE_FILE_OBJECT,
+            information, nullptr, nullptr, label ? nullptr : acl, label ? acl : nullptr) : ERROR_INVALID_DATA;
+        ok = result == ERROR_SUCCESS && ok;
+        ok = CloseHandle(i->handle) && ok; LocalFree(i->original);
+    }
+    fixtureAcls.clear(); need(ok);
+}
 inline void verifyParent(HANDLE handle) {
     need(GetProcessId(handle) == initial.parentPid && creation(handle) == initial.parentCreation &&
         WaitForSingleObject(handle, 0) == WAIT_TIMEOUT);
 }
 [[noreturn]] inline void beforeResume(HANDLE process, HANDLE thread, HANDLE job) {
+    need(a3::state != nullptr);
+    std::string references = "[", pipes = "[";
+    for (unsigned i = 0; i < 8; ++i) { if (i) references += ","; references += number((uintptr_t)a3::state->references[i]); }
+    for (unsigned i = 0; i < 3; ++i) { if (i) pipes += ","; pipes += number(a3::state->pipeValues[i]); }
+    references += "]"; pipes += "]";
     rpc("custody", "{\"process\":" + number((uintptr_t)process) + ",\"thread\":" + number((uintptr_t)thread) +
         ",\"job\":" + number((uintptr_t)job) + ",\"pid\":" + number(GetProcessId(process)) +
         ",\"tid\":" + number(GetThreadId(thread)) + ",\"creation\":" + number(creation(process)) +
-        ",\"helper_creation\":" + number(creation(GetCurrentProcess())) + "}");
+        ",\"helper_creation\":" + number(creation(GetCurrentProcess())) +
+        ",\"references\":" + references + ",\"pipe_values\":" + pipes + "}");
     // Original supervisor always terminates; original acceptance predicate unchanged.
     a3::beforeResume(process, thread, job);
     throw std::runtime_error("unexpected inspector return");

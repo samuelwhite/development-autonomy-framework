@@ -175,6 +175,7 @@ def launcher_changes():
             b'        wchar_t mode[] = L"sealed", probe[] = L"probe";\n'
             b"        wchar_t* arguments[]{argv[0], mode, probe};\n"
             b"        code = accepted_harness_main(3, arguments);\n"
+            b"        ae5::finishFixtureCleanup();\n"
             b"    } catch (...) { code = 1; }",
         ),
     )

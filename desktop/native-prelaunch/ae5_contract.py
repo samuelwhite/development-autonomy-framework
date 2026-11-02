@@ -70,9 +70,27 @@ def process(value):
 
 
 def handoff(value):
-    exact(value, ("process", "thread", "job", "pid", "tid", "creation", "helper_creation"))
-    for key in value:
+    exact(
+        value,
+        (
+            "process",
+            "thread",
+            "job",
+            "pid",
+            "tid",
+            "creation",
+            "helper_creation",
+            "references",
+            "pipe_values",
+        ),
+    )
+    for key in set(value) - {"references", "pipe_values"}:
         integer(value[key], 1, 2**32 - 1 if key in {"pid", "tid"} else 2**63 - 1)
+    for key, count in (("references", 8), ("pipe_values", 3)):
+        require(type(value[key]) is list and len(value[key]) == count, "reference_count")
+        for handle in value[key]:
+            integer(handle, 1, 2**63 - 1)
+        require(len(set(value[key])) == count, "duplicate_reference_slot")
     require(len({value[k] for k in ("process", "thread", "job")}) == 3, "aliased_handle_slots")
     return value
 

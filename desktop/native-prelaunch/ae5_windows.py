@@ -142,6 +142,7 @@ class WindowsCustody:
         self.profile = None
         self.pending_resource = self.pending_intent = None
         self.verified_rights = {}
+        self.image_pins = []
         self._bindings()
         self.parent_creation = self.identity(self.k.GetCurrentProcess())["creation"]
 
@@ -335,6 +336,7 @@ class WindowsCustody:
     def create_helper(self, executable):
         # Second independent closed gate, before Job/pipe/process creation.
         require(NATIVE_RELEASE is True, "ae5_native_creation_unreleased")
+        require(len(self.image_pins) == 4, "four_binary_pins_required")
         require(not self.member(self.k.GetCurrentProcess(), None), "unreviewed_ancestor_job")
         executable = Path(executable).resolve(strict=True)
         require(
@@ -426,6 +428,8 @@ class WindowsCustody:
                 self.close(job)
 
     def acquire(self, offered):
+        from ae51_snapshot import observe_suspended
+
         require(
             self.child is None
             and offered["helper_creation"] == self.identity(self.helper)["creation"],
@@ -479,6 +483,15 @@ class WindowsCustody:
                 "helper_transfer_closed": False,
             }
             require(observed["inner"] == INNER and observed["outer"] == OUTER, "effective_limits")
+            # Temporary read/duplicate authority exists only before the custody ACK.
+            # It never enters the safety lane and never changes the child's state.
+            self.independent_snapshot = observe_suspended(self, offered)
+            from ae51_contract import digest
+
+            with (self.root / "protected.bin").open("rb") as protected:
+                ciphertext = protected.read(4097)
+            require(0 < len(ciphertext) <= 4096, "synthetic_ciphertext_bound")
+            self.protected_fixture_sha256 = digest(ciphertext)
             self.close(inner)
             inner = None
             observed["inner_query_closed"] = True
@@ -494,6 +507,57 @@ class WindowsCustody:
         result = self.k.WaitForSingleObject(self.helper, 0)
         require(result in (0, 258), "helper_wait_failed")
         return result == 258
+
+    def pin_images(self, expected):
+        require(NATIVE_RELEASE is True, "ae51_image_pin_gate_closed")
+        require(
+            not self.image_pins
+            and set(expected)
+            == {"ae5-fixture-host.exe", "probe.exe", "producer.exe", "verifier.exe"},
+            "fixed_binary_inventory",
+        )
+        from ae51_contract import digest
+
+        for name, wanted in expected.items():
+            handle = self.k.CreateFileW(
+                str(self.root / name), 0x80020000, 1, None, 3, 0x00200000, None
+            )
+            require(handle and handle != INVALID, "binary_pin_failed")
+            self.image_pins.append(handle)
+            from ae5_resources import file_binding
+
+            require(file_binding(self, handle)["path"] == str(self.root / name), "binary_pin_path")
+            data = bytearray()
+            while len(data) <= wanted["bytes"]:
+                buffer, count = C.create_string_buffer(65536), W.DWORD()
+                self.check(self.k.ReadFile(handle, buffer, len(buffer), C.byref(count), None))
+                if not count.value:
+                    break
+                data.extend(buffer.raw[: count.value])
+            require(
+                {"bytes": len(data), "sha256": digest(data)} == wanted, "pinned_binary_identity"
+            )
+
+    def close_custody(self):
+        # Caller first joins all normal diagnostic lanes. Never close/reuse a
+        # handle while an unresolved termination or observation call owns it.
+        for name in (
+            "control_write",
+            "control_read",
+            "stderr_read",
+            "thread",
+            "child",
+            "helper",
+            "transfer",
+            "outer",
+        ):
+            handle = getattr(self, name, None)
+            if handle:
+                self.close(handle)
+                setattr(self, name, None)
+        for handle in self.image_pins:
+            self.close(handle)
+        self.image_pins.clear()
 
     def child_exited(self):
         return self.child is not None and self.k.WaitForSingleObject(self.child, 0) == 0
@@ -526,6 +590,7 @@ class WindowsCustody:
                 self.outer, 1, C.byref(account), C.sizeof(account), None
             )
         )
+        self.last_total_processes = account.total
         return result, account.active
 
     def read_control(self, length):

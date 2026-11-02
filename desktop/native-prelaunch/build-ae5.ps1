@@ -53,6 +53,10 @@ try {
     $status = 'COMPILED_NOT_EXECUTED'
 } catch { $failure = $_.Exception.Message; throw }
 finally {
+    $gateReview = $null
+    if (Test-Path -LiteralPath "$output\ae5-build-review.json") {
+        $gateReview = Get-Content -LiteralPath "$output\ae5-build-review.json" -Raw | ConvertFrom-Json
+    }
     $files = [ordered]@{}
     Get-ChildItem -LiteralPath $output -File -Recurse | Sort-Object FullName | ForEach-Object {
         $relative = [IO.Path]::GetRelativePath($output, $_.FullName).Replace('\','/')
@@ -61,7 +65,8 @@ finally {
     [ordered]@{
         schema='daf-ae5-compile-only/v1'; source_commit=(& git -C $repoRoot rev-parse HEAD)
         source_tree=(& git -C $repoRoot rev-parse 'HEAD^{tree}'); status=$status; failure=$failure
-        native_executions=0; native_claims=0; native_gate='CLOSED'; qualified=$false; execution_authority=$false
+        native_executions=0; native_claims=0; native_gate=$(if ($gateReview) { $gateReview.native_gate } else { 'UNREVIEWED' })
+        source_gates=$(if ($gateReview) { $gateReview.source_gates } else { $null }); qualified=$false; execution_authority=$false
         compiler=@{toolset='14.50.35717'; sdk=$sdkVersion; sha256=(Get-FileHash -LiteralPath $compiler).Hash.ToLowerInvariant()}
         flags=($flags -join ' '); link_flags='/DYNAMICBASE /HIGHENTROPYVA /NXCOMPAT /guard:cf /INCREMENTAL:NO'; files=$files
     } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath "$output\build-manifest.json" -Encoding utf8NoBOM

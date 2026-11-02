@@ -25,6 +25,8 @@ OFFER = {
     "tid": 21,
     "creation": 200,
     "helper_creation": 100,
+    "references": list(range(1000, 1008)),
+    "pipe_values": [2000, 2001, 2002],
 }
 RESOURCE = {
     "kind": "profile",
@@ -201,7 +203,7 @@ class CustodyTests(unittest.TestCase):
 
     def test_public_and_backend_gates_fail_before_effects(self):
         with self.assertRaises(PermissionError):
-            p.native_entry("TC-0", "missing")
+            p.native_entry("missing")
         with self.assertRaisesRegex(ValueError, "unreleased"):
             w.WindowsCustody.create_helper(object(), "missing")
         self.assertFalse(p.NATIVE_RELEASE)
@@ -249,7 +251,11 @@ class CustodyTests(unittest.TestCase):
         for key in OFFER:
             r, _ = parent()
             prepare(r)
-            wrong = {**OFFER, key: OFFER[key] + 1}
+            value = OFFER[key]
+            wrong = {
+                **OFFER,
+                key: [value[0] + 1, *value[1:]] if isinstance(value, list) else value + 1,
+            }
             with self.assertRaises(ValueError):
                 r.message(message(r, "custody", wrong))
             self.assertEqual(r.decision.state, "STOP")

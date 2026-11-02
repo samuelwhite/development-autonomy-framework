@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from a7_build_review import normalized, section
+from ae51_contract import source_gates
 from instrument_a7 import INSPECTOR_SHA
 from instrument_ae5 import (
     ACCEPTED,
@@ -179,11 +180,15 @@ def review(build, compiled=False):
             "WriteFile",
         ):
             _require(name in binary, "missing_required_import")
+    gates = source_gates(build / "source/native-prelaunch")
     return {
         "schema": "daf-ae5-build-review/v1",
         "compiled": compiled,
         "native_executions": 0,
-        "native_gate": "CLOSED",
+        "native_gate": "CLOSED"
+        if all(gates[k] is False for k in ("python", "windows", "cpp"))
+        else "SOURCE_RELEASE_CHANGED",
+        "source_gates": gates,
         "qualified": False,
         "originals": originals,
         "full_generated_inverses": True,
