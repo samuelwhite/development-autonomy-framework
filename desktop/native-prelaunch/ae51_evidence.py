@@ -130,6 +130,21 @@ def verify_observations(record, bound, control, stderr, acks, live):
         "unexpected_stop",
     )
     require(
+        type(record["termination_requests"]) is dict
+        and set(record["termination_requests"]) <= {"child", "outer"},
+        "termination_request_shape",
+    )
+    for target, request in record["termination_requests"].items():
+        exact(request, ("target", "returned", "ok", "error"))
+        require(
+            request["target"] == target
+            and request["returned"] is True
+            and request["ok"] is True
+            and type(request["error"]) is int
+            and request["error"] == 0,
+            "unexpected_termination_result",
+        )
+    require(
         record["helper_elapsed_ms"] < HELPER_MS and record["elapsed_ms"] < OUTER_MS,
         "absolute_deadline",
     )

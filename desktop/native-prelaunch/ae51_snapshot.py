@@ -24,6 +24,7 @@ def validate_snapshot(value, offered):
             "handles",
             "strict_flags",
             "temporary_handles_closed",
+            "temporary_process_rights",
         ),
     )
     for key in ("capture_flags", "context_flags", "count_before", "count_after", "strict_flags"):
@@ -51,6 +52,7 @@ def validate_snapshot(value, offered):
         "witness_complete_count",
     )
     require(value["strict_flags"] == 3, "witness_strict_handles")
+    require(value["temporary_process_rights"] == TEMPORARY_PROCESS_RIGHTS, "witness_process_rights")
     inventory = {}
     for row in value["handles"]:
         for item in row.values():
@@ -184,6 +186,7 @@ def observe_suspended(b, offered):
             "handles": rows,
             "strict_flags": flags.value,
             "temporary_handles_closed": False,
+            "temporary_process_rights": b.verified_rights[process],
         }
     finally:
         errors = []

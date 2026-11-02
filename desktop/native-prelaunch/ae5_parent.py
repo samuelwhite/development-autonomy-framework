@@ -106,6 +106,7 @@ class Custodian:
         self.ack_capture = bytearray()
         self.control_overflow = False
         self.started_lanes = False
+        self.safety_query_error = None
         self.control_complete = False
         self.cleanup_ack_written = False
         self.timeline = []
@@ -243,11 +244,23 @@ class Custodian:
         now = self.clock()
         try:
             alive = self.backend.helper_alive()
-        except Exception:
+        except Exception as error:
+            self.safety_query_error = "helper_wait:" + type(error).__name__
             alive = False
         self.decision.tick(now, alive, self.communication)
         if self.decision.state == "STOP":
-            for target in ("child", "outer"):
+            targets = ("child", "outer")
+            if self.decision.reason == "helper_exit":
+                try:
+                    # A signalled retained process object cannot become live again.
+                    # TerminateProcess on that object would return error 5. Keep
+                    # outer-Job termination; never infer tree quiescence here.
+                    if self.backend.child_exited() is True:
+                        targets = ("outer",)
+                except Exception as error:
+                    self.safety_query_error = "child_wait:" + type(error).__name__
+                    # Unknown exit still requests both termination lanes.
+            for target in targets:
                 if target not in self.lanes:
                     lane = threading.Thread(target=self._terminate, args=(target,), daemon=True)
                     self.lanes[target] = lane

@@ -13,7 +13,7 @@ import ae51_snapshot as snapshot
 import ae51_tc0 as entry
 from ae5_contract import ACK, MAGIC, Ledger, canonical
 from test_a3 import fixture as original_fixture
-from test_ae5 import observations
+from test_ae5 import EXERCISE, HELPER, Fake, observations
 from test_ae5 import parent as fake_parent
 
 
@@ -61,6 +61,7 @@ def vector():
         "count_after": 3,
         "strict_flags": 3,
         "temporary_handles_closed": True,
+        "temporary_process_rights": snapshot.TEMPORARY_PROCESS_RIGHTS,
         "handles": [
             {"value": value, "checked": 255, "hostile": 0, "pipes": mask}
             for value, mask in zip((100, 104, 108), (1, 2, 4), strict=True)
@@ -161,6 +162,39 @@ def vector():
 
 
 class TC0Preflight(unittest.TestCase):
+    def test_safety_query_error_is_retained_as_failure(self):
+        class Broken(Fake):
+            def helper_alive(self):
+                raise OSError("synthetic query refusal")
+
+        backend = Broken()
+        runner = parent.Custodian(
+            backend, HELPER, 1000, EXERCISE, lambda _seq, raw: raw, lambda: 1000
+        )
+        runner.safety_step()
+        for lane in runner.lanes.values():
+            lane.join(1)
+        self.assertEqual(runner.safety_query_error, "helper_wait:OSError")
+        self.assertEqual(runner.decision.state, "STOP")
+
+    def test_confirmed_child_exit_does_not_issue_redundant_terminateprocess(self):
+        runner, backend = fake_parent()
+        backend.alive, backend.exited = False, True
+        runner.safety_step()
+        for lane in runner.lanes.values():
+            lane.join(1)
+        self.assertEqual(backend.calls, ["outer"])
+        self.assertEqual(runner.decision.state, "STOP")
+
+    def test_failed_or_pending_termination_request_stays_unresolved(self):
+        for returned, ok, error in ((False, False, 0), (True, False, 5)):
+            model = vector()
+            model[0]["termination_requests"] = {
+                "outer": {"target": "outer", "returned": returned, "ok": ok, "error": error}
+            }
+            with self.assertRaisesRegex(ValueError, "unexpected_termination_result"):
+                evidence.verify_observations(*model)
+
     def test_bool_exit_or_context_is_not_an_observation(self):
         model = vector()
         model[5]["helper"]["exit"] = False

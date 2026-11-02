@@ -310,6 +310,7 @@ class CustodyTests(unittest.TestCase):
             r, b = parent()
             if failure == "helper":
                 b.alive = False
+                b.exited = False  # Helper death while the owned child is still live.
             else:
                 r.lost_communication()
             for _ in range(3):

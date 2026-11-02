@@ -162,6 +162,7 @@ def collect_tc0(b, package, evidence, baseline, claim_raw, approval_raw):
                     )
                 }
             )
+            contract.approval(contract.load(approval_raw, 10000), bound, int(time.time()))
             helper, started = b.create_helper(b.root / "ae5-fixture-host.exe")
             custodian = ae5_parent.Custodian(
                 b,
@@ -203,6 +204,19 @@ def collect_tc0(b, package, evidence, baseline, claim_raw, approval_raw):
                 key = "handle-probe.exe" if name == "probe.exe" else name
                 expected[name] = bound["files"][key]["sha256"]
             live = cleanup_readback(b, baseline, expected)
+            # Both retained exits and Job quiescence are now independently known.
+            # Join normal lanes before freezing request results so a late API
+            # failure cannot disappear from a successful observation record.
+            custodian.safety_done.set()
+            joined_by = min(
+                outer_started + OUTER_MS,
+                (custodian.decision.abort_at or b.k.GetTickCount64()) + 3000,
+            )
+            lanes[0].join(timeout=max(0, (joined_by - b.k.GetTickCount64()) / 1000))
+            require(not lanes[0].is_alive(), "safety_lane_unresolved")
+            for lane in (*lanes[1:], *custodian.lanes.values()):
+                lane.join(timeout=max(0, (joined_by - b.k.GetTickCount64()) / 1000))
+                require(not lane.is_alive(), "parent_lane_unresolved")
             record = {
                 "schema": "daf-ae51-observation/v1",
                 "case": "TC-0",
@@ -233,7 +247,7 @@ def collect_tc0(b, package, evidence, baseline, claim_raw, approval_raw):
                 "stderr_overflow": custodian.stderr_overflow,
                 "stop_reason": custodian.decision.reason,
                 "termination_requests": dict(custodian.termination_calls),
-                "failure": None,
+                "failure": custodian.safety_query_error,
                 "captures": {
                     name: {"bytes": len(raw), "sha256": contract.digest(raw)}
                     for name, raw in (
@@ -260,14 +274,6 @@ def collect_tc0(b, package, evidence, baseline, claim_raw, approval_raw):
                 not revoked.is_set() and b.k.GetTickCount64() < outer_started + OUTER_MS,
                 "verification_deadline",
             )
-            custodian.safety_done.set()
-            for lane in (*lanes, *custodian.lanes.values()):
-                lane.join(
-                    timeout=max(
-                        0, min(0.1, (outer_started + OUTER_MS - b.k.GetTickCount64()) / 1000)
-                    )
-                )
-                require(not lane.is_alive(), "parent_lane_unresolved")
             b.close_custody()
             # Receipt construction is native-only, after all independent checks.
             receipt = {
