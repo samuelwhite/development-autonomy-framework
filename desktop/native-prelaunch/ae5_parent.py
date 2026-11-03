@@ -1,4 +1,4 @@
-"""Diagnostic parent orchestration. Public native entry is unconditionally closed.
+"""Diagnostic parent orchestration. TC-0 requires a separately approved package.
 
 The supervisor only inspects memory and process handles. Blocking termination
 calls have separate one-shot lanes; IPC, fsync and cleanup have no supervisor
@@ -25,7 +25,7 @@ from ae5_contract import (
     require,
 )
 
-NATIVE_RELEASE = False
+NATIVE_RELEASE = True  # TC-0 source candidate only; package approval remains mandatory.
 
 
 class SetupGuard:

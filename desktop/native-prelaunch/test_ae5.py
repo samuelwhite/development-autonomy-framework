@@ -6,6 +6,7 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import ae5_contract as c
 import ae5_parent as p
@@ -202,12 +203,14 @@ class CustodyTests(unittest.TestCase):
         self.assertEqual(backend.calls, ["outer"])
 
     def test_public_and_backend_gates_fail_before_effects(self):
-        with self.assertRaises(PermissionError):
-            p.native_entry("missing")
-        with self.assertRaisesRegex(ValueError, "unreleased"):
-            w.WindowsCustody.create_helper(object(), "missing")
-        self.assertFalse(p.NATIVE_RELEASE)
-        self.assertFalse(w.NATIVE_RELEASE)
+        # Portable negative control only closes source gates; never enables one.
+        with patch.object(p, "NATIVE_RELEASE", False), patch.object(w, "NATIVE_RELEASE", False):
+            with self.assertRaises(PermissionError):
+                p.native_entry("missing")
+            with self.assertRaisesRegex(ValueError, "unreleased"):
+                w.WindowsCustody.create_helper(object(), "missing")
+        self.assertTrue(p.NATIVE_RELEASE)
+        self.assertTrue(w.NATIVE_RELEASE)
 
     def test_positive_custody_ack_binding_and_no_resume_state(self):
         r, b = parent()
@@ -545,7 +548,7 @@ class SourceTests(unittest.TestCase):
             INSPECTOR_SHA,
         )
         header = (source / "ae5-custody.h").read_text()
-        self.assertIn("inline volatile const LONG NativeRelease = 0;", header)
+        self.assertIn("inline volatile const LONG NativeRelease = 1;", header)
         self.assertIn("sizeof(Ack) == 64", header)
 
 

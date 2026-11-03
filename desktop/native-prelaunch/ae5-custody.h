@@ -1,4 +1,4 @@
-// Diagnostic-only A-E5. Both source release gates remain closed.
+// Diagnostic-only TC-0 source candidate. Separate public-parent approval required.
 #pragma once
 #include "identity.h"
 #include "suspended-inspection.h"
@@ -13,7 +13,7 @@ static_assert(sizeof(PSS_THREAD_ENTRY) == 120 && offsetof(PSS_THREAD_ENTRY, Susp
     "PSS thread layout");
 // Volatile read retains dormant code for compiler/import review. Read-only source
 // constant, not a command-line, environment, IPC or exported activation switch.
-inline volatile const LONG NativeRelease = 0;
+inline volatile const LONG NativeRelease = 1;
 inline bool nativeReleased() { return NativeRelease == 1; }
 struct Ack {
     DWORD magic, sequence;

@@ -3,6 +3,7 @@
 import copy
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import ae5_parent as parent
 import ae5_resources as resources
@@ -226,10 +227,16 @@ class TC0Preflight(unittest.TestCase):
             complete.finish(34001, 35000)
         self.assertEqual(complete.state, "STOP")
 
-    def test_all_frozen_source_gate_values_are_closed(self):
+    def test_frozen_tc0_candidate_keeps_recovery_closed(self):
         self.assertEqual(
             c.source_gates(Path(__file__).parent),
-            {"python": False, "windows": False, "cpp": False, "recovery": False, "decision": None},
+            {
+                "python": True,
+                "windows": True,
+                "cpp": True,
+                "recovery": False,
+                "decision": "DAF-A-E5.2-TC-0-RC1",
+            },
         )
 
     def test_consumed_partial_or_stop_cannot_restart(self):
@@ -292,16 +299,18 @@ class TC0Preflight(unittest.TestCase):
                 c.approval(value, bound(), now)
 
     def test_public_entry_and_collector_refuse_before_any_effect(self):
-        with self.assertRaises(PermissionError):
-            parent.native_entry(Path("never-created-package.json"))
-        with self.assertRaises(ValueError):
-            entry.execute_tc0(Path("never-created-package.json"))
-        with self.assertRaises(ValueError):
-            entry.collect_tc0(None, None, None, None, None, None)
-        self.assertFalse(parent.NATIVE_RELEASE)
-        self.assertFalse(windows.NATIVE_RELEASE)
+        # Closing a source gate must still refuse before any I/O or native API.
+        with patch.object(parent, "NATIVE_RELEASE", False):
+            with self.assertRaises(PermissionError):
+                parent.native_entry(Path("never-created-package.json"))
+            with self.assertRaises(ValueError):
+                entry.execute_tc0(Path("never-created-package.json"))
+            with self.assertRaises(ValueError):
+                entry.collect_tc0(None, None, None, None, None, None)
+        self.assertTrue(parent.NATIVE_RELEASE)
+        self.assertTrue(windows.NATIVE_RELEASE)
         self.assertFalse(resources.RECOVERY_RELEASE)
-        self.assertIsNone(c.PRODUCT_DECISION_ID)
+        self.assertEqual(c.PRODUCT_DECISION_ID, "DAF-A-E5.2-TC-0-RC1")
 
     def test_single_command_has_no_activation_switch(self):
         source = Path(entry.__file__).read_text()
@@ -466,8 +475,9 @@ class TC0Preflight(unittest.TestCase):
             self.assertFalse(runner.control_complete)
 
     def test_native_snapshot_gate_precedes_api_calls(self):
-        with self.assertRaises(ValueError):
-            snapshot.observe_suspended(None, {})
+        with patch.object(windows, "NATIVE_RELEASE", False):
+            with self.assertRaises(ValueError):
+                snapshot.observe_suspended(None, {})
 
     def test_json_duplicates_and_bool_identities_refused(self):
         with self.assertRaises(ValueError):

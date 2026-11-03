@@ -89,6 +89,26 @@ def _require(ok, reason):
         raise ValueError("ae5_" + reason)
 
 
+def native_source_state(gates):
+    closed = {"python": False, "windows": False, "cpp": False, "recovery": False, "decision": None}
+    candidate = {
+        "python": True,
+        "windows": True,
+        "cpp": True,
+        "recovery": False,
+        "decision": "DAF-A-E5.2-TC-0-RC1",
+    }
+    _require(
+        set(gates) == set(closed)
+        and all(type(gates[k]) is bool for k in ("python", "windows", "cpp", "recovery")),
+        "source_gate_shape",
+    )
+    if gates == closed:
+        return "CLOSED"
+    _require(gates == candidate, "unreviewed_source_release")
+    return "TC0_SOURCE_CANDIDATE_APPROVAL_REQUIRED"
+
+
 def source_review(build):
     prelaunch, foundation = build / "source/native-prelaunch", build / "source/native-foundation"
     originals = {
@@ -121,13 +141,7 @@ def source_review(build):
         == canonical(originals["harness"].read_bytes()),
         "baseline_harness",
     )
-    source_gate = (prelaunch / "ae5-custody.h").read_text()
-    _require("inline volatile const LONG NativeRelease = 0;" in source_gate, "native_source_gate")
-    for name in ("ae5_parent.py", "ae5_windows.py"):
-        _require("NATIVE_RELEASE = False" in (prelaunch / name).read_text(), "python_native_gate")
-    _require(
-        "RECOVERY_RELEASE = False" in (prelaunch / "ae5_resources.py").read_text(), "recovery_gate"
-    )
+    native_source_state(source_gates(prelaunch))
     return {key: identity(value) for key, value in originals.items()}
 
 
@@ -185,9 +199,7 @@ def review(build, compiled=False):
         "schema": "daf-ae5-build-review/v1",
         "compiled": compiled,
         "native_executions": 0,
-        "native_gate": "CLOSED"
-        if all(gates[k] is False for k in ("python", "windows", "cpp"))
-        else "SOURCE_RELEASE_CHANGED",
+        "native_gate": native_source_state(gates),
         "source_gates": gates,
         "qualified": False,
         "originals": originals,

@@ -122,7 +122,8 @@ def verify_build(build, workers):
     return manifest, digest(raw), files, sources
 
 
-def verify_package(path):
+def read_package(path):
+    """Read the bounded package header without Git, native APIs or subprocesses."""
     raw = owned(path).read_bytes()
     value = load(raw)
     exact(
@@ -142,6 +143,12 @@ def verify_package(path):
     require(value["schema"] == "daf-ae51-package/v1" and value["case"] == "TC-0", "package_case")
     require(value["qualified"] is False and value["execution_authority"] is False, "no_authority")
     require(value["status"] in {"PREFLIGHT_ONLY", "PRODUCT_RELEASE_REVIEWED"}, "package_status")
+    binding(value["binding"])
+    return value, digest(raw)
+
+
+def verify_package(path):
+    value, package_sha = read_package(path)
     manifest, manifest_sha, files, sources = verify_build(
         REPO / value["build"], REPO / value["workers"]
     )
@@ -154,7 +161,7 @@ def verify_package(path):
         and bound["files"] == files,
         "package_build_binding",
     )
-    return value, digest(raw), sources
+    return value, package_sha, sources
 
 
 def preflight(build, workers, output):

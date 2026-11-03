@@ -9,7 +9,8 @@ import threading
 from ae5_contract import ACK, MAGIC, canonical, exact, integer, require, unique
 
 CASE = "TC-0"
-PRODUCT_DECISION_ID = None  # Separate Product source-level release is required.
+# Reserved candidate binding label, not a Product approval or decision record.
+PRODUCT_DECISION_ID = "DAF-A-E5.2-TC-0-RC1"
 
 
 class Finalization:

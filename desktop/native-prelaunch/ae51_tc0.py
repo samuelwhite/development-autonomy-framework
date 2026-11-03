@@ -1,4 +1,4 @@
-"""Public TC-0 route. Closed source gates precede every claim and native effect."""
+"""Public TC-0 route. Source readiness and separate approval precede every effect."""
 
 import os
 import sys
@@ -11,7 +11,7 @@ import ae5_windows
 import ae51_contract as contract
 from ae5_contract import ACK, OUTER_MS, canonical, require
 from ae51_evidence import cleanup_readback, fixture_baseline, frames, verify_observations
-from ae51_package import REPO, identity, owned, verify_package
+from ae51_package import REPO, identity, owned, read_package, verify_package
 
 FIXTURES = {
     "allowed.txt": b"Explicitly readable synthetic fixture",
@@ -48,7 +48,8 @@ def publish(path, raw):
 
 def execute_tc0(package):
     require_release()  # Calling this public function directly cannot bypass the gates.
-    value, package_sha, _ = verify_package(package)
+    # Even read-only Git subprocesses wait until explicit package approval.
+    value, package_sha = read_package(package)
     bound = value["binding"]
     require(
         value["status"] == "PRODUCT_RELEASE_REVIEWED" and type(value["approval"]) is str,
@@ -58,6 +59,7 @@ def execute_tc0(package):
     approval = contract.load(approval_raw, 10000)
     contract.approval(approval, bound, int(time.time()))
     require(approval["decision_id"] == contract.PRODUCT_DECISION_ID, "unreviewed_product_decision")
+    require(verify_package(package)[1] == package_sha, "package_changed_during_verification")
     cpp = (REPO / value["build"] / "source/native-prelaunch/ae5-custody.h").read_text()
     require("inline volatile const LONG NativeRelease = 1;" in cpp, "cpp_native_gate_closed")
     # Fixed global paths; another output directory or package cannot reset the budget.

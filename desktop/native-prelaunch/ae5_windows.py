@@ -1,7 +1,7 @@
-"""Dormant diagnostic Win32 adapter. Never imported by the closed public entry.
+"""Diagnostic Win32 adapter behind the public TC-0 package approval barrier.
 
 No PID reopening, arbitrary process discovery, resume, privilege adjustment or
-breakaway. Native process creation has its own source gate, also closed.
+breakaway. Source readiness alone is not approval to create a native process.
 """
 
 import ctypes as C
@@ -12,7 +12,7 @@ from pathlib import Path
 
 from ae5_contract import INNER, OUTER, require
 
-NATIVE_RELEASE = False
+NATIVE_RELEASE = True  # TC-0 source candidate only; no approval is supplied here.
 HANDLE = C.c_void_p
 SIZE = C.c_size_t
 Q = C.c_ulonglong
