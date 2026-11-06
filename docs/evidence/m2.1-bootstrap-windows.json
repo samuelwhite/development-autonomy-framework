@@ -1,0 +1,2677 @@
+{
+  "schema": "daf-bootstrap-review/v1",
+  "recorded_date": "2026-10-30",
+  "decision": "STOP_FOR_PRODUCT_REVIEW",
+  "execution_authority": false,
+  "production_qualified": false,
+  "strict_per_attempt_read_isolation": false,
+  "hard_two_second_cpu_ceiling_demonstrated": false,
+  "scope": "Standalone maintainer diagnostics only. No production controller, approval UI, adapter or desktop execution workflow.",
+  "canonical_local_build": "dist/m21-bootstrap-final",
+  "runner_exit": 2,
+  "source_identity_note": "Eight final compiled/reproducer source file hashes match the archived build input and current branch bytes. README and six evidence tests were added afterward; neither changes the measured binaries.",
+  "build_manifest_sha256": "16d583fed7df87e273bec470ae7ef94916547b4d3b6eb8f10845b516102189e5",
+  "build_manifest": {
+    "schema": "daf-bootstrap-build/v1",
+    "source_base": "5b6f5d4328854df66d7bc25ab7aa0504256e6e12",
+    "approved_composition_source": "ea5f338877ef219ecd808f0d4fb23b2b87099762",
+    "original_failed_source": "42a1ca7118d4f56361328e1b8acb4fb843683a70",
+    "note": "Source file hashes identify this working-tree build; source_base alone does not.",
+    "built_utc": "2026-10-30T20:13:31.7955071Z",
+    "environment": {
+      "msvc": "14.50.35717",
+      "windows_build": "26300.9711",
+      "architecture": "X64",
+      "bundled_python": "3.14.10",
+      "clean_machine": false,
+      "edition": "Core",
+      "compiler_sha256": "ed1a6206c8179ed6826187b63306cb9cc421de6507e14166864556851bc2820d",
+      "windows_sdk": "10.0.26100.0",
+      "display_version": "26H2"
+    },
+    "files": {
+      "allowed.txt": {
+        "sha256": "0f3f3cb1a6e785afcc791f52dbf30c2a7814e4cb9ec730c438ac1a6b5a073828",
+        "bytes": 37
+      },
+      "ambient-shared.txt": {
+        "sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+        "bytes": 40
+      },
+      "dbghelp.dll": {
+        "sha256": "df29a85fb3f06495792180f74cdfbda2aa9d3172b7797b2c478fb4eb4e5371cc",
+        "bytes": 2222016
+      },
+      "dual-grant.txt": {
+        "sha256": "bf4161f04e1b16ed625deb89e8b8a39f48b649c15fe3980e432367edc8ce5e5f",
+        "bytes": 43
+      },
+      "fixture-root.marker": {
+        "sha256": "edc909f1745ecdf83abfa46ec602cb882c52855e0f0b0fc1800f02e0150afe1b",
+        "bytes": 53
+      },
+      "launcher.exe": {
+        "sha256": "05cbcaface17edd937e266920b36c7a8e11336c586c3c6765de3c9a78beb5f5c",
+        "bytes": 468480
+      },
+      "launcher.obj": {
+        "sha256": "513e1a4375f15cb665a8fd38540267d96b74e36d46f7525e82ba3cd898a96065",
+        "bytes": 1656843
+      },
+      "native-minimal.exe": {
+        "sha256": "9c02bb6963e21c178b40f35f1aa7a9117f33d493d7a865b35e96cf01afc3b395",
+        "bytes": 4096
+      },
+      "native-minimal.obj": {
+        "sha256": "03a1a124af7a2a84e6210b865da24fc6a4f35f6ee660b26f1096a2edb1b73f4b",
+        "bytes": 6978
+      },
+      "native-static.exe": {
+        "sha256": "737f55f5d9af452c8cf91126ff39859bafc295eca09eaf0464a9e96ba64c7306",
+        "bytes": 160768
+      },
+      "native-static.obj": {
+        "sha256": "b0ba41ea94b7e785510fc3ca611a3cb1f81cf9186d8c85ec73c8a5816500426b",
+        "bytes": 49334
+      },
+      "private.txt": {
+        "sha256": "4b009879cb3537bb4f07fcf363896d567c56391daad085375e2b22d060609380",
+        "bytes": 30
+      },
+      "probe.py": {
+        "sha256": "ef533c45c6220c471c6742cc2d844459abc66546b73eee34b439cdd2021d9aab",
+        "bytes": 10436
+      },
+      "protected.bin": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "runtime/_asyncio.pyd": {
+        "sha256": "c833cfdab82da58163acdada02cdb2b92d42bc543e1b5519dbcbe4d3805a98fc",
+        "bytes": 79072
+      },
+      "runtime/_bz2.pyd": {
+        "sha256": "9590a3f4b7c0801cd379341d40bb89b5dc9a4e232c9498b6f3bc6b5e99d4ae7f",
+        "bytes": 87776
+      },
+      "runtime/_ctypes.pyd": {
+        "sha256": "adf71d85781a2fe937fcc44c0961498e2cf30849f9863ff7b5f7510817cea952",
+        "bytes": 143072
+      },
+      "runtime/_decimal.pyd": {
+        "sha256": "9605f332fb52636d77a3125abc7e42ba22b3838dcf136d81f37fe5875cbd62d6",
+        "bytes": 290016
+      },
+      "runtime/_elementtree.pyd": {
+        "sha256": "77707cb19dc91eb634d70f31b21022ee4c6ea5ce834c6952bc56ba00c6fd644d",
+        "bytes": 138976
+      },
+      "runtime/_hashlib.pyd": {
+        "sha256": "9052a85ac9947afbbdfdd62b0cad7501b668e6107832cefaa4b76377d710dae0",
+        "bytes": 68832
+      },
+      "runtime/_lzma.pyd": {
+        "sha256": "9ff9f63ad79f161722106e029b4c3afc6494848fd73f9bcc2ed5434a15c71bde",
+        "bytes": 160992
+      },
+      "runtime/_multiprocessing.pyd": {
+        "sha256": "7606f4044ffc923eac208f5bc5acb1dea14fe8edf2efe08a63e11177f4c7a016",
+        "bytes": 38624
+      },
+      "runtime/_overlapped.pyd": {
+        "sha256": "8f35ff35e76a2308ce0a50200fb01b55569f30952098239f7e000f3da1393a61",
+        "bytes": 58080
+      },
+      "runtime/_queue.pyd": {
+        "sha256": "51a3d8e40b061db4fc77f9a3b18e6c2f912c4edf467e46c95ac325d35f2be4df",
+        "bytes": 36576
+      },
+      "runtime/_remote_debugging.pyd": {
+        "sha256": "d4351e7236bd94e0a3242fdb6f26b914b9629b567ab63ec5f2a3661bcc1b7041",
+        "bytes": 105184
+      },
+      "runtime/_socket.pyd": {
+        "sha256": "11f2ace2a37e59bf0f2fcfcc2523307408fa2e7f0aec561bc7531a8db130a83c",
+        "bytes": 87776
+      },
+      "runtime/_sqlite3.pyd": {
+        "sha256": "33e91d0de7924180012c86efb17611ec589b93f90b321ed9ec3c2f4c99fae5be",
+        "bytes": 133344
+      },
+      "runtime/_ssl.pyd": {
+        "sha256": "56fdbe70896e4b3c6d4e8897fad1d011129354172566832371289edca0d85a21",
+        "bytes": 193248
+      },
+      "runtime/_uuid.pyd": {
+        "sha256": "ad949327a9730feefc7f2c14db9b1b43f4351df1aad3688dc1e68e4a23f7e81c",
+        "bytes": 28384
+      },
+      "runtime/_wmi.pyd": {
+        "sha256": "c8f6705d2da1be12b10050a1311b7c865fd79f11404cfad1a70b3f8962051056",
+        "bytes": 40160
+      },
+      "runtime/_zoneinfo.pyd": {
+        "sha256": "cbc875a462df36415e17c1ef182e50b541697e4d5ef9199c38737888de4317ad",
+        "bytes": 51936
+      },
+      "runtime/_zstd.pyd": {
+        "sha256": "7a7b50c580428daf3d43c87b121988d2e8c7af9533fa2195f1aef8652fc2c489",
+        "bytes": 503520
+      },
+      "runtime/libcrypto-3.dll": {
+        "sha256": "75495fe0e079ab00d49be740d3c710a0b94e3f74f9648cb7cc9f768fc7f52319",
+        "bytes": 6021880
+      },
+      "runtime/libffi-8.dll": {
+        "sha256": "eff52743773eb550fcc6ce3efc37c85724502233b6b002a35496d828bd7b280a",
+        "bytes": 39696
+      },
+      "runtime/libssl-3.dll": {
+        "sha256": "8957182a9c385bfd9f3f790921de2ddc614cf91f99edbed4e9e5446a46504e32",
+        "bytes": 1308920
+      },
+      "runtime/libtommath.dll": {
+        "sha256": "b1834c6e5a2789cff054bafe96d6c96db18b3a9d72c4df88711ef9c7c8bc45d9",
+        "bytes": 95456
+      },
+      "runtime/LICENSE.txt": {
+        "sha256": "935cf13e19f8c31b497d20b05d73623431a226b230c3599bc30fa3348979bc68",
+        "bytes": 35407
+      },
+      "runtime/pyexpat.pyd": {
+        "sha256": "87b0f7401749bd19bddf8872c17965a99142928fdefab0b513ded9c116f3da6b",
+        "bytes": 202464
+      },
+      "runtime/python.cat": {
+        "sha256": "1621ec5a5ade1c57d38c1a0ef26535c878fcbfd260205e8335177a35d31d13b2",
+        "bytes": 602294
+      },
+      "runtime/python.exe": {
+        "sha256": "d718435b892db4ad5b547d12fec61be7baa7faf7a58d857ea58053be24c7a000",
+        "bytes": 106208
+      },
+      "runtime/python3.dll": {
+        "sha256": "7bb0a7df2d5cb829319dd8d122039843e2a762361bb5a61bb5d24ca34f4040b5",
+        "bytes": 73952
+      },
+      "runtime/python314._pth": {
+        "sha256": "8ebf932a8bbc72d5ef35f6b80fcb3305cf15f0dbbdca0e37f477833e9ed468ac",
+        "bytes": 16
+      },
+      "runtime/python314.dll": {
+        "sha256": "d8a06cc6ca3348925ea29e343e1c5c5895fe0bb433ff913e1cee44caf358aa6a",
+        "bytes": 6816992
+      },
+      "runtime/python314.zip": {
+        "sha256": "4e97b321fe7f470c5a2cda0414f2b9caa896835edadf03eef251a0ebc3c24cc3",
+        "bytes": 4158438
+      },
+      "runtime/pythonw.exe": {
+        "sha256": "36392dade900489423a15686340bf5f95a64d661d9322bb4c0e0f1d4e6a84cb7",
+        "bytes": 104672
+      },
+      "runtime/select.pyd": {
+        "sha256": "0da869c017fd3231cfc1c1e4c4bef1bb7bf5cba38236e6d7bf1630c3507c5a1d",
+        "bytes": 33504
+      },
+      "runtime/sqlite3.dll": {
+        "sha256": "679cac0aa7dc1f9ba3c188565884c29a954b64f8bfbcc3b0e2163ee05b492b45",
+        "bytes": 1584864
+      },
+      "runtime/unicodedata.pyd": {
+        "sha256": "4c4e9f9e71e299a7e0093830e79f955f2b12b4eb0a6bb45003d42256b6e5985d",
+        "bytes": 758496
+      },
+      "runtime/vcruntime140_1.dll": {
+        "sha256": "a7146c08f89fe5b04541ab507cdb59ff7b44534d4ba3c668a426c6450a03434e",
+        "bytes": 50112
+      },
+      "runtime/vcruntime140.dll": {
+        "sha256": "d1f4225df2cd877dbf130d5668a021dce3f94118455ff5ec952061c30afc9ce7",
+        "bytes": 178616
+      },
+      "runtime/winsound.pyd": {
+        "sha256": "df409ab34d986e3379b55a42f88e3879f903be7dc952cf8c066f704b69511723",
+        "bytes": 32992
+      },
+      "source/access-trace.h": {
+        "sha256": "fc1f59a6fc25bfe8ac7d49350edc65e52f25cbf56fec4b038e1d634914b6055b",
+        "bytes": 6500
+      },
+      "source/build.ps1": {
+        "sha256": "f978a29af97d7214610f9ff0643879c228c229528ad90fe77edb1e595d3b5445",
+        "bytes": 5550
+      },
+      "source/launcher.cpp": {
+        "sha256": "510a3f97b0a98760abd5880cd709b36bd562f49d4822c6873c2dea26d5cbb29e",
+        "bytes": 43976
+      },
+      "source/loader-diagnostics.h": {
+        "sha256": "77085e4e0e4ef8a3c43e72fcff29157206a0daf80c0acacb9cd68fb9eaeba219",
+        "bytes": 3893
+      },
+      "source/native-child.c": {
+        "sha256": "361b99e45b235cbaf1eab45d2af33a0027740e89a97cff7ff3bf2cf13e90e428",
+        "bytes": 2358
+      },
+      "source/native-suite.h": {
+        "sha256": "c05007f384a188bf71d7e455d60c33a177764cd221877712f4c7220b5eacc133",
+        "bytes": 14732
+      },
+      "source/probe.py": {
+        "sha256": "ef533c45c6220c471c6742cc2d844459abc66546b73eee34b439cdd2021d9aab",
+        "bytes": 10436
+      },
+      "source/run.py": {
+        "sha256": "3ac2913dad70c8e3c88fa19cf932018be5b0b187e0c69a62f94861826767c38f",
+        "bytes": 11292
+      },
+      "symsrv.dll": {
+        "sha256": "041800b9a13fa8e22d861a2d987c1004f44fe0ed130113cbef44333693f86926",
+        "bytes": 1841184
+      }
+    },
+    "system_images": {
+      "ntdll.dll": {
+        "version": "10.0.26100.9549 (WinBuild.160101.0800)",
+        "sha256": "651ac9041af8e6b5ebd331d53163244c0a27d36d1433f0f15cac1f28c5f2e82c"
+      },
+      "kernel32.dll": {
+        "version": "10.0.26100.9549 (WinBuild.160101.0800)",
+        "sha256": "e132eba4166256e2f414b91fe7d5386590bc5ea8626aee5af9c9738383cf2ae1"
+      },
+      "KernelBase.dll": {
+        "version": "10.0.26100.9278 (WinBuild.160101.0800)",
+        "sha256": "5c29b73622ce0976e1ada566f31f2197ba0f8beaea89c3ec033366126172c3d0"
+      },
+      "bcrypt.dll": {
+        "version": "10.0.26100.1 (WinBuild.160101.0800)",
+        "sha256": "d0fc7863d7b034da33f34dc82b96a8604572598a217668a43fc9eca3a8e2a8e1"
+      },
+      "advapi32.dll": {
+        "version": "10.0.26100.3624 (WinBuild.160101.0800)",
+        "sha256": "b864e1468a01a44f1901e03c05c1029e71655dd9abddd6d840bcfff5e7227d44"
+      },
+      "sechost.dll": {
+        "version": "10.0.26100.1 (WinBuild.160101.0800)",
+        "sha256": "b4a345ad9af0635f50e27eea8ae0ff37255dca90e6d5991bdbc4806fb02aaa72"
+      },
+      "ws2_32.dll": {
+        "version": "10.0.26100.1 (WinBuild.160101.0800)",
+        "sha256": "b123b00c46c415d7baeaada58c29c3e6920895db836ee4c0cfee49d738af60ad"
+      },
+      "crypt32.dll": {
+        "version": "10.0.26100.9549 (WinBuild.160101.0800)",
+        "sha256": "71da5f9806f7aaf9e081c1df28b13182d2643b7f3534173f868ba65287612bbb"
+      },
+      "userenv.dll": {
+        "version": "10.0.26100.7920 (WinBuild.160101.0800)",
+        "sha256": "aeb1a6a15397bee7a0ebc67b8188f751e10089c0adadfd86146496c5faae914c"
+      },
+      "rpcrt4.dll": {
+        "version": "10.0.26100.1 (WinBuild.160101.0800)",
+        "sha256": "c060f02c11fb19c9c8a30b5077a87cdb17d4be40f08070a539ec73eb53402775"
+      },
+      "ucrtbase.dll": {
+        "version": "10.0.26100.9711 (WinBuild.160101.0800)",
+        "sha256": "dedb7611e1abc1ff3852dcac3d4c93a048d729e25b061973b9969f22698f14ca"
+      },
+      "msvcrt.dll": {
+        "version": "7.0.26100.9711 (WinBuild.160101.0800)",
+        "sha256": "fc1447db4e4814cbcb002179a8003a41f383fc417879f628727043cab8c25093"
+      }
+    }
+  },
+  "unchanged_pr12_configuration": {
+    "profile_acl": {
+      "identical": true,
+      "baseline_sha256": "05a1067b7a436a276f0639d1a068a042e3c66b66cbeffcbb6c3ff29710022b25",
+      "first_line": "static PACL readonlyAcl(DWORD appAccess, bool directory) {",
+      "last_line": "}",
+      "line_count": 28,
+      "hash_encoding": "UTF-8, LF, including final newline"
+    },
+    "registry_seal": {
+      "identical": true,
+      "baseline_sha256": "7374045c46448664d9bcb1353c7782c5300aae2ab02a4ee87332c731634300e6",
+      "first_line": "static void sealRegistry() {",
+      "last_line": "}",
+      "line_count": 24,
+      "hash_encoding": "UTF-8, LF, including final newline"
+    },
+    "filesystem_seal": {
+      "identical": true,
+      "baseline_sha256": "556af560448d482615459065dc841e27128fe46430071cce43002ba84497f221",
+      "first_line": "static void seal(const fs::path& p, PSID) {",
+      "last_line": "}",
+      "line_count": 16,
+      "hash_encoding": "UTF-8, LF, including final newline"
+    },
+    "restricting_token": {
+      "identical": true,
+      "baseline_sha256": "4598cf232b7f25e5f5da8581ed962bbffc14e304f04a99af78987e3912bce348",
+      "first_line": "        DWORD restrictionFlags = DISABLE_MAX_PRIVILEGE | (policy == L\"write-restricted\" ? WRITE_RESTRICTED : 0);",
+      "last_line": "        inspectRestrictions(restricted, \"input_restricted_sids\");",
+      "line_count": 7,
+      "hash_encoding": "UTF-8, LF, including final newline"
+    },
+    "job_limits": {
+      "identical": true,
+      "baseline_sha256": "f98074bfdd787460e21302e5cb91294a366432340bc734cadab87c863e5af8d4",
+      "first_line": "        job = CreateJobObjectW(nullptr, nullptr); check(job != nullptr, \"create job\");",
+      "last_line": "            \"exact job limits; no breakaway flags\");",
+      "line_count": 21,
+      "hash_encoding": "UTF-8, LF, including final newline"
+    },
+    "lpac_and_attributes": {
+      "identical": true,
+      "baseline_sha256": "2398f0b52815cc553e56e2c7dc4751e85035b12003dd3772b4b4e28d1ac3b351",
+      "first_line": "        SECURITY_CAPABILITIES capabilities{}; capabilities.AppContainerSid = sid;",
+      "last_line": "        attribute(PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY, &children, sizeof(children));",
+      "line_count": 17,
+      "hash_encoding": "UTF-8, LF, including final newline"
+    },
+    "final_token_checks": {
+      "identical": true,
+      "baseline_sha256": "0d73ad9bda83f96ae8def26bedce26a285f5175091ab99da172fb524b704134d",
+      "first_line": "        HANDLE token = nullptr; check(OpenProcessToken(process, TOKEN_QUERY | TOKEN_DUPLICATE, &token), \"child token\");",
+      "last_line": "        }",
+      "line_count": 100,
+      "hash_encoding": "UTF-8, LF, including final newline"
+    }
+  },
+  "static_imports": {
+    "native-minimal.exe": [
+      "KERNEL32.dll"
+    ],
+    "native-static.exe": [
+      "KERNEL32.dll"
+    ],
+    "python314.dll_relevant_import": {
+      "library": "bcrypt.dll",
+      "symbol": "BCryptGenRandom"
+    }
+  },
+  "symbols": {
+    "library": "ntdll",
+    "pdb_guid": "C031D45B-0DA1-8A6E-74D0-6ED6AB2DD9E1",
+    "age": 1,
+    "bytes": 1912832,
+    "sha256": "c93f4614aa6f40fe370d40eb7ee9589ca0eda170ef2d704b5d278da71c02c249",
+    "symbol_field": "_PEB.NtGlobalFlag",
+    "offset": 188,
+    "flag_before": 0,
+    "flag_after": 2
+  },
+  "loader_findings": {
+    "write_restricted": "bcrypt.dll DLL_PROCESS_ATTACH fails after its NtOpenFile to \\Device\\KsecDD requests 0x00100003 and returns 0xc0000022; process exits 0xc0000142 before Python.",
+    "full_restricted": "LdrpInitializeProcess - ERROR: Failed to open \\KnownDlls with status 0xc0000022; process exits 0xc0000022 before application initialization.",
+    "independent_probe": "Same native composition opens KsecDD for read, denies read/write with identical share/options and fails LoadLibraryExW(bcrypt.dll) with 1114. No device IO or return substitution.",
+    "debug_limits": "Debugging is host-only and changes diagnostic timing; resource and lifecycle conclusions use untraced native cases."
+  },
+  "common_native_observations_verified_in_every_case": {
+    "host_appcontainer": {
+      "value": 0
+    },
+    "host_elevated": {
+      "value": 0
+    },
+    "CreateRestrictedToken_error": {
+      "value": 0
+    },
+    "set_generated_token_default_dacl_error": {
+      "value": 0
+    },
+    "fixture_label_result": {
+      "value": 0
+    },
+    "dual_fixture_label_result": {
+      "value": 0
+    },
+    "job_limit_flags": {
+      "value": 8458
+    },
+    "job_process_limit": {
+      "value": 1
+    },
+    "job_memory_bytes": {
+      "value": 134217728
+    },
+    "job_cpu_100ns": {
+      "value": 20000000
+    },
+    "create_owned_desktop_error": {
+      "value": 0
+    },
+    "CreateProcessAsUser_error": {
+      "value": 0
+    },
+    "appcontainer": {
+      "value": 1
+    },
+    "final_integrity_sid": {
+      "sid": "S-1-16-4096",
+      "attributes": 0
+    },
+    "final_elevated": {
+      "value": 0
+    },
+    "final_privilege_count": {
+      "value": 1
+    },
+    "final_privilege_luid": {
+      "value": 23
+    },
+    "final_privilege_attributes": {
+      "value": 3
+    },
+    "final_child_IsTokenRestricted": {
+      "value": 1
+    },
+    "final_child_process_policy": {
+      "value": 1
+    },
+    "lpac_token_query_error": {
+      "value": 87
+    },
+    "lpac_accesscheck_mask": {
+      "value": 0
+    },
+    "accesscheck_both_write": {
+      "allowed": true,
+      "requested": 4,
+      "granted": 4
+    },
+    "accesscheck_lpac_without_task_write": {
+      "allowed": false,
+      "requested": 4,
+      "granted": 0
+    },
+    "accesscheck_task_without_lpac_write": {
+      "allowed": false,
+      "requested": 4,
+      "granted": 0
+    },
+    "accesscheck_ambient_write": {
+      "allowed": false,
+      "requested": 4,
+      "granted": 0
+    },
+    "accesscheck_both_read": {
+      "allowed": true,
+      "requested": 1,
+      "granted": 1
+    },
+    "accesscheck_all_apps_with_task_read": {
+      "allowed": false,
+      "requested": 1,
+      "granted": 0
+    },
+    "accesscheck_all_restricted_with_task_read": {
+      "allowed": true,
+      "requested": 1,
+      "granted": 1
+    },
+    "native_explicit_dual_write": {
+      "allowed": true,
+      "error": 0,
+      "bytes_written": 37
+    },
+    "native_ambient_write": {
+      "allowed": false,
+      "error": 5,
+      "bytes_written": 0
+    },
+    "open_existing_registry_storage_error": {
+      "value": 0
+    },
+    "open_or_create_owned_registry_error": {
+      "value": 0
+    },
+    "owned_registry_disposition": {
+      "value": 1
+    },
+    "capability_count": {
+      "value": 1
+    },
+    "final_registry_read_capability": {
+      "sid": "S-1-15-3-1024-1065365936-1281604716-3511738428-1654721687-432734479-3232135806-4053264122-3456934681",
+      "attributes": 0
+    },
+    "job_at_creation": {
+      "value": 1
+    },
+    "child_resumed": {
+      "value": 1
+    }
+  },
+  "cases": [
+    {
+      "case": "python-normal",
+      "helper_exit": 1,
+      "elapsed_seconds": 0.33,
+      "probes": [],
+      "cng_trace": [],
+      "ambient_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "dual_after_sha256": "fd06e44f2b384ff6e4cf34feedde83ad58c6b2ed49c779b7dbb3eec00b20750f",
+      "native_log_sha256": "d6237065f4392e2c6e7e59e393342b56b2be4699a49ee7fd690743f042c92c6e",
+      "child_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "native_observations": {
+        "requested_attempt_sid": {
+          "sid": "S-1-9-518393054-1323494459-1281178267-2887713856",
+          "attributes": 0
+        },
+        "CreateRestrictedToken_flags": {
+          "value": 9
+        },
+        "input_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-518393054-1323494459-1281178267-2887713856",
+            "attributes": 7
+          }
+        ],
+        "final_appcontainer_sid": {
+          "sid": "S-1-15-2-956053766-3768085290-217482602-4202440954-911468523-748790747-422674835",
+          "attributes": 0
+        },
+        "final_child_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-518393054-1323494459-1281178267-2887713856",
+            "attributes": 7
+          }
+        ],
+        "accesscheck_lpac_without_task_read": {
+          "allowed": true,
+          "requested": 1,
+          "granted": 1
+        },
+        "child_pid": {
+          "value": 64628
+        },
+        "helper_pid": {
+          "value": 46684
+        },
+        "host_available_commit_bytes": {
+          "value": 23644532736
+        },
+        "child_exit": {
+          "value": 3221225794
+        },
+        "active_after_wait": {
+          "value": 0
+        },
+        "job_total_user_time_100ns": {
+          "value": 0
+        },
+        "peak_process_memory_bytes": {
+          "value": 1814528
+        },
+        "restore_registry_acl": {
+          "value": 0
+        },
+        "restore_profile_acl": {
+          "observation": {
+            "value": 0
+          },
+          "count": 7
+        },
+        "delete_explicitly_created_registry_storage": {
+          "value": 0
+        },
+        "delete_synthetic_credential": {
+          "value": 1
+        },
+        "delete_synthetic_registry_key": {
+          "value": 0
+        },
+        "delete_owned_profile_hresult": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "case": "python-traced",
+      "helper_exit": 1,
+      "elapsed_seconds": 1.633,
+      "probes": [],
+      "cng_trace": [
+        {
+          "trace": "NtOpenFile",
+          "object": "\\Device\\KsecDD",
+          "access": 1048579,
+          "status": 3221225506,
+          "caller": "bcrypt.dll",
+          "caller_rva": 33237,
+          "share": 7,
+          "open_options": 32
+        }
+      ],
+      "ambient_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "dual_after_sha256": "fd06e44f2b384ff6e4cf34feedde83ad58c6b2ed49c779b7dbb3eec00b20750f",
+      "native_log_sha256": "f2163f39c05d28de7d10ef4326f1fb4d0e71dcd7f3e76d08ff1f60520459b543",
+      "child_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "native_observations": {
+        "requested_attempt_sid": {
+          "sid": "S-1-9-3389406682-1090880425-3190455692-3392205012",
+          "attributes": 0
+        },
+        "CreateRestrictedToken_flags": {
+          "value": 9
+        },
+        "input_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-3389406682-1090880425-3190455692-3392205012",
+            "attributes": 7
+          }
+        ],
+        "final_appcontainer_sid": {
+          "sid": "S-1-15-2-1268845562-3721435967-2235145565-448073356-861044587-31205137-2470248602",
+          "attributes": 0
+        },
+        "final_child_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-3389406682-1090880425-3190455692-3392205012",
+            "attributes": 7
+          }
+        ],
+        "accesscheck_lpac_without_task_read": {
+          "allowed": true,
+          "requested": 1,
+          "granted": 1
+        },
+        "child_pid": {
+          "value": 84732
+        },
+        "helper_pid": {
+          "value": 77472
+        },
+        "host_available_commit_bytes": {
+          "value": 23599583232
+        },
+        "symbol_derived_NtGlobalFlag_offset": {
+          "value": 188
+        },
+        "child_NtGlobalFlag_before": {
+          "value": 0
+        },
+        "child_NtGlobalFlag_after": {
+          "value": 2
+        },
+        "debug_exception_counts": {
+          "0x80000003": 137,
+          "0x80000004": 136
+        },
+        "child_exit": {
+          "value": 3221225794
+        },
+        "active_after_wait": {
+          "value": 0
+        },
+        "job_total_user_time_100ns": {
+          "value": 156250
+        },
+        "peak_process_memory_bytes": {
+          "value": 1769472
+        },
+        "restore_registry_acl": {
+          "value": 0
+        },
+        "restore_profile_acl": {
+          "observation": {
+            "value": 0
+          },
+          "count": 7
+        },
+        "delete_explicitly_created_registry_storage": {
+          "value": 0
+        },
+        "delete_synthetic_credential": {
+          "value": 1
+        },
+        "delete_synthetic_registry_key": {
+          "value": 0
+        },
+        "delete_owned_profile_hresult": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "case": "native-minimal",
+      "helper_exit": 0,
+      "elapsed_seconds": 0.194,
+      "probes": [
+        {
+          "probe": "native_entry",
+          "status": "observed"
+        },
+        {
+          "probe": "pid",
+          "value": 16464
+        },
+        {
+          "probe": "permitted_write_error",
+          "value": 0
+        },
+        {
+          "probe": "ambient_write_error",
+          "value": 5
+        },
+        {
+          "probe": "ambient_read_error",
+          "value": 0
+        },
+        {
+          "probe": "permitted_read_error",
+          "value": 0
+        },
+        {
+          "probe": "native_basic_complete",
+          "status": "observed"
+        }
+      ],
+      "cng_trace": [],
+      "ambient_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "dual_after_sha256": "0cc3e207b9afd758c38a172fe0c6c86fbdabed9ec2329d6ba3f314a4bd0e6e68",
+      "native_log_sha256": "f4c1a13abf8cfd7139f12fa2ee4058502c2a066c0c7dfd86c356cad9fe65d4de",
+      "child_log_sha256": "08b6d59437798c5b00a0e181cc9991b9638b9de86cac4f8a5753fd9c18aa9ef3",
+      "native_observations": {
+        "requested_attempt_sid": {
+          "sid": "S-1-9-354302707-1101017649-3557871789-301837339",
+          "attributes": 0
+        },
+        "CreateRestrictedToken_flags": {
+          "value": 9
+        },
+        "input_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-354302707-1101017649-3557871789-301837339",
+            "attributes": 7
+          }
+        ],
+        "final_appcontainer_sid": {
+          "sid": "S-1-15-2-2907963974-2612531459-1969225589-393486232-2849848324-3993176185-2115248124",
+          "attributes": 0
+        },
+        "final_child_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-354302707-1101017649-3557871789-301837339",
+            "attributes": 7
+          }
+        ],
+        "accesscheck_lpac_without_task_read": {
+          "allowed": true,
+          "requested": 1,
+          "granted": 1
+        },
+        "child_pid": {
+          "value": 16464
+        },
+        "helper_pid": {
+          "value": 15644
+        },
+        "host_available_commit_bytes": {
+          "value": 23643176960
+        },
+        "child_exit": {
+          "value": 0
+        },
+        "active_after_wait": {
+          "value": 0
+        },
+        "job_total_user_time_100ns": {
+          "value": 0
+        },
+        "peak_process_memory_bytes": {
+          "value": 512000
+        },
+        "restore_registry_acl": {
+          "value": 0
+        },
+        "restore_profile_acl": {
+          "observation": {
+            "value": 0
+          },
+          "count": 7
+        },
+        "delete_explicitly_created_registry_storage": {
+          "value": 0
+        },
+        "delete_synthetic_credential": {
+          "value": 1
+        },
+        "delete_synthetic_registry_key": {
+          "value": 0
+        },
+        "delete_owned_profile_hresult": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "case": "native-dependency",
+      "helper_exit": 0,
+      "elapsed_seconds": 0.219,
+      "probes": [
+        {
+          "probe": "native_entry",
+          "status": "observed"
+        },
+        {
+          "probe": "pid",
+          "value": 59384
+        },
+        {
+          "probe": "permitted_write_error",
+          "value": 0
+        },
+        {
+          "probe": "ambient_write_error",
+          "value": 5
+        },
+        {
+          "probe": "ambient_read_error",
+          "value": 0
+        },
+        {
+          "probe": "permitted_read_error",
+          "value": 0
+        },
+        {
+          "probe": "native_basic_complete",
+          "status": "observed"
+        },
+        {
+          "probe": "ksecdd_read_open",
+          "status": "allowed",
+          "code": 0
+        },
+        {
+          "probe": "ksecdd_read_write_open",
+          "status": "error",
+          "code": 3221225506
+        },
+        {
+          "probe": "bcrypt_dynamic_load",
+          "status": "error",
+          "code": 1114
+        }
+      ],
+      "cng_trace": [],
+      "ambient_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "dual_after_sha256": "0cc3e207b9afd758c38a172fe0c6c86fbdabed9ec2329d6ba3f314a4bd0e6e68",
+      "native_log_sha256": "8e78c34b0991118dc57f3da8f34f86307c0c3be5d830a673b09f904f70295143",
+      "child_log_sha256": "b106d2f044d56a84cf56fd66acdb57a3a66133d28e2bf779a5c14ac6a8d1809a",
+      "native_observations": {
+        "requested_attempt_sid": {
+          "sid": "S-1-9-3566189586-1126154892-2944794799-432332497",
+          "attributes": 0
+        },
+        "CreateRestrictedToken_flags": {
+          "value": 9
+        },
+        "input_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-3566189586-1126154892-2944794799-432332497",
+            "attributes": 7
+          }
+        ],
+        "final_appcontainer_sid": {
+          "sid": "S-1-15-2-4126411147-3963795551-4262697317-2329969874-485207514-3415938550-3999545909",
+          "attributes": 0
+        },
+        "final_child_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-3566189586-1126154892-2944794799-432332497",
+            "attributes": 7
+          }
+        ],
+        "accesscheck_lpac_without_task_read": {
+          "allowed": true,
+          "requested": 1,
+          "granted": 1
+        },
+        "child_pid": {
+          "value": 59384
+        },
+        "helper_pid": {
+          "value": 65176
+        },
+        "host_available_commit_bytes": {
+          "value": 23656841216
+        },
+        "child_exit": {
+          "value": 0
+        },
+        "active_after_wait": {
+          "value": 0
+        },
+        "job_total_user_time_100ns": {
+          "value": 0
+        },
+        "peak_process_memory_bytes": {
+          "value": 737280
+        },
+        "restore_registry_acl": {
+          "value": 0
+        },
+        "restore_profile_acl": {
+          "observation": {
+            "value": 0
+          },
+          "count": 7
+        },
+        "delete_explicitly_created_registry_storage": {
+          "value": 0
+        },
+        "delete_synthetic_credential": {
+          "value": 1
+        },
+        "delete_synthetic_registry_key": {
+          "value": 0
+        },
+        "delete_owned_profile_hresult": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "case": "native-suite",
+      "helper_exit": 0,
+      "elapsed_seconds": 0.252,
+      "probes": [
+        {
+          "probe": "native_entry",
+          "status": "observed"
+        },
+        {
+          "probe": "pid",
+          "value": 63252
+        },
+        {
+          "probe": "permitted_write_error",
+          "value": 0
+        },
+        {
+          "probe": "ambient_write_error",
+          "value": 5
+        },
+        {
+          "probe": "ambient_read_error",
+          "value": 0
+        },
+        {
+          "probe": "permitted_read_error",
+          "value": 0
+        },
+        {
+          "probe": "native_basic_complete",
+          "status": "observed"
+        },
+        {
+          "probe": "load_advapi32",
+          "status": "allowed",
+          "code": 0
+        },
+        {
+          "probe": "load_userenv",
+          "status": "allowed",
+          "code": 0
+        },
+        {
+          "probe": "load_crypt32",
+          "status": "allowed",
+          "code": 0
+        },
+        {
+          "probe": "load_ws2_32",
+          "status": "allowed",
+          "code": 0
+        },
+        {
+          "probe": "read_allowed_fixture",
+          "status": "allowed",
+          "code": 0
+        },
+        {
+          "probe": "read_host_private_fixture",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "write_workspace",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "write_runtime",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "write_profile_root",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "write_profile_package_root",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "write_profile_temp",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "write_effective_temp",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "read_profile_sentinel",
+          "status": "allowed",
+          "code": 0
+        },
+        {
+          "probe": "append_profile_file",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "replace_profile_dacl",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "append_after_dacl_attempt",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "replace_profile_root_dacl",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "replace_temp_dacl",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "write_after_directory_dacl_attempt",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "write_host_profile",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "write_windows_temp",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "registry_machine_read",
+          "status": "allowed",
+          "code": 0
+        },
+        {
+          "probe": "read_host_private_registry_fixture",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "registry_user_write",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "registry_profile_write",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "registry_profile_write_dacl",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "reinitialize_own_profile",
+          "status": "error",
+          "code": 87
+        },
+        {
+          "probe": "write_profile_after_reinitialize",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "write_temp_after_reinitialize",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "registry_write_after_reinitialize",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "host_credential_read",
+          "status": "error",
+          "code": 1702
+        },
+        {
+          "probe": "host_dpapi_decrypt",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "loopback_tcp",
+          "status": "denied",
+          "code": 10013
+        },
+        {
+          "probe": "loopback_udp",
+          "status": "denied",
+          "code": 10013
+        },
+        {
+          "probe": "external_tcp_testnet",
+          "status": "denied",
+          "code": 10013
+        },
+        {
+          "probe": "external_udp_testnet",
+          "status": "denied",
+          "code": 10013
+        },
+        {
+          "probe": "dns_resolution",
+          "status": "error",
+          "code": 11003
+        },
+        {
+          "probe": "child_process",
+          "status": "denied",
+          "code": 367
+        },
+        {
+          "probe": "breakaway_child",
+          "status": "denied",
+          "code": 5
+        },
+        {
+          "probe": "native_suite_complete",
+          "status": "observed",
+          "code": 0
+        }
+      ],
+      "cng_trace": [],
+      "ambient_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "dual_after_sha256": "0cc3e207b9afd758c38a172fe0c6c86fbdabed9ec2329d6ba3f314a4bd0e6e68",
+      "native_log_sha256": "fc2be82ccbb1db67a9590d673022a0b856823e21be28353a06ea07724eb32b76",
+      "child_log_sha256": "0902a57867857a9b100777cfddeebd22a24dd5de7750092cc4a5fd2ce4f5703f",
+      "native_observations": {
+        "requested_attempt_sid": {
+          "sid": "S-1-9-333791757-1278501209-1135420559-2085361969",
+          "attributes": 0
+        },
+        "CreateRestrictedToken_flags": {
+          "value": 9
+        },
+        "input_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-333791757-1278501209-1135420559-2085361969",
+            "attributes": 7
+          }
+        ],
+        "final_appcontainer_sid": {
+          "sid": "S-1-15-2-570036029-1226676-747630261-1127243185-1441006861-2021606327-2926362650",
+          "attributes": 0
+        },
+        "final_child_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-333791757-1278501209-1135420559-2085361969",
+            "attributes": 7
+          }
+        ],
+        "accesscheck_lpac_without_task_read": {
+          "allowed": true,
+          "requested": 1,
+          "granted": 1
+        },
+        "child_pid": {
+          "value": 63252
+        },
+        "helper_pid": {
+          "value": 44072
+        },
+        "host_available_commit_bytes": {
+          "value": 23619092480
+        },
+        "child_exit": {
+          "value": 0
+        },
+        "active_after_wait": {
+          "value": 0
+        },
+        "job_total_user_time_100ns": {
+          "value": 156250
+        },
+        "peak_process_memory_bytes": {
+          "value": 1171456
+        },
+        "restore_registry_acl": {
+          "value": 0
+        },
+        "restore_profile_acl": {
+          "observation": {
+            "value": 0
+          },
+          "count": 7
+        },
+        "delete_explicitly_created_registry_storage": {
+          "value": 0
+        },
+        "delete_synthetic_credential": {
+          "value": 1
+        },
+        "delete_synthetic_registry_key": {
+          "value": 0
+        },
+        "delete_owned_profile_hresult": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "case": "full-read-restriction",
+      "helper_exit": 1,
+      "elapsed_seconds": 0.224,
+      "probes": [],
+      "cng_trace": [],
+      "ambient_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "dual_after_sha256": "fd06e44f2b384ff6e4cf34feedde83ad58c6b2ed49c779b7dbb3eec00b20750f",
+      "native_log_sha256": "9c37e8064fdf70536729e7184d8dd40826dd30a4e3e1b10de8c95e27a031e5eb",
+      "child_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "native_observations": {
+        "requested_attempt_sid": {
+          "sid": "S-1-9-3140632021-1128240336-1737367711-3481405328",
+          "attributes": 0
+        },
+        "CreateRestrictedToken_flags": {
+          "value": 1
+        },
+        "input_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-3140632021-1128240336-1737367711-3481405328",
+            "attributes": 7
+          }
+        ],
+        "final_appcontainer_sid": {
+          "sid": "S-1-15-2-1407575359-976604410-890190938-939458631-1029824872-2324167022-3383586417",
+          "attributes": 0
+        },
+        "final_child_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-3140632021-1128240336-1737367711-3481405328",
+            "attributes": 7
+          }
+        ],
+        "accesscheck_lpac_without_task_read": {
+          "allowed": false,
+          "requested": 1,
+          "granted": 0
+        },
+        "child_pid": {
+          "value": 70424
+        },
+        "helper_pid": {
+          "value": 44716
+        },
+        "host_available_commit_bytes": {
+          "value": 23690883072
+        },
+        "child_exit": {
+          "value": 3221225506
+        },
+        "active_after_wait": {
+          "value": 0
+        },
+        "job_total_user_time_100ns": {
+          "value": 0
+        },
+        "peak_process_memory_bytes": {
+          "value": 405504
+        },
+        "restore_registry_acl": {
+          "value": 0
+        },
+        "restore_profile_acl": {
+          "observation": {
+            "value": 0
+          },
+          "count": 7
+        },
+        "delete_explicitly_created_registry_storage": {
+          "value": 0
+        },
+        "delete_synthetic_credential": {
+          "value": 1
+        },
+        "delete_synthetic_registry_key": {
+          "value": 0
+        },
+        "delete_owned_profile_hresult": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "case": "memory",
+      "helper_exit": 0,
+      "elapsed_seconds": 0.253,
+      "probes": [
+        {
+          "probe": "native_entry",
+          "status": "observed"
+        },
+        {
+          "probe": "pid",
+          "value": 8628
+        },
+        {
+          "probe": "permitted_write_error",
+          "value": 0
+        },
+        {
+          "probe": "ambient_write_error",
+          "value": 5
+        },
+        {
+          "probe": "ambient_read_error",
+          "value": 0
+        },
+        {
+          "probe": "permitted_read_error",
+          "value": 0
+        },
+        {
+          "probe": "native_basic_complete",
+          "status": "observed"
+        },
+        {
+          "probe": "memory_positive_control",
+          "status": "allowed",
+          "code": 0
+        },
+        {
+          "probe": "memory_limit",
+          "status": "denied",
+          "code": 1455
+        }
+      ],
+      "cng_trace": [],
+      "ambient_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "dual_after_sha256": "0cc3e207b9afd758c38a172fe0c6c86fbdabed9ec2329d6ba3f314a4bd0e6e68",
+      "native_log_sha256": "8bc4ae2a546b4bee07fc342dc02b236178ffef4d151e5addd045627ad6390fb5",
+      "child_log_sha256": "f757da128ad980879d3de53a35fccf158f8dcfb6a98c8917ecbefc66f8284f06",
+      "native_observations": {
+        "requested_attempt_sid": {
+          "sid": "S-1-9-4194600433-1080658493-571484844-166175160",
+          "attributes": 0
+        },
+        "CreateRestrictedToken_flags": {
+          "value": 9
+        },
+        "input_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-4194600433-1080658493-571484844-166175160",
+            "attributes": 7
+          }
+        ],
+        "final_appcontainer_sid": {
+          "sid": "S-1-15-2-1467932230-3220094560-3999570200-2591528782-3273333898-3794274611-3695880267",
+          "attributes": 0
+        },
+        "final_child_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-4194600433-1080658493-571484844-166175160",
+            "attributes": 7
+          }
+        ],
+        "accesscheck_lpac_without_task_read": {
+          "allowed": true,
+          "requested": 1,
+          "granted": 1
+        },
+        "child_pid": {
+          "value": 8628
+        },
+        "helper_pid": {
+          "value": 5480
+        },
+        "host_available_commit_bytes": {
+          "value": 23602044928
+        },
+        "child_exit": {
+          "value": 0
+        },
+        "active_after_wait": {
+          "value": 0
+        },
+        "job_total_user_time_100ns": {
+          "value": 0
+        },
+        "peak_process_memory_bytes": {
+          "value": 34185216
+        },
+        "restore_registry_acl": {
+          "value": 0
+        },
+        "restore_profile_acl": {
+          "observation": {
+            "value": 0
+          },
+          "count": 7
+        },
+        "delete_explicitly_created_registry_storage": {
+          "value": 0
+        },
+        "delete_synthetic_credential": {
+          "value": 1
+        },
+        "delete_synthetic_registry_key": {
+          "value": 0
+        },
+        "delete_owned_profile_hresult": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "case": "cpu",
+      "helper_exit": 1,
+      "elapsed_seconds": 4.862,
+      "probes": [
+        {
+          "probe": "native_entry",
+          "status": "observed"
+        },
+        {
+          "probe": "pid",
+          "value": 80420
+        },
+        {
+          "probe": "permitted_write_error",
+          "value": 0
+        },
+        {
+          "probe": "ambient_write_error",
+          "value": 5
+        },
+        {
+          "probe": "ambient_read_error",
+          "value": 0
+        },
+        {
+          "probe": "permitted_read_error",
+          "value": 0
+        },
+        {
+          "probe": "native_basic_complete",
+          "status": "observed"
+        },
+        {
+          "probe": "cpu_ready",
+          "status": "observed",
+          "code": 0
+        }
+      ],
+      "cng_trace": [],
+      "ambient_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "dual_after_sha256": "0cc3e207b9afd758c38a172fe0c6c86fbdabed9ec2329d6ba3f314a4bd0e6e68",
+      "native_log_sha256": "2b6ee340093bcaf2d4195b246b373d20b6103fc2045832147492e252eb2e858b",
+      "child_log_sha256": "750c570cb3d11858e86af705c8080b15d8393bd19a3a8e62781e75c4bfaf51c0",
+      "native_observations": {
+        "requested_attempt_sid": {
+          "sid": "S-1-9-2395011591-1180268666-1755538365-3543722499",
+          "attributes": 0
+        },
+        "CreateRestrictedToken_flags": {
+          "value": 9
+        },
+        "input_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-2395011591-1180268666-1755538365-3543722499",
+            "attributes": 7
+          }
+        ],
+        "final_appcontainer_sid": {
+          "sid": "S-1-15-2-2445083510-706100159-3565658536-2704127086-1932482765-3473461187-2243017117",
+          "attributes": 0
+        },
+        "final_child_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-2395011591-1180268666-1755538365-3543722499",
+            "attributes": 7
+          }
+        ],
+        "accesscheck_lpac_without_task_read": {
+          "allowed": true,
+          "requested": 1,
+          "granted": 1
+        },
+        "child_pid": {
+          "value": 80420
+        },
+        "helper_pid": {
+          "value": 31460
+        },
+        "host_available_commit_bytes": {
+          "value": 23608705024
+        },
+        "child_exit": {
+          "value": 3221225540
+        },
+        "active_after_wait": {
+          "value": 0
+        },
+        "job_total_user_time_100ns": {
+          "value": 44375000
+        },
+        "peak_process_memory_bytes": {
+          "value": 577536
+        },
+        "restore_registry_acl": {
+          "value": 0
+        },
+        "restore_profile_acl": {
+          "observation": {
+            "value": 0
+          },
+          "count": 7
+        },
+        "delete_explicitly_created_registry_storage": {
+          "value": 0
+        },
+        "delete_synthetic_credential": {
+          "value": 1
+        },
+        "delete_synthetic_registry_key": {
+          "value": 0
+        },
+        "delete_owned_profile_hresult": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "case": "wall",
+      "helper_exit": 1,
+      "elapsed_seconds": 10.244,
+      "probes": [
+        {
+          "probe": "native_entry",
+          "status": "observed"
+        },
+        {
+          "probe": "pid",
+          "value": 47876
+        },
+        {
+          "probe": "permitted_write_error",
+          "value": 0
+        },
+        {
+          "probe": "ambient_write_error",
+          "value": 5
+        },
+        {
+          "probe": "ambient_read_error",
+          "value": 0
+        },
+        {
+          "probe": "permitted_read_error",
+          "value": 0
+        },
+        {
+          "probe": "native_basic_complete",
+          "status": "observed"
+        },
+        {
+          "probe": "hold_ready",
+          "status": "observed",
+          "code": 0
+        }
+      ],
+      "cng_trace": [],
+      "ambient_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "dual_after_sha256": "0cc3e207b9afd758c38a172fe0c6c86fbdabed9ec2329d6ba3f314a4bd0e6e68",
+      "native_log_sha256": "2dd7eecb2a7dc2411ca5c73a73d6b8305241dd46fa841aff47a323fd102fc377",
+      "child_log_sha256": "a0c0f7a752e98c6966f5f3d79825d7c5b7fe3d8c1e17679f91f659048fc96dc9",
+      "native_observations": {
+        "requested_attempt_sid": {
+          "sid": "S-1-9-1956238824-1169478875-1865021597-3339459806",
+          "attributes": 0
+        },
+        "CreateRestrictedToken_flags": {
+          "value": 9
+        },
+        "input_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-1956238824-1169478875-1865021597-3339459806",
+            "attributes": 7
+          }
+        ],
+        "final_appcontainer_sid": {
+          "sid": "S-1-15-2-1571360285-1415741281-3474107184-758455570-4164694333-3775654609-2738022833",
+          "attributes": 0
+        },
+        "final_child_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-1956238824-1169478875-1865021597-3339459806",
+            "attributes": 7
+          }
+        ],
+        "accesscheck_lpac_without_task_read": {
+          "allowed": true,
+          "requested": 1,
+          "granted": 1
+        },
+        "child_pid": {
+          "value": 47876
+        },
+        "helper_pid": {
+          "value": 90476
+        },
+        "host_available_commit_bytes": {
+          "value": 23556427776
+        },
+        "wall_timeout": {
+          "value": 1
+        },
+        "child_exit": {
+          "value": 125
+        },
+        "active_after_wait": {
+          "value": 0
+        },
+        "job_total_user_time_100ns": {
+          "value": 0
+        },
+        "peak_process_memory_bytes": {
+          "value": 557056
+        },
+        "restore_registry_acl": {
+          "value": 0
+        },
+        "restore_profile_acl": {
+          "observation": {
+            "value": 0
+          },
+          "count": 7
+        },
+        "delete_explicitly_created_registry_storage": {
+          "value": 0
+        },
+        "delete_synthetic_credential": {
+          "value": 1
+        },
+        "delete_synthetic_registry_key": {
+          "value": 0
+        },
+        "delete_owned_profile_hresult": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "case": "helper-death",
+      "helper_exit": 1,
+      "elapsed_seconds": 0.005,
+      "probes": [
+        {
+          "probe": "native_entry",
+          "status": "observed"
+        },
+        {
+          "probe": "pid",
+          "value": 53988
+        },
+        {
+          "probe": "permitted_write_error",
+          "value": 0
+        },
+        {
+          "probe": "ambient_write_error",
+          "value": 5
+        },
+        {
+          "probe": "ambient_read_error",
+          "value": 0
+        },
+        {
+          "probe": "permitted_read_error",
+          "value": 0
+        },
+        {
+          "probe": "native_basic_complete",
+          "status": "observed"
+        },
+        {
+          "probe": "hold_ready",
+          "status": "observed",
+          "code": 0
+        }
+      ],
+      "cng_trace": [],
+      "ambient_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "dual_after_sha256": "0cc3e207b9afd758c38a172fe0c6c86fbdabed9ec2329d6ba3f314a4bd0e6e68",
+      "native_log_sha256": "a89a076223d4cc89509e75672f493849f7b2cab322f3f1fc1fee323623cec07d",
+      "child_log_sha256": "8b35aef2a281ead1cdb7b8015514ef9c088c5dbbd5f0257ca4addfad4636cbcf",
+      "child_handle_signalled": true,
+      "native_observations": {
+        "requested_attempt_sid": {
+          "sid": "S-1-9-3951393576-1291536502-3913093515-734546315",
+          "attributes": 0
+        },
+        "CreateRestrictedToken_flags": {
+          "value": 9
+        },
+        "input_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-3951393576-1291536502-3913093515-734546315",
+            "attributes": 7
+          }
+        ],
+        "final_appcontainer_sid": {
+          "sid": "S-1-15-2-2698244735-3478845705-3346256179-2135799518-2586652217-2712145619-2473665454",
+          "attributes": 0
+        },
+        "final_child_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-3951393576-1291536502-3913093515-734546315",
+            "attributes": 7
+          }
+        ],
+        "accesscheck_lpac_without_task_read": {
+          "allowed": true,
+          "requested": 1,
+          "granted": 1
+        },
+        "child_pid": {
+          "value": 53988
+        },
+        "helper_pid": {
+          "value": 74372
+        },
+        "host_available_commit_bytes": {
+          "value": 23638970368
+        }
+      }
+    },
+    {
+      "case": "parent-death",
+      "helper_exit": null,
+      "elapsed_seconds": 0.03,
+      "probes": [
+        {
+          "probe": "native_entry",
+          "status": "observed"
+        },
+        {
+          "probe": "pid",
+          "value": 14920
+        },
+        {
+          "probe": "permitted_write_error",
+          "value": 0
+        },
+        {
+          "probe": "ambient_write_error",
+          "value": 5
+        },
+        {
+          "probe": "ambient_read_error",
+          "value": 0
+        },
+        {
+          "probe": "permitted_read_error",
+          "value": 0
+        },
+        {
+          "probe": "native_basic_complete",
+          "status": "observed"
+        },
+        {
+          "probe": "hold_ready",
+          "status": "observed",
+          "code": 0
+        }
+      ],
+      "cng_trace": [],
+      "ambient_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "dual_after_sha256": "0cc3e207b9afd758c38a172fe0c6c86fbdabed9ec2329d6ba3f314a4bd0e6e68",
+      "native_log_sha256": "dca11f852305be20c0f9ee3cc9d035707867f82be7b81b232baae19715a543ae",
+      "child_log_sha256": "d0fee9b939ffcaa3e31c762972127f61c7997d29d4432875ac92b55a72dc6820",
+      "child_and_helper_handles_signalled": true,
+      "native_observations": {
+        "requested_attempt_sid": {
+          "sid": "S-1-9-864202221-1313792665-3455348871-878298236",
+          "attributes": 0
+        },
+        "CreateRestrictedToken_flags": {
+          "value": 9
+        },
+        "input_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-864202221-1313792665-3455348871-878298236",
+            "attributes": 7
+          }
+        ],
+        "final_appcontainer_sid": {
+          "sid": "S-1-15-2-3734897601-421563496-1388013442-889735312-4205336676-1903166979-114617969",
+          "attributes": 0
+        },
+        "final_child_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-864202221-1313792665-3455348871-878298236",
+            "attributes": 7
+          }
+        ],
+        "accesscheck_lpac_without_task_read": {
+          "allowed": true,
+          "requested": 1,
+          "granted": 1
+        },
+        "child_pid": {
+          "value": 14920
+        },
+        "helper_pid": {
+          "value": 77956
+        },
+        "host_available_commit_bytes": {
+          "value": 23604461568
+        },
+        "parent_death": {
+          "value": 1
+        },
+        "child_exit": {
+          "value": 125
+        },
+        "active_after_wait": {
+          "value": 0
+        },
+        "job_total_user_time_100ns": {
+          "value": 0
+        },
+        "peak_process_memory_bytes": {
+          "value": 581632
+        },
+        "restore_registry_acl": {
+          "value": 0
+        },
+        "restore_profile_acl": {
+          "observation": {
+            "value": 0
+          },
+          "count": 7
+        },
+        "delete_explicitly_created_registry_storage": {
+          "value": 0
+        },
+        "delete_synthetic_credential": {
+          "value": 1
+        },
+        "delete_synthetic_registry_key": {
+          "value": 0
+        },
+        "delete_owned_profile_hresult": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "case": "cpu-repeat",
+      "helper_exit": 1,
+      "elapsed_seconds": 9.237,
+      "probes": [
+        {
+          "probe": "native_entry",
+          "status": "observed"
+        },
+        {
+          "probe": "pid",
+          "value": 11964
+        },
+        {
+          "probe": "permitted_write_error",
+          "value": 0
+        },
+        {
+          "probe": "ambient_write_error",
+          "value": 5
+        },
+        {
+          "probe": "ambient_read_error",
+          "value": 0
+        },
+        {
+          "probe": "permitted_read_error",
+          "value": 0
+        },
+        {
+          "probe": "native_basic_complete",
+          "status": "observed"
+        },
+        {
+          "probe": "cpu_ready",
+          "status": "observed",
+          "code": 0
+        }
+      ],
+      "cng_trace": [],
+      "ambient_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "dual_after_sha256": "0cc3e207b9afd758c38a172fe0c6c86fbdabed9ec2329d6ba3f314a4bd0e6e68",
+      "native_log_sha256": "cd06269093da4ef2487840e30d12ddda5940448bd79651f40782f13d397a61fe",
+      "child_log_sha256": "07cbec2ba2f407d179ca06a4e6223c34d5522cca0ba3f733db2c7e723f13de40",
+      "native_observations": {
+        "requested_attempt_sid": {
+          "sid": "S-1-9-1981582571-1207276448-2023570103-3173649775",
+          "attributes": 0
+        },
+        "CreateRestrictedToken_flags": {
+          "value": 9
+        },
+        "input_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-1981582571-1207276448-2023570103-3173649775",
+            "attributes": 7
+          }
+        ],
+        "final_appcontainer_sid": {
+          "sid": "S-1-15-2-2432328271-1556982516-3214019979-2244217083-2454150606-3750803171-1949316468",
+          "attributes": 0
+        },
+        "final_child_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-1981582571-1207276448-2023570103-3173649775",
+            "attributes": 7
+          }
+        ],
+        "accesscheck_lpac_without_task_read": {
+          "allowed": true,
+          "requested": 1,
+          "granted": 1
+        },
+        "child_pid": {
+          "value": 11964
+        },
+        "helper_pid": {
+          "value": 35360
+        },
+        "host_available_commit_bytes": {
+          "value": 23949598720
+        },
+        "child_exit": {
+          "value": 3221225540
+        },
+        "active_after_wait": {
+          "value": 0
+        },
+        "job_total_user_time_100ns": {
+          "value": 84218750
+        },
+        "peak_process_memory_bytes": {
+          "value": 593920
+        },
+        "restore_registry_acl": {
+          "value": 0
+        },
+        "restore_profile_acl": {
+          "observation": {
+            "value": 0
+          },
+          "count": 7
+        },
+        "delete_explicitly_created_registry_storage": {
+          "value": 0
+        },
+        "delete_synthetic_credential": {
+          "value": 1
+        },
+        "delete_synthetic_registry_key": {
+          "value": 0
+        },
+        "delete_owned_profile_hresult": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "case": "full-python-traced",
+      "helper_exit": 1,
+      "elapsed_seconds": 1.583,
+      "probes": [],
+      "cng_trace": [],
+      "ambient_sha256": "260a4e0da0e9317d433048f4eabe82467f3ea1ca5d4164f14179b70f9e9a32ce",
+      "dual_after_sha256": "fd06e44f2b384ff6e4cf34feedde83ad58c6b2ed49c779b7dbb3eec00b20750f",
+      "native_log_sha256": "3d5cb2962c7525f4f75099203ed3b2d95f2dbd58c74240db54b33482a073a206",
+      "child_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "native_observations": {
+        "requested_attempt_sid": {
+          "sid": "S-1-9-2005550360-1241125903-1076320898-3807770715",
+          "attributes": 0
+        },
+        "CreateRestrictedToken_flags": {
+          "value": 1
+        },
+        "input_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-2005550360-1241125903-1076320898-3807770715",
+            "attributes": 7
+          }
+        ],
+        "final_appcontainer_sid": {
+          "sid": "S-1-15-2-1009404278-676822167-2487593960-1062579436-3599317629-3348976076-2250392463",
+          "attributes": 0
+        },
+        "final_child_restricted_sids": [
+          {
+            "value": 1
+          },
+          {
+            "sid": "S-1-9-2005550360-1241125903-1076320898-3807770715",
+            "attributes": 7
+          }
+        ],
+        "accesscheck_lpac_without_task_read": {
+          "allowed": false,
+          "requested": 1,
+          "granted": 0
+        },
+        "child_pid": {
+          "value": 41428
+        },
+        "helper_pid": {
+          "value": 85944
+        },
+        "host_available_commit_bytes": {
+          "value": 23467290624
+        },
+        "symbol_derived_NtGlobalFlag_offset": {
+          "value": 188
+        },
+        "child_NtGlobalFlag_before": {
+          "value": 0
+        },
+        "child_NtGlobalFlag_after": {
+          "value": 2
+        },
+        "child_exit": {
+          "value": 3221225506
+        },
+        "active_after_wait": {
+          "value": 0
+        },
+        "job_total_user_time_100ns": {
+          "value": 0
+        },
+        "peak_process_memory_bytes": {
+          "value": 417792
+        },
+        "restore_registry_acl": {
+          "value": 0
+        },
+        "restore_profile_acl": {
+          "observation": {
+            "value": 0
+          },
+          "count": 7
+        },
+        "delete_explicitly_created_registry_storage": {
+          "value": 0
+        },
+        "delete_synthetic_credential": {
+          "value": 1
+        },
+        "delete_synthetic_registry_key": {
+          "value": 0
+        },
+        "delete_owned_profile_hresult": {
+          "value": 0
+        }
+      }
+    }
+  ],
+  "raw_result_hashes": {
+    "results.json": "3161525782a04d6dd188dc39ffe795195b51af0546eccb4911593c2531fb88ed",
+    "cpu-repeat.json": "1d5eb2e809c90cee217a49b5fe277f17f579428e913ed974ee0cd76e84c7fd2a",
+    "full-python-traced.json": "67b7797ebe4ff6213d1e2ab00064560c8ff94c884ca465a11f67c8da589bda75",
+    "runner.jsonl": "e7030ba21627cd06db0604367b4e2b98ab5a88b1328eddf2e6a4c2da6818bf85",
+    "runner-errors.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "preliminary_measurements_not_carried_forward": [
+    {
+      "build": "m21-bootstrap-r1",
+      "outcome": "System DbgHelp type query failed with error 87; child not resumed. No bootstrap pass.",
+      "manifest_sha256": "d93adf9842efd53fde83a0ef7763bd1a982c14308f697edf953b656a8d0b1407",
+      "source_and_executables": {
+        "launcher.exe": {
+          "sha256": "31403b2ae5145c9f3f73da4aaba07cae27b4d0591cf33bab94acbf2bc05095d1",
+          "bytes": 422400
+        },
+        "native-minimal.exe": {
+          "sha256": "67990230257e0bcd69ff67cc81ed59d3d188460435cf1780b083a81ab1e43f51",
+          "bytes": 4096
+        },
+        "native-static.exe": {
+          "sha256": "aab53e61d008df10b41c9943a1d54e6162d080d1516e698180d6613051253fd1",
+          "bytes": 107520
+        },
+        "source/build.ps1": {
+          "sha256": "35e05abdc9a3638541e3f1c2eaff5e42e959e5e6e0d6b615f198ebc9312d7bcf",
+          "bytes": 4889
+        },
+        "source/launcher.cpp": {
+          "sha256": "c08a4469d4554653cb11fba7bc7a92e8a7335608c0549595a8f53c8bdcba7029",
+          "bytes": 42430
+        },
+        "source/loader-diagnostics.h": {
+          "sha256": "62a3c22fe307dd3aedc4b75088727d38533e1566ba39526471df7a4cdbf342c7",
+          "bytes": 3608
+        },
+        "source/native-child.c": {
+          "sha256": "eb21cf03587406b89e5c2cc395caaae108076d191ff646473aa34cd9f5b2094c",
+          "bytes": 2298
+        },
+        "source/probe.py": {
+          "sha256": "ef533c45c6220c471c6742cc2d844459abc66546b73eee34b439cdd2021d9aab",
+          "bytes": 10436
+        },
+        "source/run.py": {
+          "sha256": "3ddf4388f924f0f9d3fd109c64978a858c6c201d1d2d80d13c3af9856310bf94",
+          "bytes": 8660
+        }
+      },
+      "raw_logs": {
+        "python-native.log": "878e77da46c7665c168b66fd3de3ea55c18eec66c48e1162e9b1c576638d25bf",
+        "python.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "build": "m21-bootstrap-r2",
+      "outcome": "Minimal native direct-entry startup and basic controls succeeded.",
+      "manifest_sha256": "21982b4e12123b33ba6f59a50f563e79f488003f7208bbcfc197de4600cec264",
+      "source_and_executables": {
+        "launcher.exe": {
+          "bytes": 422400,
+          "sha256": "796cb23e4c390a52e14203d081233cce596e971a2d1b9d03b203f21be3388181"
+        },
+        "native-minimal.exe": {
+          "bytes": 4096,
+          "sha256": "4fbd8c3aa9e7b5715efc202d346ee08c8ecff43dd0962569660c555813975d86"
+        },
+        "native-static.exe": {
+          "bytes": 107520,
+          "sha256": "4682c2eaae09fea3061a572ed3d8eb20aad2f357b5101640fe802bb2763acd3c"
+        },
+        "source/build.ps1": {
+          "bytes": 5063,
+          "sha256": "3bc383d06480f74e67168c0d385d1b2a18652e70679b63ab5a15802d146dd7a8"
+        },
+        "source/launcher.cpp": {
+          "bytes": 42430,
+          "sha256": "c08a4469d4554653cb11fba7bc7a92e8a7335608c0549595a8f53c8bdcba7029"
+        },
+        "source/loader-diagnostics.h": {
+          "bytes": 3893,
+          "sha256": "77085e4e0e4ef8a3c43e72fcff29157206a0daf80c0acacb9cd68fb9eaeba219"
+        },
+        "source/native-child.c": {
+          "bytes": 2298,
+          "sha256": "eb21cf03587406b89e5c2cc395caaae108076d191ff646473aa34cd9f5b2094c"
+        },
+        "source/probe.py": {
+          "bytes": 10436,
+          "sha256": "ef533c45c6220c471c6742cc2d844459abc66546b73eee34b439cdd2021d9aab"
+        },
+        "source/run.py": {
+          "bytes": 8660,
+          "sha256": "3ddf4388f924f0f9d3fd109c64978a858c6c201d1d2d80d13c3af9856310bf94"
+        }
+      },
+      "raw_logs": {
+        "child.jsonl": "d103b10786a0c57408e4990fa6394cbc002271dd3c315b7e8b2e446318dfd97c",
+        "native.log": "07be5019ceb889711dae512058c85f12cbe82c9d3cfb534dffd596db15e4d94c"
+      }
+    },
+    {
+      "build": "m21-bootstrap-r3",
+      "outcome": "Static-CRT native startup and basic controls succeeded.",
+      "manifest_sha256": "28e3933d8c1040908653c0d31d2205c01154249abce138a50eb9d7aa819fe11b",
+      "source_and_executables": {
+        "launcher.exe": {
+          "bytes": 422400,
+          "sha256": "fb0557a00e6fc65179c9005d3444c38e832804e6ee536fb0d98dd706972e7da2"
+        },
+        "native-minimal.exe": {
+          "bytes": 4096,
+          "sha256": "4e0571262a374e177f077050071b9ce7390e243b6a09c1948d0a819901c8a9b1"
+        },
+        "native-static.exe": {
+          "bytes": 107520,
+          "sha256": "e9c0080edd9a4c60cf8e59bae422fea77884260e0470fad250b15ff1fdb5550c"
+        },
+        "source/build.ps1": {
+          "bytes": 5063,
+          "sha256": "3bc383d06480f74e67168c0d385d1b2a18652e70679b63ab5a15802d146dd7a8"
+        },
+        "source/launcher.cpp": {
+          "bytes": 42430,
+          "sha256": "c08a4469d4554653cb11fba7bc7a92e8a7335608c0549595a8f53c8bdcba7029"
+        },
+        "source/loader-diagnostics.h": {
+          "bytes": 3893,
+          "sha256": "77085e4e0e4ef8a3c43e72fcff29157206a0daf80c0acacb9cd68fb9eaeba219"
+        },
+        "source/native-child.c": {
+          "bytes": 2298,
+          "sha256": "eb21cf03587406b89e5c2cc395caaae108076d191ff646473aa34cd9f5b2094c"
+        },
+        "source/probe.py": {
+          "bytes": 10436,
+          "sha256": "ef533c45c6220c471c6742cc2d844459abc66546b73eee34b439cdd2021d9aab"
+        },
+        "source/run.py": {
+          "bytes": 8660,
+          "sha256": "3ddf4388f924f0f9d3fd109c64978a858c6c201d1d2d80d13c3af9856310bf94"
+        }
+      },
+      "raw_logs": {
+        "child.jsonl": "3446ba4cb027fbc79f6598dd42b75980804c2c74df8ba691b3fd67a4e429e4ba",
+        "native.log": "97a68c3125d2b20e77035c3ed0657fb703d87861105c4187aba2d2c30f71c53e"
+      }
+    },
+    {
+      "build": "m21-bootstrap-r4",
+      "outcome": "Matching symbols and loader snaps identified bcrypt DLL_PROCESS_ATTACH failure.",
+      "manifest_sha256": "4374c5baf39b76ee210a16b89f05b3f176e9b014fe9c5cd312b888b80b66b0ea",
+      "source_and_executables": {
+        "launcher.exe": {
+          "bytes": 422400,
+          "sha256": "315bd46823573f64b65959aa211066f29801ab57b3c3b29727036ee31297eb6a"
+        },
+        "native-minimal.exe": {
+          "bytes": 4096,
+          "sha256": "b41b2f265d8a13d9bfec08e275bd67d10d4f3fba1509e018d9dbe10a0ae5077b"
+        },
+        "native-static.exe": {
+          "bytes": 107520,
+          "sha256": "622cd34fb0f877386611a13085d18b0e30431c987341aa9dddd03311092cb2cd"
+        },
+        "source/build.ps1": {
+          "bytes": 5063,
+          "sha256": "3bc383d06480f74e67168c0d385d1b2a18652e70679b63ab5a15802d146dd7a8"
+        },
+        "source/launcher.cpp": {
+          "bytes": 42430,
+          "sha256": "c08a4469d4554653cb11fba7bc7a92e8a7335608c0549595a8f53c8bdcba7029"
+        },
+        "source/loader-diagnostics.h": {
+          "bytes": 3893,
+          "sha256": "77085e4e0e4ef8a3c43e72fcff29157206a0daf80c0acacb9cd68fb9eaeba219"
+        },
+        "source/native-child.c": {
+          "bytes": 2298,
+          "sha256": "eb21cf03587406b89e5c2cc395caaae108076d191ff646473aa34cd9f5b2094c"
+        },
+        "source/probe.py": {
+          "bytes": 10436,
+          "sha256": "ef533c45c6220c471c6742cc2d844459abc66546b73eee34b439cdd2021d9aab"
+        },
+        "source/run.py": {
+          "bytes": 8660,
+          "sha256": "3ddf4388f924f0f9d3fd109c64978a858c6c201d1d2d80d13c3af9856310bf94"
+        }
+      },
+      "raw_logs": {
+        "child.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "native.log": "f9a62fd90bf2b0dbe1f02f2b7329bfd7f3f53e594dfd67b30bd393dc0a520fad"
+      }
+    },
+    {
+      "build": "m21-bootstrap-r5",
+      "outcome": "Fixed NT-call observation identified bcrypt KsecDD read/write access denial.",
+      "manifest_sha256": "190be0cd3ddbd03b974987271e7a7ee22938ef8027b1908ad1789e31ab3edafb",
+      "source_and_executables": {
+        "launcher.exe": {
+          "sha256": "3b66ca3291cde09157685be7e2acb5558ca7a22e1957631d5003340d7ce925a2",
+          "bytes": 466944
+        },
+        "native-minimal.exe": {
+          "sha256": "957d8464afbeaa1027a0b2fd086ce78874f5eed13029e8fef2605844745ef1d0",
+          "bytes": 4096
+        },
+        "native-static.exe": {
+          "sha256": "bd0d462e0e0e99290769b901478a288c954bcb096bb4d1310d669eea6375e00b",
+          "bytes": 107520
+        },
+        "source/access-trace.h": {
+          "sha256": "60f3772840bf0adc7b8d29b1a214eec924758424cc2ed4eb199e5f3c184d86f5",
+          "bytes": 6172
+        },
+        "source/build.ps1": {
+          "sha256": "3bc383d06480f74e67168c0d385d1b2a18652e70679b63ab5a15802d146dd7a8",
+          "bytes": 5063
+        },
+        "source/launcher.cpp": {
+          "sha256": "b2e72ae357c4a5691205484dfdd7e58322c7dce0ef2cca794b5dcc17a5ecda34",
+          "bytes": 43102
+        },
+        "source/loader-diagnostics.h": {
+          "sha256": "77085e4e0e4ef8a3c43e72fcff29157206a0daf80c0acacb9cd68fb9eaeba219",
+          "bytes": 3893
+        },
+        "source/native-child.c": {
+          "sha256": "eb21cf03587406b89e5c2cc395caaae108076d191ff646473aa34cd9f5b2094c",
+          "bytes": 2298
+        },
+        "source/probe.py": {
+          "sha256": "ef533c45c6220c471c6742cc2d844459abc66546b73eee34b439cdd2021d9aab",
+          "bytes": 10436
+        },
+        "source/run.py": {
+          "sha256": "3ddf4388f924f0f9d3fd109c64978a858c6c201d1d2d80d13c3af9856310bf94",
+          "bytes": 8660
+        }
+      },
+      "raw_logs": {
+        "child.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "native.log": "fb4774d8dd90de506839afaa8e29588d3f96f22e48edf9e958ada1a9f79769d3"
+      }
+    },
+    {
+      "build": "m21-bootstrap-r6",
+      "outcome": "Independent native KsecDD access/load probe; share mask was 3, final corrected to exact observed 7.",
+      "manifest_sha256": "a8dfbf682282d39cebe28395fa63832d5c08182ae1b17677f0fead0ee237cf1b",
+      "source_and_executables": {
+        "launcher.exe": {
+          "sha256": "35cd813889f494e01ee80b69079c67c05cac173831a50770800e2a73d4dad2db",
+          "bytes": 466944
+        },
+        "native-minimal.exe": {
+          "sha256": "d8384eafbdbc02c4ef9e80fe2a2dc85080655050250381d1b629096da6ad0fe6",
+          "bytes": 4096
+        },
+        "native-static.exe": {
+          "sha256": "90a0ff290d1020ce7011caa4592c0e6e71b01be1f66667c0a4609410fbdd89f6",
+          "bytes": 160768
+        },
+        "source/access-trace.h": {
+          "sha256": "60f3772840bf0adc7b8d29b1a214eec924758424cc2ed4eb199e5f3c184d86f5",
+          "bytes": 6172
+        },
+        "source/build.ps1": {
+          "sha256": "3bc383d06480f74e67168c0d385d1b2a18652e70679b63ab5a15802d146dd7a8",
+          "bytes": 5063
+        },
+        "source/launcher.cpp": {
+          "sha256": "22367f77bc31921656a4313790aff4c5b200fd978750283648d77af4ec59a0ff",
+          "bytes": 43127
+        },
+        "source/loader-diagnostics.h": {
+          "sha256": "77085e4e0e4ef8a3c43e72fcff29157206a0daf80c0acacb9cd68fb9eaeba219",
+          "bytes": 3893
+        },
+        "source/native-child.c": {
+          "sha256": "361b99e45b235cbaf1eab45d2af33a0027740e89a97cff7ff3bf2cf13e90e428",
+          "bytes": 2358
+        },
+        "source/native-suite.h": {
+          "sha256": "e2dd6cbd72d7244598725c3d48a2b5ded6e4a03ccd34887c768962cb084dc225",
+          "bytes": 14664
+        },
+        "source/probe.py": {
+          "sha256": "ef533c45c6220c471c6742cc2d844459abc66546b73eee34b439cdd2021d9aab",
+          "bytes": 10436
+        },
+        "source/run.py": {
+          "sha256": "3ddf4388f924f0f9d3fd109c64978a858c6c201d1d2d80d13c3af9856310bf94",
+          "bytes": 8660
+        }
+      },
+      "raw_logs": {
+        "child.jsonl": "13836acc0f7d6d019982b785907fb768588ae3efefbf50531741bdacbe5a643f",
+        "native.log": "92047535c3a64648f0329a284bcca1f39b26c05865904e4cdd03ba03eba54fb5"
+      }
+    },
+    {
+      "build": "m21-bootstrap-r7",
+      "outcome": "Initial fresh static-native adversarial suite completed; final matrix reruns it.",
+      "manifest_sha256": "ba0b256e23e0704e38312384bb8837862bca26ca4462afa8d8e3759ce59d0f0a",
+      "source_and_executables": {
+        "launcher.exe": {
+          "sha256": "9c915750b2a7b5b441c63ef257425785d3c4f6c82fae80ac05dfbe3c6c215e0a",
+          "bytes": 466944
+        },
+        "native-minimal.exe": {
+          "sha256": "944b4dd43eac4750f7d0737ff6afd5664d38eb99b262395e6327408049f09208",
+          "bytes": 4096
+        },
+        "native-static.exe": {
+          "sha256": "b878787920bb9995fbd3f154964fb85124d5d17f1f8d758da1ee82875fddb51c",
+          "bytes": 160768
+        },
+        "source/access-trace.h": {
+          "sha256": "60f3772840bf0adc7b8d29b1a214eec924758424cc2ed4eb199e5f3c184d86f5",
+          "bytes": 6172
+        },
+        "source/build.ps1": {
+          "sha256": "3bc383d06480f74e67168c0d385d1b2a18652e70679b63ab5a15802d146dd7a8",
+          "bytes": 5063
+        },
+        "source/launcher.cpp": {
+          "sha256": "22367f77bc31921656a4313790aff4c5b200fd978750283648d77af4ec59a0ff",
+          "bytes": 43127
+        },
+        "source/loader-diagnostics.h": {
+          "sha256": "77085e4e0e4ef8a3c43e72fcff29157206a0daf80c0acacb9cd68fb9eaeba219",
+          "bytes": 3893
+        },
+        "source/native-child.c": {
+          "sha256": "361b99e45b235cbaf1eab45d2af33a0027740e89a97cff7ff3bf2cf13e90e428",
+          "bytes": 2358
+        },
+        "source/native-suite.h": {
+          "sha256": "e2dd6cbd72d7244598725c3d48a2b5ded6e4a03ccd34887c768962cb084dc225",
+          "bytes": 14664
+        },
+        "source/probe.py": {
+          "sha256": "ef533c45c6220c471c6742cc2d844459abc66546b73eee34b439cdd2021d9aab",
+          "bytes": 10436
+        },
+        "source/run.py": {
+          "sha256": "3ddf4388f924f0f9d3fd109c64978a858c6c201d1d2d80d13c3af9856310bf94",
+          "bytes": 8660
+        }
+      },
+      "raw_logs": {
+        "child.jsonl": "57e92d379ad09df92fce13c3ea410468e8aae722ac871be5d87aa06406c49724",
+        "native.log": "d5cefd920660fa170663d0964da714d8d88068f68c60f3dc709dae1db0874305"
+      }
+    },
+    {
+      "build": "m21-bootstrap-matrix-1",
+      "outcome": "Initial complete matrix; canonical final matrix repeats it with exact KsecDD share mask and CPU/headroom accounting.",
+      "manifest_sha256": "bb19724e97cedb48d753c78d06e1d1c268cf7fd32e740bae73993a4aca1cc9da",
+      "results_sha256": "000ef9109f9e19c906a34ffbeeb48ff08d331011ef697dec36dc8f6124949eae",
+      "source_and_executables": {
+        "launcher.exe": {
+          "sha256": "6d6e815141a5442af7b315a716b3da9b2e9d923a92a15acbb28ca2df91ecd898",
+          "bytes": 467968
+        },
+        "native-minimal.exe": {
+          "sha256": "2afed35943280f1411cf23efb9790a04b5cda03215ec512fb0918aafd23f1ccc",
+          "bytes": 4096
+        },
+        "native-static.exe": {
+          "sha256": "9aaf117aa955f53c34377ac62862473d44dcc003d8d6071cbb0c4dc0e4dfe459",
+          "bytes": 160768
+        },
+        "source/access-trace.h": {
+          "sha256": "fc1f59a6fc25bfe8ac7d49350edc65e52f25cbf56fec4b038e1d634914b6055b",
+          "bytes": 6500
+        },
+        "source/build.ps1": {
+          "sha256": "f978a29af97d7214610f9ff0643879c228c229528ad90fe77edb1e595d3b5445",
+          "bytes": 5550
+        },
+        "source/launcher.cpp": {
+          "sha256": "22367f77bc31921656a4313790aff4c5b200fd978750283648d77af4ec59a0ff",
+          "bytes": 43127
+        },
+        "source/loader-diagnostics.h": {
+          "sha256": "77085e4e0e4ef8a3c43e72fcff29157206a0daf80c0acacb9cd68fb9eaeba219",
+          "bytes": 3893
+        },
+        "source/native-child.c": {
+          "sha256": "361b99e45b235cbaf1eab45d2af33a0027740e89a97cff7ff3bf2cf13e90e428",
+          "bytes": 2358
+        },
+        "source/native-suite.h": {
+          "sha256": "2aa1815da45753da2697b96d8a9510285cba62625702e554c4dbb4f5b4335677",
+          "bytes": 14714
+        },
+        "source/probe.py": {
+          "sha256": "ef533c45c6220c471c6742cc2d844459abc66546b73eee34b439cdd2021d9aab",
+          "bytes": 10436
+        },
+        "source/run.py": {
+          "sha256": "3ac2913dad70c8e3c88fa19cf932018be5b0b187e0c69a62f94861826767c38f",
+          "bytes": 11292
+        }
+      }
+    }
+  ],
+  "cleanup": {
+    "owned_identities_checked": 31,
+    "remaining_profiles_or_registry_storage": 0
+  },
+  "regression_validation": {
+    "python": {
+      "passed": 451,
+      "skipped": 3,
+      "skip_reason": "Windows symlink privilege",
+      "coverage_percent": 91
+    },
+    "desktop_boundary": 9,
+    "desktop_simulation": 58,
+    "new_evidence_unittests_local_only": 6,
+    "lint": "pass",
+    "format": "pass",
+    "distribution_guard": {
+      "modules": 20,
+      "dependencies": 0,
+      "live_transport_present": false
+    },
+    "hosted_ci": "Recorded at the final source head in the draft PR; existing jobs do not qualify this Windows isolation experiment."
+  },
+  "preserved_artifacts": {
+    "m12_windows_zip": {
+      "sha256": "ce1b6cefc184bce208c2ba887ad7bf73b320d299542a0f8d4cc924d8b7a0c5a1",
+      "bytes": 170994746
+    },
+    "v01_tag": "v0.1.0.dev1",
+    "v01_commit": "038f1ef33f5233924d35dd773bfa8a25df494be6"
+  },
+  "limitations": [
+    "One Windows 11 Home development machine, not clean installation qualification.",
+    "Ambient read succeeds under WRITE_RESTRICTED. Full restriction fails at bootstrap.",
+    "Configured 2 s CPU limit terminated at 4.4375 s user CPU; repeat 8.421875 s. Periodic enforcement is not a hard ceiling.",
+    "LPAC token information query returns 87; contrasting independent access checks and real operations are recorded.",
+    "Profile recreation 87 and synthetic credential access 1702 are API errors, not relabelled access denials.",
+    "IPv4 TCP/UDP and DNS probes are bounded; no packet capture or exhaustive network-API qualification.",
+    "Supplied results and successful tests do not authenticate records or confer authority.",
+    "Microsoft symbol download occurs only in trusted maintainer diagnostics; no worker network capability is added."
+  ]
+}
