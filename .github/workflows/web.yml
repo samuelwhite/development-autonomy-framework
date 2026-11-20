@@ -19,12 +19,18 @@ jobs:
       - run: npm ci --prefix desktop --ignore-scripts --no-fund
       - run: ./desktop/node_modules/.bin/playwright install --with-deps chromium
       - run: node --test web/tests/browser.test.mjs
-      - name: Build and smoke-test the Compose example
-        working-directory: web
+      - name: Build and smoke-test Compose from a restrictive checkout
         env:
           DAF_VIEWER_PASSWORD_SOURCE: ${{ runner.temp }}/daf-viewer-password
         run: |
           umask 077
+          checkout_dir="$RUNNER_TEMP/daf-restrictive-context"
+          mkdir "$checkout_dir"
+          git archive HEAD:web | tar --extract --file=- --directory="$checkout_dir" --no-same-permissions
+          cd "$checkout_dir"
+          test "$(stat -c '%a' server.mjs)" = 600
+          test "$(stat -c '%a' public)" = 700
+          test "$(stat -c '%a' public/app.js)" = 600
           openssl rand -hex 32 > "$DAF_VIEWER_PASSWORD_SOURCE"
           chmod 0400 "$DAF_VIEWER_PASSWORD_SOURCE"
           sudo chown 1000:1000 "$DAF_VIEWER_PASSWORD_SOURCE"
@@ -47,7 +53,11 @@ jobs:
           '
       - name: Remove test container
         if: always()
-        working-directory: web
         env:
           DAF_VIEWER_PASSWORD_SOURCE: ${{ runner.temp }}/daf-viewer-password
-        run: docker compose down
+        run: |
+          checkout_dir="$RUNNER_TEMP/daf-restrictive-context"
+          if [ -f "$checkout_dir/compose.yaml" ]; then
+            cd "$checkout_dir"
+            docker compose down
+          fi
