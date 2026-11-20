@@ -194,6 +194,24 @@ test('jobs reject mismatched identity, and proposals reject cross-repository sou
   assert.equal(project.runs.state, 'current');
 });
 
+test('Actions lifecycle and conclusion remain distinct', async () => {
+  const observations = [
+    { status: 'in_progress', conclusion: null }, { status: 'queued', conclusion: null },
+    { status: 'waiting', conclusion: null }, { status: 'completed', conclusion: 'cancelled' },
+  ];
+  const feed = createFeed({ ...config(), signal: signal(), fetcher: async (url) => {
+    if (url.includes('/attempts/')) return Response.json({ total_count: 0, jobs: [] });
+    if (url.includes('/actions/runs')) return Response.json({
+      workflow_runs: observations.map((status, index) => ({ ...run, ...status, id: run.id + index })),
+    });
+    return githubFixture(url);
+  } });
+  const [project] = (await feed()).projects;
+  assert.deepEqual(project.runs.data.map((run) => [run.state, run.conclusion]), [
+    ['running', null], ['queued', null], ['blocked', null], ['completed', 'cancelled'],
+  ]);
+});
+
 test('service shutdown aborts reads and stops listening', async (t) => {
   let started;
   const readStarted = new Promise((resolve) => { started = resolve; });
