@@ -1,0 +1,686 @@
+{
+  "schema": "daf-a8-first-hosted-review/v1",
+  "review_head": "45f89ae139f544820a28009eca6fa11b3fba9d18",
+  "review_tree": "46e7ab9b36178f4858d0001c2dfe99f76f89bfea",
+  "native_executions": 0,
+  "qualified": false,
+  "execution_authority": false,
+  "runs": [
+    {
+      "id": 41318646152,
+      "name": "preview-quality",
+      "result": "failure",
+      "jobs": [
+        {
+          "id": 124883973002,
+          "name": "offline (windows-latest, 3.13)",
+          "status": "completed",
+          "conclusion": "failure",
+          "run_id": 41318646152,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Run actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Run python -m pip install -r requirements-dev.txt",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Run python -m ruff check .",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5
+            },
+            {
+              "name": "Run python -m ruff format --check .",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6
+            },
+            {
+              "name": "Run python -m pytest --cov=daf --cov-report=term-missing",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Portable native foundation contracts (not Windows isolation acceptance)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8
+            },
+            {
+              "name": "Portable diagnostic evidence contracts (no native execution)",
+              "status": "completed",
+              "conclusion": "failure",
+              "number": 9
+            },
+            {
+              "name": "Run python scripts/check_distribution.py",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 10
+            },
+            {
+              "name": "Run python -m build",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 11
+            },
+            {
+              "name": "Run python scripts/smoke_wheel.py",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 12
+            },
+            {
+              "name": "Run python scripts/smoke_sdist.py",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 13
+            },
+            {
+              "name": "Run python -m pip_audit -r requirements-dev.txt --strict",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 14
+            },
+            {
+              "name": "Post Run actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 27
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 28
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 29
+            }
+          ]
+        },
+        {
+          "id": 124883973067,
+          "name": "offline (ubuntu-latest, 3.12)",
+          "status": "completed",
+          "conclusion": "failure",
+          "run_id": 41318646152,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Run actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Run python -m pip install -r requirements-dev.txt",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Run python -m ruff check .",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5
+            },
+            {
+              "name": "Run python -m ruff format --check .",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6
+            },
+            {
+              "name": "Run python -m pytest --cov=daf --cov-report=term-missing",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Portable native foundation contracts (not Windows isolation acceptance)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8
+            },
+            {
+              "name": "Portable diagnostic evidence contracts (no native execution)",
+              "status": "completed",
+              "conclusion": "failure",
+              "number": 9
+            },
+            {
+              "name": "Run python scripts/check_distribution.py",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 10
+            },
+            {
+              "name": "Run python -m build",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 11
+            },
+            {
+              "name": "Run python scripts/smoke_wheel.py",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 12
+            },
+            {
+              "name": "Run python scripts/smoke_sdist.py",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 13
+            },
+            {
+              "name": "Run python -m pip_audit -r requirements-dev.txt --strict",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 14
+            },
+            {
+              "name": "Post Run actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 27
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 28
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 29
+            }
+          ]
+        },
+        {
+          "id": 124883973114,
+          "name": "offline (ubuntu-latest, 3.13)",
+          "status": "completed",
+          "conclusion": "failure",
+          "run_id": 41318646152,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Run actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Run python -m pip install -r requirements-dev.txt",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Run python -m ruff check .",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5
+            },
+            {
+              "name": "Run python -m ruff format --check .",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6
+            },
+            {
+              "name": "Run python -m pytest --cov=daf --cov-report=term-missing",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Portable native foundation contracts (not Windows isolation acceptance)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8
+            },
+            {
+              "name": "Portable diagnostic evidence contracts (no native execution)",
+              "status": "completed",
+              "conclusion": "failure",
+              "number": 9
+            },
+            {
+              "name": "Run python scripts/check_distribution.py",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 10
+            },
+            {
+              "name": "Run python -m build",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 11
+            },
+            {
+              "name": "Run python scripts/smoke_wheel.py",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 12
+            },
+            {
+              "name": "Run python scripts/smoke_sdist.py",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 13
+            },
+            {
+              "name": "Run python -m pip_audit -r requirements-dev.txt --strict",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 14
+            },
+            {
+              "name": "Post Run actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 27
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 28
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 29
+            }
+          ]
+        },
+        {
+          "id": 124883973121,
+          "name": "offline (windows-latest, 3.12)",
+          "status": "completed",
+          "conclusion": "failure",
+          "run_id": 41318646152,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Run actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Run python -m pip install -r requirements-dev.txt",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Run python -m ruff check .",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5
+            },
+            {
+              "name": "Run python -m ruff format --check .",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6
+            },
+            {
+              "name": "Run python -m pytest --cov=daf --cov-report=term-missing",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Portable native foundation contracts (not Windows isolation acceptance)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8
+            },
+            {
+              "name": "Portable diagnostic evidence contracts (no native execution)",
+              "status": "completed",
+              "conclusion": "failure",
+              "number": 9
+            },
+            {
+              "name": "Run python scripts/check_distribution.py",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 10
+            },
+            {
+              "name": "Run python -m build",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 11
+            },
+            {
+              "name": "Run python scripts/smoke_wheel.py",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 12
+            },
+            {
+              "name": "Run python scripts/smoke_sdist.py",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 13
+            },
+            {
+              "name": "Run python -m pip_audit -r requirements-dev.txt --strict",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 14
+            },
+            {
+              "name": "Post Run actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 27
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 28
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 29
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 41318646249,
+      "name": "desktop-candidate",
+      "result": "success",
+      "jobs": [
+        {
+          "id": 124883972974,
+          "name": "desktop (ubuntu-24.04)",
+          "status": "completed",
+          "conclusion": "success",
+          "run_id": 41318646249,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Check runner-provided Node (no extra GitHub Actions)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Run npm ci --no-fund",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Run npm audit --audit-level=moderate",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5
+            },
+            {
+              "name": "Run npm test",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6
+            },
+            {
+              "name": "Run node --test ../prototype/simulation.test.cjs",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Run npm run build",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8
+            },
+            {
+              "name": "Archive and extract Windows candidate",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 9
+            },
+            {
+              "name": "Windows packaged journeys",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 10
+            },
+            {
+              "name": "Linux sandbox configuration on disposable runner",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11
+            },
+            {
+              "name": "Linux packaged journeys with sandbox enabled",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12
+            },
+            {
+              "name": "Linux review archive",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13
+            },
+            {
+              "name": "Validation summary (no artifact upload)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 28
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 29
+            }
+          ]
+        },
+        {
+          "id": 124883973184,
+          "name": "desktop (windows-latest)",
+          "status": "completed",
+          "conclusion": "success",
+          "run_id": 41318646249,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Check runner-provided Node (no extra GitHub Actions)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Run npm ci --no-fund",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Run npm audit --audit-level=moderate",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5
+            },
+            {
+              "name": "Run npm test",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6
+            },
+            {
+              "name": "Run node --test ../prototype/simulation.test.cjs",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Run npm run build",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8
+            },
+            {
+              "name": "Archive and extract Windows candidate",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9
+            },
+            {
+              "name": "Windows packaged journeys",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10
+            },
+            {
+              "name": "Linux sandbox configuration on disposable runner",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 11
+            },
+            {
+              "name": "Linux packaged journeys with sandbox enabled",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 12
+            },
+            {
+              "name": "Linux review archive",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 13
+            },
+            {
+              "name": "Validation summary (no artifact upload)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 28
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 29
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "cause": "Project-header duplicate detection depended on the build being beneath the source checkout. All four portable diagnostic jobs failed the same external-temp-directory sensitivity test; each ran 100 tests with one failure. Their preceding 454 Python regressions and 42 foundation tests passed. Downstream Python distribution/build/smoke/audit steps were skipped, not counted as passes.",
+  "correction": "Explicit approved project-header identities must each occur exactly once regardless of build location. SDK repetitions remain recorded. The test uses a separate synthetic source checkout and external build on every platform."
+}
