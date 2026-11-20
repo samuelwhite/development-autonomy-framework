@@ -54,6 +54,7 @@ function request(path, body, cookie) {
   return fetch(origin + path, {
     redirect: 'manual',
     headers: {
+      Connection: 'close',
       Origin: process.env.DAF_PUBLIC_ORIGIN,
       ...(cookie ? { Cookie: cookie } : {}),
       ...(body ? { 'Content-Type': 'application/json' } : {}),
