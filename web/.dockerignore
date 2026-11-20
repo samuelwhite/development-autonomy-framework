@@ -1,0 +1,10 @@
+**
+!Dockerfile
+!config.mjs
+!github.mjs
+!feed.mjs
+!server.mjs
+!public/
+!public/index.html
+!public/style.css
+!public/app.js
