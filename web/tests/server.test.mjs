@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { get } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -78,6 +79,39 @@ test('HTTP routes, methods, credentials and GitHub provenance are bounded', asyn
   assert.ok(calls.every((url) => url.origin === 'https://api.github.com' && url.pathname.startsWith('/repos/example/project/')));
   assert.ok(calls.some((url) => url.searchParams.get('ref') === commit));
   assert.equal(calls.length, 6);
+});
+
+test('static pages and assets accept query strings behind viewer authentication', async (t) => {
+  let calls = 0;
+  const app = missionControl({ ...config(), password }, { fetcher: () => { calls++; } });
+  t.after(() => app.stop());
+  const origin = await listen(app);
+  const headers = { authorization };
+  for (const [path, type] of [
+    ['/?utm_source=chatgpt.com', 'text/html; charset=utf-8'],
+    ['/?utm_source=chatgpt.com&utm_medium=referral', 'text/html; charset=utf-8'],
+    ['/style.css?v=1', 'text/css; charset=utf-8'],
+    ['/app.js?v=1', 'text/javascript; charset=utf-8'],
+  ]) {
+    assert.equal((await fetch(origin + path)).status, 401, path);
+    const response = await fetch(origin + path, { headers });
+    assert.equal(response.status, 200, path);
+    assert.equal(response.headers.get('content-type'), type);
+  }
+  for (const path of [
+    '/missing?v=1', '/api/mission-control?utm_source=chatgpt.com', '/api/mission-control?repo=evil/test',
+    '/unknown/../app.js?v=1', '//localhost/style.css?v=1',
+  ]) {
+    // Send the exact request target to avoid client-side URL normalisation.
+    const status = await new Promise((resolve, reject) => {
+      get(origin, { path, headers }, (response) => {
+        response.resume();
+        resolve(response.statusCode);
+      }).on('error', reject);
+    });
+    assert.equal(status, 404, path);
+  }
+  assert.equal(calls, 0);
 });
 
 test('public-only wildcard listeners fail closed and protect every viewer route', async (t) => {

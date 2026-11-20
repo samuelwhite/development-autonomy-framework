@@ -55,7 +55,9 @@ export function missionControl(config, options = {}) {
           return send(503, plain, 'Mission Control data unavailable');
         }
       }
-      const asset = assets.get(request.url);
+      const pathname = URL.parse(request.url, 'http://localhost')?.pathname;
+      // Reject paths that URL parsing would normalise into an approved route.
+      const asset = pathname === request.url.split('?', 1)[0] ? assets.get(pathname) : undefined;
       return asset ? send(200, ...asset) : send(404, plain, 'Page not found');
     });
   http.maxConnections = 64;
