@@ -19,7 +19,7 @@ async function bootstrap() {
     'docker compose -f compose.yaml -f compose.accounts.yaml run --rm --no-deps mission-control node bootstrap.mjs',
     '/dev/null'], { stdio: ['pipe', 'pipe', 'pipe'] });
   const prompts = [
-    ['Administrator username: ', 'ci.admin'],
+    ['Administrator username or email: ', 'ci.admin@example.test'],
     ['Administrator password: ', adminPassword],
     ['Repeat password: ', adminPassword],
   ];
@@ -79,7 +79,7 @@ docker('exec', '-T', 'mission-control', 'test', '!', '-e', '/run/secrets/viewer_
 assert.equal((await request('/healthz')).status, 200);
 assert.equal((await request('/')).status, 303);
 assert.equal((await request('/api/mission-control')).status, 401);
-const administrator = await login('ci.admin', adminPassword);
+const administrator = await login('CI.Admin@Example.Test', adminPassword);
 assert.equal((await request('/api/users/create',
   { username: 'ci.viewer', role: 'viewer', password: viewerPassword }, administrator)).status, 200);
 const invalidated = await login('ci.viewer', viewerPassword);

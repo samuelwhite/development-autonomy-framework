@@ -6,6 +6,9 @@ import { promisify } from 'node:util';
 const scrypt = promisify(derive);
 const parameters = { N: 32768, r: 8, p: 3, maxmem: 40 * 1024 * 1024 };
 const word = /^[a-z0-9][a-z0-9_.-]{2,31}$/;
+const emailAtom = /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+$/;
+const domainLabel = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+const identifierHint = 'Use a 3 to 32 character username or a valid email address.';
 const hex = /^[a-f0-9]{64}$/;
 const roles = new Set(['administrator', 'viewer']);
 const sessionLifetime = 24 * 60 * 60;
@@ -20,8 +23,15 @@ export class AccountError extends Error {
 }
 
 export function username(value) {
-  const name = typeof value === 'string' ? value.toLowerCase() : '';
-  return word.test(name) ? name : null;
+  if (typeof value !== 'string' || value.length > 254) return null;
+  const name = value.toLowerCase();
+  if (word.test(name)) return name;
+  if (/[^\x21-\x7e]/.test(value)) return null;
+  const [local, domain, extra] = name.split('@');
+  if (!domain || extra !== undefined || local.length > 64) return null;
+  if (!local.split('.').every((part) => emailAtom.test(part))) return null;
+  const labels = domain.split('.');
+  return labels.length >= 2 && labels.every((label) => domainLabel.test(label)) ? name : null;
 }
 
 function inputPassword(value) {
@@ -40,10 +50,13 @@ function enforcePassword(value, name) {
   }
   const folded = password.normalize('NFKC').trim().toLowerCase();
   const compact = folded.replace(/[\s._-]+/g, '');
-  const account = name.replace(/[._-]+/g, '');
+  const local = name.split('@', 1)[0];
+  const identifiers = [name, local, local.split('+', 1)[0]].map((value) => value.replace(/[._-]+/g, ''));
+  const derived = identifiers.some((value) => value && compact.startsWith(value) &&
+    /^[\d!@#$]*$/.test(compact.slice(value.length)));
   if (!folded || blocklist.has(digest(folded)) || /^(.)\1+$/u.test(compact) ||
       /^(?:1234567890?|0123456789|qwertyuiop|asdfghjkl|letmein|password|passphrase|welcome|admin|daf|missioncontrol|correcthorsebatterystaple)[\d!@#$]*$/.test(compact) ||
-      (compact.startsWith(account) && /^[\d!@#$]*$/.test(compact.slice(account.length)))) {
+      derived) {
     throw new AccountError(400, 'Choose a unique password that is harder to guess.');
   }
   return password;
@@ -115,7 +128,7 @@ function transaction(db, operation) {
 
 export async function bootstrapAccounts(directory, rawName, password) {
   const name = username(rawName);
-  if (!name) throw new AccountError(400, 'Use 3 to 32 letters, digits, dots, hyphens or underscores.');
+  if (!name) throw new AccountError(400, identifierHint);
   const record = await passwordRecord(password, name);
   const db = open(directory, true);
   try {
@@ -221,7 +234,8 @@ export function openAccounts(directory, now = Date.now) {
     async add(id, rawName, role, password) {
       needUser(id, true);
       const name = username(rawName);
-      if (!name || !roles.has(role)) throw new AccountError(400, 'Enter a valid username and role.');
+      if (!name) throw new AccountError(400, identifierHint);
+      if (!roles.has(role)) throw new AccountError(400, 'Choose Administrator or Viewer.');
       const record = await passwordRecord(password, name);
       transaction(db, () => {
         needUser(id, true);

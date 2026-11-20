@@ -23,7 +23,7 @@ docker compose -p daf-accounts-check -f compose.yaml -f compose.accounts.yaml \
 docker compose -p daf-accounts-check -f compose.yaml -f compose.accounts.yaml up --wait --no-build
 ```
 
-Enter the administrator username and password in a private interactive terminal. Password entry is hidden. Bootstrap refuses noninteractive input and an existing database. Supply a unique passphrase, for example 15 or more characters. The product minimum is 10 characters. The maximum is 256 Unicode characters. There are no composition rules and the application checks common breached and context-derived passwords locally.
+Enter the administrator username or email address and password in a private interactive terminal. Email addresses are case-insensitive sign-in identifiers. DAF sends no email. Password entry is hidden. Bootstrap refuses noninteractive input and an existing database. Supply a unique passphrase, for example 15 or more characters. The product minimum is 10 characters. The maximum is 256 Unicode characters. There are no composition rules and the application checks common breached and context-derived passwords locally.
 
 The staged project uses the same read-only image, loopback publishing, non-root UID, dropped capabilities and resource limits. Only the dedicated account state directory is writable. Verify outside-LAN and outside-tailnet denial before adding a private GitHub feed. The GitHub token remains a separate server-side read-only mount. [Forge-HomeCI acceptance](homeci-acceptance.md)
 

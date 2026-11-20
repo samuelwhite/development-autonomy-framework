@@ -15,6 +15,7 @@ const adminPassword = 'copper lanterns light the old signal tower';
 const viewerPassword = 'several rivers cross the valley before dawn';
 const changedPassword = 'river stones keep the memory of rain';
 const resetPassword = 'orchard paths circle back through sunlight';
+const viewer = 'first.last+development@engineering.example.test';
 
 test('administrator and viewer use local accounts in the browser', { timeout: 45_000 }, async (t) => {
   const directory = await mkdtemp(join(tmpdir(), 'daf-account-browser-'));
@@ -57,7 +58,7 @@ test('administrator and viewer use local accounts in the browser', { timeout: 45
     }
   };
   const signIn = async (page, name, password) => {
-    await page.getByRole('textbox', { name: 'Username' }).fill(name);
+    await page.getByRole('textbox', { name: 'Username or email' }).fill(name);
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Sign in' }).click();
     await page.getByRole('link', { name: 'My account' }).waitFor();
@@ -79,30 +80,37 @@ test('administrator and viewer use local accounts in the browser', { timeout: 45
   await desktop.getByRole('heading', { name: 'Users', exact: true }).waitFor();
   assert.ok(await desktop.getByRole('button', { name: 'Disable demo.admin' }).isDisabled());
   const add = desktop.locator('#create-user');
-  await add.getByLabel('Username').fill('demo.viewer');
+  const identifier = add.getByLabel('Username or email');
+  await identifier.fill('invalid.@example.test');
   await add.getByLabel('Password', { exact: true }).fill(viewerPassword);
   await add.getByRole('button', { name: 'Add user' }).click();
-  await desktop.getByRole('heading', { name: 'demo.viewer' }).waitFor();
+  await add.getByRole('alert').filter({ hasText: 'Use a 3 to 32 character username or a valid email address.' }).waitFor();
+  await identifier.fill(viewer.toUpperCase());
+  assert.equal(await identifier.inputValue(), viewer.toUpperCase());
+  await add.getByRole('button', { name: 'Add user' }).click();
+  await desktop.getByRole('heading', { name: viewer }).waitFor();
   await capture(desktop, 'desktop-users');
 
-  await signIn(phone, 'demo.viewer', viewerPassword);
+  await signIn(phone, viewer.toUpperCase(), viewerPassword);
   assert.equal(await phone.getByRole('link', { name: 'Settings / Users' }).count(), 0);
   assert.equal((await phone.request.get(origin + '/settings/users')).status(), 403);
   await phone.getByRole('link', { name: 'My account' }).click();
   await phone.getByRole('heading', { name: 'Change password' }).waitFor();
+  await phone.locator('#account-identity').filter({ hasText: viewer }).waitFor();
+  assert.ok(await noOverflow(phone));
   await phone.getByLabel('Current password').fill(viewerPassword);
   await phone.getByLabel('New password').fill(changedPassword);
   await phone.getByRole('button', { name: 'Change password' }).click();
   await phone.getByRole('heading', { name: 'Sign in to Mission Control' }).waitFor();
-  await signIn(phone, 'demo.viewer', changedPassword);
-  await desktop.getByLabel('Reset password for demo.viewer').click();
+  await signIn(phone, viewer, changedPassword);
+  await desktop.getByLabel(`Reset password for ${viewer}`).click();
   const reset = desktop.locator('details[open] form');
   await reset.getByLabel('New password').fill(resetPassword);
   await reset.getByRole('button', { name: 'Set password' }).click();
-  await desktop.getByText('Password reset for demo.viewer.', { exact: true }).waitFor();
+  await desktop.getByText(`Password reset for ${viewer}.`, { exact: true }).waitFor();
   assert.equal((await phone.request.get(origin + '/api/mission-control')).status(), 401);
-  await desktop.getByRole('button', { name: 'Disable demo.viewer' }).click();
-  await desktop.getByRole('button', { name: 'Enable demo.viewer' }).waitFor();
+  await desktop.getByRole('button', { name: `Disable ${viewer}` }).click();
+  await desktop.getByRole('button', { name: `Enable ${viewer}` }).waitFor();
   await desktop.getByRole('button', { name: 'Sign out' }).click();
   await desktop.getByRole('heading', { name: 'Sign in to Mission Control' }).waitFor();
   assert.equal((await desktop.request.get(origin + '/api/mission-control')).status(), 401);
