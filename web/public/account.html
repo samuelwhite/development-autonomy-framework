@@ -56,7 +56,8 @@
         <section class="panel" aria-labelledby="create-heading">
           <h2 id="create-heading">Add user</h2>
           <form id="create-user" class="account-form" method="post">
-            <label>Username <input type="text" name="username" autocomplete="off" autocapitalize="none" required minlength="3" maxlength="32"></label>
+            <label>Username or email <input type="text" name="username" autocomplete="off" autocapitalize="none" spellcheck="false" required minlength="3" maxlength="254" aria-describedby="username-format"></label>
+            <p class="note" id="username-format">Use a 3 to 32 character username or an email address. Email addresses are sign-in identifiers only.</p>
             <label>Role <select name="role"><option value="viewer">Viewer</option><option value="administrator">Administrator</option></select></label>
             <label>Password <input type="password" name="password" autocomplete="new-password" required minlength="10"></label>
             <p class="note">Use at least 10 characters and share the password privately.</p>

@@ -154,4 +154,5 @@ footer { border-top: 1px solid var(--line); font-size: .8rem; }
 .users-grid { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; }
 .user-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
 .account-name { font-family: ui-monospace, Consolas, monospace; }
+#account-identity, #users-status { overflow-wrap: anywhere; }
 @media (max-width: 700px) { .users-grid { grid-template-columns: 1fr; } }

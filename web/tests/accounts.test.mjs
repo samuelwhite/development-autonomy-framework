@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { bootstrapAccounts, openAccounts } from '../accounts.mjs';
+import { bootstrapAccounts, openAccounts, username } from '../accounts.mjs';
 import { loadConfig } from '../config.mjs';
 import { missionControl } from '../server.mjs';
 import { listen } from './fixtures.mjs';
@@ -27,6 +27,47 @@ async function storage(t, close) {
   });
   return directory;
 }
+
+test('username validation accepts conventional names and bounded email identifiers', () => {
+  const longest = `${'a'.repeat(64)}@${'b'.repeat(63)}.${'c'.repeat(63)}.${'d'.repeat(61)}`;
+  assert.equal(longest.length, 254);
+  assert.equal(username(longest), longest);
+  assert.equal(username('Alice.Team+CI@Sub.Example-Test.org'), 'alice.team+ci@sub.example-test.org');
+  assert.equal(username('Sample_User-1'), 'sample_user-1');
+  assert.equal(username('a'.repeat(32)), 'a'.repeat(32));
+  for (const invalid of [
+    'a'.repeat(33), longest + 'd', `${'a'.repeat(65)}@example.test`,
+    `a@${'b'.repeat(64)}.test`, 'a..b@example.test', '.a@example.test', 'a.@example.test',
+    'a@-example.test', 'a@example-.test', 'a@example..test', 'a@example', 'a@@example.test',
+    '@example.test', 'a@', ' a@example.test', 'a@example.test\n', 'a@exa_mple.test',
+  ]) {
+    assert.equal(username(invalid), null, invalid);
+  }
+});
+
+test('email accounts bootstrap, deduplicate, restart and sign in case-insensitively', async (t) => {
+  const directory = await storage(t);
+  await assert.rejects(bootstrapAccounts(directory, 'invalid@@example.test', adminPassword), { status: 400 });
+  await bootstrapAccounts(directory, 'Admin@Example.Test', adminPassword);
+  const accounts = openAccounts(directory);
+  try {
+    const { id } = await accounts.login('ADMIN@example.test', adminPassword);
+    await assert.rejects(accounts.add(id, 'aDmIn@eXample.Test', 'viewer', viewerPassword), { status: 409 });
+    await assert.rejects(accounts.add(id, 'bad.@example.test', 'viewer', viewerPassword), { status: 400 });
+    await assert.rejects(accounts.add(id, 'Alice.Team+CI@Example.Test', 'viewer', 'aliceteam1234'), { status: 400 });
+    await accounts.add(id, 'Alice.Team+CI@Example.Test', 'viewer', viewerPassword);
+  } finally {
+    accounts.close();
+  }
+  const reopened = openAccounts(directory);
+  try {
+    const { id } = await reopened.login('ALICE.TEAM+Ci@example.TEST', viewerPassword);
+    assert.equal(reopened.identity(id).name, 'alice.team+ci@example.test');
+    await assert.rejects(reopened.login('alice.team+ci@@example.test', viewerPassword), { status: 401 });
+  } finally {
+    reopened.close();
+  }
+});
 
 test('store fails closed, blocks common passwords and allows a long passphrase', async (t) => {
   const directory = await storage(t);

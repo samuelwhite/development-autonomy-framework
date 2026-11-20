@@ -27,7 +27,7 @@ try {
     try { accounts.revokeAll(); } finally { accounts.close(); }
     console.log('Sessions revoked.');
   } else if (process.argv.length === 2) {
-    const username = await ask('Administrator username: ');
+    const username = await ask('Administrator username or email: ');
     const password = await ask('Administrator password: ', true);
     if (password !== await ask('Repeat password: ', true)) {
       throw new AccountError(400, 'Passwords do not match.');
