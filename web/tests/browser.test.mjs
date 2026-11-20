@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { missionControl } from '../server.mjs';
-import { entry, githubFixture, listen, title } from './fixtures.mjs';
+import { commit, entry, githubFixture, listen, password, title, token } from './fixtures.mjs';
 
 const { chromium } = createRequire(new URL('../../desktop/package.json', import.meta.url))('playwright');
 const channel = process.env.DAF_WEB_BROWSER_CHANNEL;
@@ -52,6 +52,10 @@ test('responsive dashboard navigates source-linked planning and job evidence saf
   await page.getByText('Draft', { exact: true }).waitFor();
   await page.getByRole('heading', { name: 'Validation evidence' }).waitFor();
   assert.match(await page.getByRole('link', { name: 'Artifacts' }).getAttribute('href'), /\/attempts\/2#artifacts$/);
+  await page.getByRole('heading', { name: 'DAF roadmap' }).waitFor();
+  await page.getByText('Status unknown', { exact: true }).waitFor();
+  assert.match(await page.getByRole('link', { name: 'M1.2 review evidence' }).getAttribute('href'),
+    /\/blob\/[a-f0-9]{40}\/docs\/m1\.2-validation\.md$/);
 
   await nav.getByRole('link', { name: 'HomeCI' }).click();
   await page.getByText('Live runner health is not connected.', { exact: false }).waitFor();
@@ -70,6 +74,90 @@ test('responsive dashboard navigates source-linked planning and job evidence saf
   assert.deepEqual(await page.getByRole('button').allTextContents(), ['Refresh view']);
   assert.deepEqual(errors, []);
   assert.deepEqual(outside, []);
+});
+
+test('appearance follows the OS, persists locally and keeps readable keyboard controls', { timeout: 30_000 }, async (t) => {
+  const app = missionControl({ repositories: [entry] }, { fetcher: githubFixture });
+  let browser;
+  t.after(async () => { try { await browser?.close(); } finally { await app.stop(); } });
+  const origin = await listen(app);
+  browser = await launch();
+  const page = await browser.newPage({ colorScheme: 'dark', reducedMotion: 'reduce',
+    viewport: { width: 390, height: 844 } });
+  page.setDefaultTimeout(5_000);
+  const appearance = page.getByLabel('Appearance');
+  const canvas = () => page.locator('html').evaluate((root) => getComputedStyle(root).backgroundColor);
+  await page.goto(origin);
+  await page.getByText('GitHub sources checked', { exact: false }).waitFor();
+  assert.equal(await appearance.inputValue(), 'system');
+  assert.equal(await canvas(), 'rgb(11, 20, 17)');
+  await page.emulateMedia({ colorScheme: 'light' });
+  assert.equal(await canvas(), 'rgb(245, 246, 241)');
+  for (let i = 0; i < 10 && !await appearance.evaluate((el) => el === document.activeElement); i++) {
+    await page.keyboard.press('Tab');
+  }
+  assert.ok(await appearance.evaluate((el) => el === document.activeElement));
+  assert.equal(await appearance.evaluate((el) => getComputedStyle(el).outlineStyle), 'solid');
+  for (const theme of ['dark', 'light']) {
+    await appearance.selectOption(theme);
+    await page.reload();
+    assert.equal(await appearance.inputValue(), theme);
+    assert.equal(await canvas(), theme === 'dark' ? 'rgb(11, 20, 17)' : 'rgb(245, 246, 241)');
+    assert.deepEqual(await page.evaluate(() => ({ ...localStorage })), { 'daf.appearance': theme });
+    await noHorizontalOverflow(page);
+    await page.getByText('GitHub sources checked', { exact: false }).waitFor();
+    const contrast = await page.locator('.badge').evaluateAll((badges) => {
+      function luminance(value) {
+        const channels = value.match(/\d+(?:\.\d+)?/g).slice(0, 3).map((n) => Number(n) / 255);
+        const linear = channels.map((c) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+        return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+      }
+      return badges.map((item) => {
+        const style = getComputedStyle(item);
+        const a = luminance(style.color);
+        const b = luminance(style.backgroundColor);
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      });
+    });
+    assert.ok(contrast.length > 0 && contrast.every((ratio) => ratio >= 4.5), `${theme}: ${contrast}`);
+  }
+  await appearance.selectOption('system');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  assert.equal(await canvas(), 'rgb(11, 20, 17)');
+  assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
+});
+
+test('authenticated Actions-only HomeCI displays exact evidence and keeps the token server-side', { timeout: 30_000 }, async (t) => {
+  const repository = 'samuelwhite/forge-homeci';
+  const calls = [];
+  const app = missionControl({ repositories: [{ repository, visibility: 'private', planning: false }],
+    password, token }, { fetcher: async (url, options) => {
+    calls.push(new URL(url).pathname);
+    assert.equal(options.headers.Authorization, `Bearer ${token}`);
+    assert.equal(options.method, 'GET');
+    return githubFixture(url);
+  } });
+  let browser;
+  t.after(async () => { try { await browser?.close(); } finally { await app.stop(); } });
+  const origin = await listen(app);
+  assert.equal((await fetch(origin + '/api/mission-control')).status, 401);
+  browser = await launch();
+  const page = await browser.newPage({ httpCredentials: { username: 'daf', password } });
+  page.setDefaultTimeout(5_000);
+  const feed = page.waitForResponse((response) => response.url() === origin + '/api/mission-control' && response.ok());
+  await page.goto(origin + '/#homeci');
+  assert.ok(!(await (await feed).text()).includes(token));
+  await page.getByText('Run 123 · Attempt 2', { exact: true }).waitFor();
+  assert.equal(await page.getByRole('link', { name: `Commit ${commit}` }).getAttribute('href'),
+    `https://github.com/${repository}/commit/${commit}`);
+  await page.getByText('1 of 1 jobs shown').click();
+  await page.getByText('Job 456', { exact: true }).waitFor();
+  assert.equal(await page.getByRole('link', { name: 'Job log' }).getAttribute('href'),
+    `https://github.com/${repository}/actions/runs/123/job/456`);
+  await page.getByText('Runner observed on this job:', { exact: false }).waitFor();
+  await page.getByText('Health unknown', { exact: true }).waitFor();
+  assert.deepEqual(calls, [`/repos/${repository}/actions/runs`,
+    `/repos/${repository}/actions/runs/123/attempts/2/jobs`]);
 });
 
 test('browser shows initial connection failure, stale data after disconnect, and clears it on 401', { timeout: 30_000 }, async (t) => {
@@ -116,18 +204,22 @@ test('capture real public DAF planning and Actions in desktop and phone views',
       await page.getByRole('heading', { name: 'Latest validation' }).waitFor();
       assert.ok(await page.getByRole('link', { name: 'Artifacts' }).count() > 0);
       await noHorizontalOverflow(page);
-      await page.screenshot({ path: join(output, `dashboard-${label}.png`), fullPage: true });
       if (label === 'desktop') {
         await page.getByRole('navigation').getByRole('link', { name: 'HomeCI' }).click();
         await page.locator('summary').first().click();
         await page.getByRole('link', { name: 'Job log' }).first().waitFor();
         await page.locator('summary').first().blur();
-        await page.screenshot({ path: join(output, 'homeci-desktop.png'), fullPage: true });
       } else {
         await page.getByRole('navigation').getByRole('link', { name: 'Development' }).click();
         await page.getByRole('link', { name: 'Plan source' }).waitFor();
         await page.getByRole('heading', { level: 1 }).blur();
-        await page.screenshot({ path: join(output, 'development-mobile.png') });
+      }
+      for (const theme of ['light', 'dark']) {
+        const appearance = page.getByLabel('Appearance');
+        await appearance.selectOption(theme);
+        await appearance.blur();
+        await noHorizontalOverflow(page);
+        await page.screenshot({ path: join(output, `ui02-${label}-${theme}.png`), fullPage: true });
       }
       await page.close();
     }

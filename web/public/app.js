@@ -21,6 +21,31 @@ const problems = {
   'not-configured': 'This source has not been configured.',
 };
 const byId = (id) => document.getElementById(id);
+const appearance = byId('appearance');
+const appearanceKey = 'daf.appearance';
+const themes = new Set(['light', 'dark', 'system']);
+function applyAppearance(value) {
+  const theme = themes.has(value) ? value : 'system';
+  appearance.value = theme;
+  document.documentElement.dataset.theme = theme;
+}
+try {
+  applyAppearance(localStorage.getItem(appearanceKey));
+} catch {
+  applyAppearance('system');
+}
+appearance.addEventListener('change', () => {
+  applyAppearance(appearance.value);
+  try {
+    localStorage.setItem(appearanceKey, appearance.value);
+  } catch {
+    // The current tab still supports appearance changes when storage is blocked.
+  }
+});
+window.addEventListener('storage', (event) => {
+  if (event.key === appearanceKey || event.key === null) applyAppearance(event.newValue);
+});
+
 const content = byId('view');
 const connection = byId('connection');
 const button = byId('refresh');
@@ -112,9 +137,11 @@ function runBadge(run) {
 
 function runRow(run, repo, feed, details) {
   return row(link(run.title, run.url), runBadge(run),
-    meta(short(repo), run.branch, `Attempt ${run.attempt}`, timestamp(run.updated)),
+    meta(short(repo), run.branch, details ? null : `Attempt ${run.attempt}`, timestamp(run.updated)),
+    details && element('p', 'meta', element('code', '', `Run ${run.id} · Attempt ${run.attempt}`)),
     links(run.workflowUrl && link('Workflow', run.workflowUrl),
-      link(`Commit ${run.commit.slice(0, 8)}`, run.commitUrl), link('Artifacts', run.artifactsUrl)),
+      link(element('span', '', 'Commit ', element('code', '', details ? run.commit : run.commit.slice(0, 8))),
+        run.commitUrl), link('Artifacts', run.artifactsUrl)),
     freshness(feed) === 'stale' && meta(`Stale result · observed ${timestamp(feed.observed)}`), details);
 }
 
@@ -196,8 +223,28 @@ function projectSection(project, ...sections) {
   ...sections);
 }
 
+// Summaries of published planning documents at the UI-01 base, not live milestone status.
+const roadmapSource = 'https://github.com/samuelwhite/development-autonomy-framework/blob/c331e26d83432540f397f28b307d529d9a215c1d/docs/';
+const roadmap = [
+  ['M1', 'Integration and read-only desktop planning', 'Review evidence', '',
+    'M1.2 imports commit-pinned public plans and reopens validated snapshots. Its Windows candidate remains subject to separate Product review.',
+    'M1.2 review evidence', 'm1.2-validation.md'],
+  ['M2', 'Supervised local execution proposal', 'Execution gated', 'blocked',
+    'M2.1A is a candidate for Product acceptance. Its validation does not authorise M2.1B or desktop execution.',
+    'M2.1 proposal and review gate', 'm2.1-supervised-execution-proposal.md#stop-and-review-gate'],
+  ['M3', 'Future execution scope', 'Status unknown', 'unknown',
+    'The M2.1 proposal excludes M3 from its approval exceptions. This source does not define an M3 delivery plan or approval.',
+    'M2.1 scope exclusions', 'm2.1-supervised-execution-proposal.md#stop-and-review-gate'],
+];
+
 function development(projects) {
   return element('div', 'stack', note('Proposals describe intended work. Pull request and CI outcomes record activity at their sources.'),
+    panel('DAF roadmap', [
+      note('Planning summaries from a pinned source revision. Execution approval is recorded separately.'),
+      list(roadmap.map(([id, title, label, state, summary, source, path]) => row(
+        element('h3', '', element('code', '', id), ` · ${title}`), badge(state, label),
+        element('p', 'detail', summary), links(link(source, roadmapSource + path))))),
+    ]),
     ...projects.map((project) => projectSection(project,
       element('div', 'project-grid',
         panel('Milestones', sourceRows(project.milestones, (items) => items.map((item) =>
@@ -224,7 +271,8 @@ function jobDetails(feed, key) {
   const details = element('details', '', element('summary', '', summary), sourceNote(feed),
     jobs?.length ? element('div', 'job-list', list(jobs.map((job) => row(
       link(job.title, job.url), runBadge(job),
-      meta(job.runner ? `Runner ${job.runner}` : 'Runner identity unavailable', job.selfHosted && 'Self-hosted',
+      element('p', 'meta', element('code', '', `Job ${job.id}`)),
+      meta(job.runner ? `Runner observed on this job: ${job.runner}` : 'Runner identity unavailable', job.selfHosted && 'Self-hosted',
         job.completed ? `Finished ${timestamp(job.completed)}` : job.started && `Started ${timestamp(job.started)}`),
       links(link('Job log', job.url)))))) : jobs && note('No jobs returned for this attempt.'));
   details.dataset.run = key;
@@ -232,9 +280,15 @@ function jobDetails(feed, key) {
 }
 
 function homeci(projects) {
+  const forgeConfigured = projects.some(({ repository, visibility }) =>
+    repository === 'samuelwhite/forge-homeci' && visibility === 'private');
   return element('div', 'stack',
     panel('Runner health', [element('div', 'runner-health', badge('unknown'),
       note('Live runner health is not connected. GitHub jobs show runner identities at the time of the job.'))]),
+    !forgeConfigured && panel('Forge HomeCI', [
+      element('div', 'runner-health', badge('unconfigured'),
+        note('An operator can connect the private Forge-HomeCI Actions feed.')),
+    ]),
     ...projects.map((project) => {
       const runners = new Map();
       for (const entry of project.runJobs) {
@@ -270,7 +324,10 @@ function render() {
   connection.textContent = connectionError || (loading ? 'Checking Mission Control…' :
     count === 0 ? 'No GitHub repositories configured.' :
       `${available ? 'GitHub sources checked' : 'GitHub data unavailable'} · ${timestamp(snapshot.reviewedAt)}`);
-  if (!snapshot || !count) { content.replaceChildren(); return; }
+  if (!snapshot || !count) {
+    content.replaceChildren(...(active === 'development' ? [development([])] : []));
+    return;
+  }
   const expanded = new Set([...content.querySelectorAll('details[open]')].map((item) => item.dataset.run));
   const focused = content.contains(document.activeElement) ? document.activeElement : null;
   const targets = focused ? [...content.querySelectorAll('a, summary')] : [];
