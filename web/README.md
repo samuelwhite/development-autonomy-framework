@@ -29,6 +29,10 @@ The server requires `DAF_VIEWER_PASSWORD_FILE` on a wildcard listener or when an
 
 Private CI needs a separately provisioned, expiring fine-grained GitHub token restricted to selected repositories, with Metadata and Actions read access. Enable Issues and Pull requests read only where planning is needed, and Contents read for a pinned plan. The app sends the token only to explicitly private entries and never to public entries, browser requests or logs. The operator must verify the scopes and rotate credentials. [GitHub fine-grained token permissions](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens)
 
+Use the [Forge-HomeCI operator procedure](docs/homeci-acceptance.md) for private feed setup, a manually authorised acceptance run and rollback.
+
+Choose Light, Dark or System from the toolbar. Only the appearance choice is saved in local storage.
+
 ## What the UI shows
 
 - **Dashboard** shows configured repositories, recent PRs and validation, source problems, open issues and Product decisions surfaced from open issues labelled `product decision`, `product-decision`, `decision required` or `decision-required`.
