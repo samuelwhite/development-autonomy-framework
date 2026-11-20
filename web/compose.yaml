@@ -1,0 +1,18 @@
+services:
+  mission-control:
+    build: .
+    init: true
+    user: '1000:1000'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 192m
+    ports:
+      - '127.0.0.1:${DAF_PUBLISHED_PORT:-18080}:8080'
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:8080/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped

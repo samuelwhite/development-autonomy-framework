@@ -1,0 +1,91 @@
+:root {
+  font: 16px/1.55 Inter, "Segoe UI", Arial, sans-serif;
+  color: #203832;
+  background: #f5f6f1;
+  --ink: #203832;
+  --muted: #52665e;
+  --line: #d9e2d9;
+  --green: #176652;
+  --dark: #152f29;
+  --paper: #fff;
+  --cream: #edf1e6;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+a { color: var(--green); text-underline-offset: .2em; }
+a:hover { text-decoration-thickness: 2px; }
+button { font: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid #a86b1b; outline-offset: 4px; }
+::selection { background: #d1e6b7; color: var(--dark); }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { line-height: 1.18; }
+h1 { font-size: clamp(2.3rem, 5vw, 3.25rem); letter-spacing: -.035em; }
+h2 { font-size: 1.25rem; letter-spacing: -.02em; }
+h3 { font-size: 1rem; overflow-wrap: anywhere; }
+.skip { position: fixed; z-index: 2; top: .5rem; left: .5rem; transform: translateY(-150%); background: white; padding: .65rem; }
+.skip:focus { transform: none; }
+.sidebar { position: fixed; inset: 0 auto 0 0; width: 246px; display: flex; flex-direction: column; padding: 30px 23px; background: var(--dark); color: #edf3e7; }
+.brand { display: flex; align-items: center; gap: 12px; width: fit-content; color: inherit; font-weight: 700; font-size: 1.55rem; text-decoration: none; }
+.brand-mark { border: 1px solid #658875; border-radius: 12px; padding: 1px 10px; color: #cde8a3; }
+.sidebar-caption { color: #b8cbbf; max-width: 160px; font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; margin-top: 14px; }
+.workspace { margin: 25px 0 20px; padding: 17px 2px; border-block: 1px solid #3d574c; font-weight: 650; }
+.workspace small { display: block; color: #b8cbbf; font-weight: 400; }
+nav { display: grid; gap: 5px; }
+nav a { padding: .58rem .75rem; border: 1px solid transparent; border-radius: 8px; color: inherit; text-decoration: none; font-size: .94rem; font-weight: 600; }
+nav a:hover { background: #28453a; }
+nav a[aria-current] { background: #314c41; border-color: #52715c; color: #eff9db; }
+.sidebar-bottom { margin-top: auto; padding-top: 1rem; color: #b8cbbf; font-size: .8rem; }
+.dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #cde8a3; }
+.shell { margin-left: 246px; min-height: 100vh; display: flex; flex-direction: column; }
+.topbar, footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px clamp(20px, 4vw, 52px); color: var(--muted); background: #f9faf6; }
+.topbar { min-height: 63px; border-bottom: 1px solid var(--line); font-size: .9rem; }
+.topbar button { background: var(--paper); color: var(--green); border: 1px solid #b2c5b7; border-radius: 8px; min-height: 44px; padding: .35rem .8rem; font-size: .88rem; font-weight: 650; }
+.topbar button:hover { background: var(--cream); }
+.topbar button[aria-disabled="true"] { cursor: wait; }
+main { width: 100%; max-width: 1390px; flex: 1; margin: 0 auto; padding: 35px clamp(20px, 4vw, 52px) 52px; }
+.page-heading p { margin-top: 8px; color: var(--muted); }
+.connection { margin: 21px 0 23px; padding: 10px 14px; border: 1px solid #cfdbca; border-radius: 9px; background: var(--cream); color: #324f41; font-size: .87rem; }
+.connection[data-alert="true"] { background: #f9eddc; border-color: #ead4b2; color: #704417; }
+.dashboard { display: grid; grid-template-columns: minmax(0, 1.16fr) minmax(0, 1fr); gap: 19px; align-items: start; }
+.stack { display: grid; gap: 18px; min-width: 0; }
+.panel { border: 1px solid var(--line); border-radius: 14px; background: var(--paper); padding: 18px 20px; min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; margin-bottom: 10px; }
+.panel-head a { font-size: .82rem; font-weight: 650; }
+.list { list-style: none; padding: 0; margin: 0; }
+.list > li { border-top: 1px solid var(--line); padding: 12px 0; min-width: 0; }
+.list > li:last-child { padding-bottom: 2px; }
+.row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px 12px; }
+.row > :first-child { min-width: 0; overflow-wrap: anywhere; }
+.row > a { font-weight: 650; }
+.meta { color: var(--muted); font-size: .81rem; margin-top: 4px; overflow-wrap: anywhere; }
+.note { color: var(--muted); font-size: .9rem; }
+.detail { margin-top: 6px; font-size: .9rem; overflow-wrap: anywhere; }
+.links { display: flex; flex-wrap: wrap; gap: 3px 14px; margin-top: 5px; font-size: .84rem; }
+.badge { display: inline-block; flex: none; padding: 2px 8px; border-radius: 6px; background: #e9eeeb; color: #41544c; font-size: .75rem; font-weight: 700; white-space: nowrap; }
+.badge[data-state="current"], .badge[data-state="completed"], .badge[data-state="merged"] { color: #1b553e; background: #e4f0df; }
+.badge[data-state="running"], .badge[data-state="queued"], .badge[data-state="open"] { color: #234963; background: #e6eff5; }
+.badge[data-state="blocked"], .badge[data-state="stale"], .badge[data-state="proposed"], .badge[data-state="draft"] { color: #734716; background: #fbefd9; }
+.badge[data-state="failed"] { color: #8a332b; background: #f9e7e4; }
+.project { border-top: 1px solid #c9d7cb; padding-top: 16px; display: grid; gap: 13px; }
+.project h2 { overflow-wrap: anywhere; }
+.project-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+details { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 9px; }
+summary { padding: 4px 0; cursor: pointer; color: var(--green); font-weight: 600; font-size: .87rem; }
+.job-list { margin-top: 9px; padding-left: 12px; border-left: 2px solid var(--line); }
+.runner-health { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+footer { border-top: 1px solid var(--line); font-size: .8rem; }
+@media (max-width: 1000px) { .dashboard { grid-template-columns: 1fr; } }
+@media (max-width: 760px) {
+  .sidebar { position: static; width: auto; padding: 12px 16px 10px; }
+  .brand { font-size: 1.25rem; }
+  .brand-mark { padding: 0 7px; border-radius: 8px; }
+  .sidebar-caption, .workspace, .sidebar-bottom { display: none; }
+  nav { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+  nav a { min-height: 44px; padding: .55rem .65rem; font-size: .88rem; }
+  .shell { margin: 0; min-height: calc(100vh - 105px); }
+  .topbar, main, footer { padding-inline: 16px; }
+  main { padding-top: 24px; }
+  .connection { margin: 16px 0; }
+  .project-grid { grid-template-columns: 1fr; }
+  .panel { padding: 14px; }
+}

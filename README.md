@@ -4,6 +4,8 @@
 
 **v0.1 Developer Preview · offline only · Apache-2.0**
 
+**Web Mission Control** brings public GitHub planning, pull requests and CI evidence into a read-only dashboard, with optional private HomeCI sources. [Run and configure the web app](web/README.md).
+
 **Desktop candidate for Product review:** [DAF M1.2](desktop/README.md) preserves
 the approved offline demo and adds real, read-only public GitHub planning. Extract
 its portable ZIP and open DAF; Electron and Python are included. Import a complete

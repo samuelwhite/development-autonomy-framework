@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>DAF · Mission Control</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <aside class="sidebar">
+    <a class="brand" href="#dashboard"><span class="brand-mark" aria-hidden="true">d.</span> DAF</a>
+    <p class="sidebar-caption">Development Autonomy Framework</p>
+    <div class="workspace">Mission Control<small>Read-only workspace</small></div>
+    <nav aria-label="Workspace">
+      <a href="#dashboard" aria-current="page">Dashboard</a>
+      <a href="#development">Development</a>
+      <a href="#homeci">HomeCI</a>
+    </nav>
+    <p class="sidebar-bottom"><span class="dot" aria-hidden="true"></span> Source-linked reporting</p>
+  </aside>
+  <div class="shell">
+    <header class="topbar">
+      <span id="location">Mission Control</span>
+      <button id="refresh" type="button">Refresh view</button>
+    </header>
+    <main id="content" tabindex="-1">
+      <div class="page-heading">
+        <h1 id="heading" tabindex="-1">Dashboard</h1>
+        <p id="description">Project planning, validation activity and work that needs a closer look.</p>
+      </div>
+      <p id="connection" class="connection" role="status">Connecting to Mission Control…</p>
+      <div id="view"></div>
+    </main>
+    <footer>DAF Mission Control <span>GitHub is the source of record</span></footer>
+  </div>
+  <noscript>Enable JavaScript to read Mission Control.</noscript>
+</body>
+</html>

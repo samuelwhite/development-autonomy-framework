@@ -1,0 +1,32 @@
+name: web-mission-control
+on:
+  pull_request:
+    paths: ['web/**', '.github/workflows/web.yml']
+  push:
+    branches: [main]
+    paths: ['web/**', '.github/workflows/web.yml']
+permissions:
+  contents: read
+jobs:
+  read-only-web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - run: node --test web/tests/server.test.mjs
+      - run: npm ci --prefix desktop --ignore-scripts --no-fund
+      - run: ./desktop/node_modules/.bin/playwright install --with-deps chromium
+      - run: node --test web/tests/browser.test.mjs
+      - name: Build and smoke-test the Compose example
+        working-directory: web
+        run: |
+          docker compose config --quiet
+          docker compose up --build --wait
+          curl --fail --silent http://127.0.0.1:18080/healthz
+          test "$(docker compose exec -T mission-control id -u)" = 1000
+      - name: Remove test container
+        if: always()
+        working-directory: web
+        run: docker compose down
