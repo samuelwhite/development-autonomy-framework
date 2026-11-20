@@ -33,6 +33,8 @@ Use the [Forge-HomeCI operator procedure](docs/homeci-acceptance.md) for private
 
 Choose Light, Dark or System from the toolbar. Only the appearance choice is saved in local storage.
 
+Individual Administrator and Viewer accounts are available as a separate opt-in Compose mode. Use the [local accounts rollout](docs/local-accounts-rollout.md) for trusted bootstrap, isolated HTTPS acceptance, persistent state and rollback. The default deployment uses Basic Auth.
+
 ## What the UI shows
 
 - **Dashboard** shows configured repositories, recent PRs and validation, source problems, open issues and Product decisions surfaced from open issues labelled `product decision`, `product-decision`, `decision required` or `decision-required`.

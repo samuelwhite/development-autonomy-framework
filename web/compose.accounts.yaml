@@ -1,0 +1,13 @@
+services:
+  mission-control:
+    environment:
+      DAF_AUTH_MODE: accounts
+      DAF_AUTH_STATE_DIR: /var/lib/daf-auth
+      DAF_PUBLIC_ORIGIN: "${DAF_PUBLIC_ORIGIN:?Set the canonical HTTPS origin}"
+    secrets: !reset []
+    volumes:
+      - type: bind
+        source: "${DAF_AUTH_STATE_SOURCE:?Set the private account state directory}"
+        target: /var/lib/daf-auth
+        bind:
+          create_host_path: false

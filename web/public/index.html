@@ -6,6 +6,8 @@
   <meta name="color-scheme" content="light dark">
   <title>DAF · Mission Control</title>
   <link rel="stylesheet" href="/style.css">
+  <script src="/appearance.js" defer></script>
+  <script src="/account.js" defer></script>
   <script src="/app.js" defer></script>
 </head>
 <body>
@@ -35,6 +37,12 @@
         <button id="refresh" type="button">Refresh view</button>
       </div>
     </header>
+    <nav id="session-tools" class="session-tools" aria-label="Account" hidden>
+      <a href="/account">My account</a>
+      <a id="settings-link" href="/settings/users" hidden>Settings / Users</a>
+      <button type="button" id="logout">Sign out</button>
+      <p id="session-error" role="alert"></p>
+    </nav>
     <main id="content" tabindex="-1">
       <div class="page-heading">
         <h1 id="heading" tabindex="-1">Dashboard</h1>

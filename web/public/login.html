@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Sign in · DAF Mission Control</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/appearance.js" defer></script>
+  <script src="/account.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand account-brand" href="/"><span class="brand-mark" aria-hidden="true">d.</span> DAF</a>
+    <div class="toolbar-actions account-appearance">
+      <label for="appearance">Appearance
+        <select id="appearance">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="system" selected>System</option>
+        </select>
+      </label>
+    </div>
+  </header>
+  <main class="signin-shell">
+    <div class="page-heading">
+      <h1>Sign in to Mission Control</h1>
+      <p>Use your DAF account to see development and validation activity.</p>
+    </div>
+    <section class="panel account-panel" aria-label="Sign in">
+      <form id="login-form" class="account-form" method="post">
+        <label>Username <input type="text" name="username" autocomplete="username" autocapitalize="none" required maxlength="32"></label>
+        <label>Password <input type="password" name="password" autocomplete="current-password" required></label>
+        <label class="checkbox"><input type="checkbox" data-show-password> Show password</label>
+        <button class="action" type="submit">Sign in</button>
+        <p class="form-error" role="alert"></p>
+      </form>
+    </section>
+    <noscript>Enable JavaScript to sign in.</noscript>
+  </main>
+</body>
+</html>

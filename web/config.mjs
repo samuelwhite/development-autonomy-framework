@@ -42,7 +42,16 @@ function readSecret(path) {
   return path ? readFileSync(path, 'utf8').trim() : '';
 }
 
-export function assertViewerAuthentication({ repositories, host, password }) {
+export function assertViewerAuthentication({ repositories, host, password, authMode, authDirectory, publicOrigin }) {
+  if (authMode === 'accounts') {
+    const origin = typeof publicOrigin === 'string' && URL.parse(publicOrigin);
+    if (!authDirectory || !origin || origin.origin !== publicOrigin ||
+        (origin.protocol !== 'https:' &&
+          !(host === '127.0.0.1' && origin.protocol === 'http:' && origin.hostname === '127.0.0.1'))) {
+      throw Error('Accounts require private state and a canonical HTTPS origin');
+    }
+    return;
+  }
   if (!password && (host === '0.0.0.0' || repositories.some((entry) => entry.visibility === 'private'))) {
     throw Error('External listeners and private sources require viewer authentication');
   }
@@ -52,16 +61,19 @@ export function loadConfig(env = process.env) {
   const repositories = validateRepositories(env.DAF_REPOSITORIES_FILE
     ? JSON.parse(readFileSync(env.DAF_REPOSITORIES_FILE, 'utf8')) : defaults);
   const token = readSecret(env.DAF_GITHUB_TOKEN_FILE);
-  const password = readSecret(env.DAF_VIEWER_PASSWORD_FILE);
+  const authMode = env.DAF_AUTH_MODE || 'basic';
+  if (!['basic', 'accounts'].includes(authMode)) throw Error('Invalid authentication mode');
+  const password = authMode === 'basic' ? readSecret(env.DAF_VIEWER_PASSWORD_FILE) : '';
   if ((password && !/^[!-~]{24,256}$/.test(password)) ||
-      (env.DAF_VIEWER_PASSWORD_FILE && !password) ||
+      (authMode === 'basic' && env.DAF_VIEWER_PASSWORD_FILE && !password) ||
       (token && !/^[A-Za-z0-9_]{1,512}$/.test(token))) throw Error('Invalid secret configuration');
   const host = env.DAF_BIND || '127.0.0.1';
   const port = Number(env.DAF_PORT || 8080);
   if (!['127.0.0.1', '0.0.0.0'].includes(host) || !Number.isInteger(port) || port < 1 || port > 65535) {
     throw Error('Invalid listener configuration');
   }
-  const config = { repositories, token, password, host, port };
+  const config = { repositories, token, password, host, port, authMode,
+    authDirectory: env.DAF_AUTH_STATE_DIR, publicOrigin: env.DAF_PUBLIC_ORIGIN };
   assertViewerAuthentication(config);
   return config;
 }

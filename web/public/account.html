@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Account · DAF Mission Control</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/appearance.js" defer></script>
+  <script src="/account.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="topbar">
+    <a class="brand account-brand" href="/"><span class="brand-mark" aria-hidden="true">d.</span> DAF</a>
+    <div class="toolbar-actions account-appearance">
+      <label for="appearance">Appearance
+        <select id="appearance">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="system" selected>System</option>
+        </select>
+      </label>
+    </div>
+  </header>
+  <nav id="session-tools" class="session-tools" aria-label="Account" hidden>
+    <a href="/">Mission Control</a>
+    <a href="/account">My account</a>
+    <a id="settings-link" href="/settings/users" hidden>Settings / Users</a>
+    <button type="button" id="logout">Sign out</button>
+    <p id="session-error" role="alert"></p>
+  </nav>
+  <main id="content" class="account-shell" tabindex="-1">
+    <div id="my-account" class="stack" hidden>
+      <div class="page-heading"><h1>My account</h1><p id="account-identity"></p></div>
+      <section class="panel" aria-labelledby="password-heading">
+        <h2 id="password-heading">Change password</h2>
+        <form id="change-password" class="account-form" method="post">
+          <label>Current password <input type="password" name="current" autocomplete="current-password" required></label>
+          <label>New password <input type="password" name="password" autocomplete="new-password" required minlength="10"></label>
+          <p class="note">Use at least 10 characters. A long, unique passphrase works well.</p>
+          <label class="checkbox"><input type="checkbox" data-show-password> Show passwords</label>
+          <button class="action" type="submit">Change password</button>
+          <p class="form-error" role="alert"></p>
+        </form>
+      </section>
+    </div>
+    <div id="user-settings" class="stack" hidden>
+      <div class="page-heading"><h1>Users</h1><p>Manage who can sign in to Mission Control.</p></div>
+      <div class="users-grid">
+        <section class="panel" aria-labelledby="users-heading">
+          <div class="panel-head"><h2 id="users-heading">Local accounts</h2></div>
+          <p id="users-status" role="status" class="note"></p>
+          <ul id="users-list" class="list"></ul>
+        </section>
+        <section class="panel" aria-labelledby="create-heading">
+          <h2 id="create-heading">Add user</h2>
+          <form id="create-user" class="account-form" method="post">
+            <label>Username <input type="text" name="username" autocomplete="off" autocapitalize="none" required minlength="3" maxlength="32"></label>
+            <label>Role <select name="role"><option value="viewer">Viewer</option><option value="administrator">Administrator</option></select></label>
+            <label>Password <input type="password" name="password" autocomplete="new-password" required minlength="10"></label>
+            <p class="note">Use at least 10 characters and share the password privately.</p>
+            <label class="checkbox"><input type="checkbox" data-show-password> Show password</label>
+            <button class="action" type="submit">Add user</button>
+            <p class="form-error" role="alert"></p>
+          </form>
+        </section>
+      </div>
+    </div>
+    <p id="account-error" class="form-error" role="alert"></p>
+    <noscript>Enable JavaScript to manage your account.</noscript>
+  </main>
+</body>
+</html>

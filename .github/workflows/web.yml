@@ -15,10 +15,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - run: node --test web/tests/server.test.mjs
+      - run: node --test web/tests/server.test.mjs web/tests/accounts.test.mjs
       - run: npm ci --prefix desktop --ignore-scripts --no-fund
       - run: ./desktop/node_modules/.bin/playwright install --with-deps chromium
-      - run: node --test web/tests/browser.test.mjs
+      - run: node --test web/tests/browser.test.mjs web/tests/account-browser.test.mjs
       - name: Build and smoke-test Compose from a restrictive checkout
         env:
           DAF_VIEWER_PASSWORD_SOURCE: ${{ runner.temp }}/daf-viewer-password
@@ -51,6 +51,16 @@ jobs:
               .then(response => { if (!response.ok) process.exitCode = 1; })
               .catch(() => { process.exitCode = 1; });
           '
+      - name: Verify interactive accounts bootstrap and restart in Compose
+        env:
+          DAF_VIEWER_PASSWORD_SOURCE: ${{ runner.temp }}/daf-viewer-password
+          DAF_AUTH_STATE_SOURCE: ${{ runner.temp }}/daf-auth-state
+          DAF_PUBLIC_ORIGIN: https://daf.example.test
+        run: |
+          cd "$RUNNER_TEMP/daf-restrictive-context"
+          sudo install -d -m 0700 -o 1000 -g 1000 "$DAF_AUTH_STATE_SOURCE"
+          docker compose -f compose.yaml -f compose.accounts.yaml config --quiet
+          node tests/container-accounts-smoke.mjs
       - name: Remove test container
         if: always()
         env:
