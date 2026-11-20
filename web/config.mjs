@@ -42,6 +42,12 @@ function readSecret(path) {
   return path ? readFileSync(path, 'utf8').trim() : '';
 }
 
+export function assertViewerAuthentication({ repositories, host, password }) {
+  if (!password && (host === '0.0.0.0' || repositories.some((entry) => entry.visibility === 'private'))) {
+    throw Error('External listeners and private sources require viewer authentication');
+  }
+}
+
 export function loadConfig(env = process.env) {
   const repositories = validateRepositories(env.DAF_REPOSITORIES_FILE
     ? JSON.parse(readFileSync(env.DAF_REPOSITORIES_FILE, 'utf8')) : defaults);
@@ -50,13 +56,12 @@ export function loadConfig(env = process.env) {
   if ((password && !/^[!-~]{24,256}$/.test(password)) ||
       (env.DAF_VIEWER_PASSWORD_FILE && !password) ||
       (token && !/^[A-Za-z0-9_]{1,512}$/.test(token))) throw Error('Invalid secret configuration');
-  if (repositories.some((entry) => entry.visibility === 'private') && !password) {
-    throw Error('Private sources require viewer authentication');
-  }
   const host = env.DAF_BIND || '127.0.0.1';
   const port = Number(env.DAF_PORT || 8080);
   if (!['127.0.0.1', '0.0.0.0'].includes(host) || !Number.isInteger(port) || port < 1 || port > 65535) {
     throw Error('Invalid listener configuration');
   }
-  return { repositories, token, password, host, port };
+  const config = { repositories, token, password, host, port };
+  assertViewerAuthentication(config);
+  return config;
 }

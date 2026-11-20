@@ -12,7 +12,7 @@ node web/server.mjs
 
 Open `http://127.0.0.1:8080`. The default setup reads DAF's public GitHub issues, milestones, PRs, pinned M1.2 proposal and Actions runs and jobs. A repository can legitimately return zero GitHub milestones. Pinned DAF proposals have their own section because they come from a plan file at a specific commit.
 
-The Docker example is also local-only by default. With Docker Engine 28+ and Compose v2, run `docker compose up --build --wait` from `web/` and open `http://127.0.0.1:18080`. For access from another machine, follow the [deployment and rollback procedure](docs/deployment.md).
+The Docker example publishes to IPv4 loopback and requires viewer authentication for every repository configuration. With Docker Engine 28+ and Compose v2, set `DAF_VIEWER_PASSWORD_SOURCE` to the absolute path of a private password file outside the repository, readable by container UID 1000. Run `docker compose up --build --wait` from `web/` and open `http://127.0.0.1:18080` using the `daf` viewer account. For access from another machine, follow the [deployment and rollback procedure](docs/deployment.md).
 
 ## Configure sources
 
@@ -25,7 +25,7 @@ The Docker example is also local-only by default. With Docker Engine 28+ and Com
 ]
 ```
 
-For private sources, always configure `DAF_VIEWER_PASSWORD_FILE`. The service challenges every route except `/healthz` with HTTP Basic authentication for username `daf`. Use a randomly generated password of at least 24 printable non-space ASCII characters and terminate TLS at the trusted proxy before accepting viewer traffic. Use this local HTTP setup only over loopback. Anyone who can authenticate can see all configured repositories. Leave `DAF_GITHUB_TOKEN_FILE` unset to show a credential-missing state without making any requests to private repositories.
+The server requires `DAF_VIEWER_PASSWORD_FILE` on a wildcard listener or when any private source is configured. Compose sets this path from its mandatory secret. With a password configured, the service challenges every read route except `/healthz` with HTTP Basic authentication for username `daf`. Use a randomly generated password of at least 24 printable non-space ASCII characters and terminate TLS at the trusted proxy before accepting viewer traffic. Use this local HTTP setup only over loopback. Anyone who can authenticate can see all configured repositories. Leave `DAF_GITHUB_TOKEN_FILE` unset to show a credential-missing state without making any requests to private repositories.
 
 Private CI needs a separately provisioned, expiring fine-grained GitHub token restricted to selected repositories, with Metadata and Actions read access. Enable Issues and Pull requests read only where planning is needed, and Contents read for a pinned plan. The app sends the token only to explicitly private entries and never to public entries, browser requests or logs. The operator must verify the scopes and rotate credentials. [GitHub fine-grained token permissions](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens)
 

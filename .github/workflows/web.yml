@@ -21,12 +21,33 @@ jobs:
       - run: node --test web/tests/browser.test.mjs
       - name: Build and smoke-test the Compose example
         working-directory: web
+        env:
+          DAF_VIEWER_PASSWORD_SOURCE: ${{ runner.temp }}/daf-viewer-password
         run: |
+          umask 077
+          openssl rand -hex 32 > "$DAF_VIEWER_PASSWORD_SOURCE"
+          chmod 0400 "$DAF_VIEWER_PASSWORD_SOURCE"
+          sudo chown 1000:1000 "$DAF_VIEWER_PASSWORD_SOURCE"
+          if env -u DAF_VIEWER_PASSWORD_SOURCE docker compose config --quiet 2>/dev/null; then
+            exit 1
+          fi
           docker compose config --quiet
           docker compose up --build --wait
           curl --fail --silent http://127.0.0.1:18080/healthz
           test "$(docker compose exec -T mission-control id -u)" = 1000
+          for path in / /style.css /app.js /api/mission-control; do
+            test "$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:18080$path")" = 401
+          done
+          docker compose exec -T mission-control node -e '
+            const password = require("node:fs").readFileSync(process.env.DAF_VIEWER_PASSWORD_FILE, "utf8").trim();
+            const authorization = "Basic " + Buffer.from("daf:" + password).toString("base64");
+            fetch("http://127.0.0.1:8080/", { headers: { authorization } })
+              .then(response => { if (!response.ok) process.exitCode = 1; })
+              .catch(() => { process.exitCode = 1; });
+          '
       - name: Remove test container
         if: always()
         working-directory: web
+        env:
+          DAF_VIEWER_PASSWORD_SOURCE: ${{ runner.temp }}/daf-viewer-password
         run: docker compose down

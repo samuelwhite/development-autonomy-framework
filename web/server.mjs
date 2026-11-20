@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { pathToFileURL } from 'node:url';
-import { loadConfig } from './config.mjs';
+import { assertViewerAuthentication, loadConfig } from './config.mjs';
 import { createFeed } from './feed.mjs';
 
 const assets = new Map([
@@ -23,9 +23,7 @@ const headers = {
 const digest = (value) => createHash('sha256').update(value).digest();
 
 export function missionControl(config, options = {}) {
-  if (config.repositories.some((entry) => entry.visibility === 'private') && !config.password) {
-    throw Error('Private sources require viewer authentication');
-  }
+  assertViewerAuthentication(config);
   const abort = new AbortController();
   const feed = createFeed({ ...options, ...config, signal: abort.signal });
   const expected = config.password && digest(`daf:${config.password}`);

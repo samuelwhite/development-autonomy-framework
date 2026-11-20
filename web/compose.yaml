@@ -8,6 +8,10 @@ services:
     security_opt: [no-new-privileges:true]
     pids_limit: 64
     mem_limit: 192m
+    environment:
+      DAF_VIEWER_PASSWORD_FILE: /run/secrets/viewer_password
+    secrets:
+      - viewer_password
     ports:
       - '127.0.0.1:${DAF_PUBLISHED_PORT:-18080}:8080'
     healthcheck:
@@ -16,3 +20,7 @@ services:
       timeout: 3s
       retries: 3
     restart: unless-stopped
+
+secrets:
+  viewer_password:
+    file: "${DAF_VIEWER_PASSWORD_SOURCE:?Set the path to a private viewer password file}"

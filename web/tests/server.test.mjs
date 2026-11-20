@@ -80,6 +80,26 @@ test('HTTP routes, methods, credentials and GitHub provenance are bounded', asyn
   assert.equal(calls.length, 6);
 });
 
+test('public-only wildcard listeners fail closed and protect every viewer route', async (t) => {
+  assert.throws(() => loadConfig({ DAF_BIND: '0.0.0.0' }), /require viewer authentication/);
+  const settings = { ...config(), host: '0.0.0.0' };
+  assert.throws(() => missionControl(settings), /require viewer authentication/);
+  const app = missionControl({ ...settings, password }, { fetcher: githubFixture });
+  t.after(() => app.stop());
+  const origin = await listen(app);
+  for (const path of ['/', '/app.js', '/style.css', '/api/mission-control']) {
+    const response = await fetch(origin + path);
+    assert.equal(response.status, 401);
+    assert.match(response.headers.get('www-authenticate'), /^Basic realm=/);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+  }
+  assert.equal((await fetch(origin + '/healthz')).status, 200);
+  const response = await fetch(origin + '/api/mission-control', { headers: { authorization } });
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-security-policy'), /frame-ancestors 'none'/);
+  assert.equal((await response.json()).projects[0].runs.state, 'current');
+});
+
 test('private feeds fail closed, and unauthenticated requests do not start reads', async (t) => {
   const privateEntry = { ...entry, repository: 'example/private', visibility: 'private', planning: false, plan: undefined };
   const settings = config([entry, privateEntry]);
