@@ -4,7 +4,16 @@
 !github.mjs
 !feed.mjs
 !server.mjs
+!accounts.mjs
+!account-http.mjs
+!bootstrap.mjs
+!password-blocklist.sha256
+!password-blocklist.LICENSE
 !public/
 !public/index.html
 !public/style.css
 !public/app.js
+!public/appearance.js
+!public/account.js
+!public/login.html
+!public/account.html

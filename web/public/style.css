@@ -120,3 +120,38 @@ footer { border-top: 1px solid var(--line); font-size: .8rem; }
   #location { display: none; }
   .toolbar-actions { width: 100%; justify-content: space-between; }
 }
+[hidden] { display: none !important; }
+.account-brand { color: var(--ink); }
+.account-brand .brand-mark { color: var(--green); }
+.account-appearance { width: auto; }
+.signin-shell { max-width: 600px; padding-top: clamp(28px, 7vw, 90px); }
+.account-panel { margin-top: 24px; }
+.account-shell { max-width: 1130px; }
+#my-account { max-width: 570px; }
+.account-form { display: grid; gap: 12px; margin-top: 12px; }
+.account-form label:not(.checkbox) { display: grid; gap: 4px; font-weight: 600; }
+.account-form input:not([type="checkbox"]), .account-form select {
+  width: 100%; min-width: 0; min-height: 44px; border: 1px solid var(--control-line);
+  background: var(--canvas); color: var(--ink); border-radius: 8px; padding: 6px 10px; font: inherit;
+}
+.checkbox { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+.checkbox input { width: 18px; height: 18px; accent-color: var(--green); }
+.action, .session-tools button {
+  justify-self: start; min-height: 44px; padding: 6px 13px; border: 1px solid var(--control-line);
+  border-radius: 8px; background: var(--paper); color: var(--green); font-weight: 650;
+}
+.action:hover, .session-tools button:hover { background: var(--cream); }
+.action:disabled { opacity: .58; cursor: default; }
+.form-error { color: var(--error-fg); padding: 8px 10px; background: var(--error-bg); border-radius: 8px; }
+.form-error:empty, #session-error:empty { display: none; }
+.session-tools {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
+  border-bottom: 1px solid var(--line); padding: 4px clamp(16px, 4vw, 52px);
+}
+.session-tools a { color: var(--green); padding: 8px 0; min-height: 44px; text-decoration: underline; }
+.session-tools a[aria-current] { color: var(--ink); background: none; border-color: transparent; }
+.session-tools a:hover { background: none; text-decoration-thickness: 2px; }
+.users-grid { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; }
+.user-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+.account-name { font-family: ui-monospace, Consolas, monospace; }
+@media (max-width: 700px) { .users-grid { grid-template-columns: 1fr; } }
