@@ -1,7 +1,6 @@
 import { createHash, randomBytes, scrypt as derive, timingSafeEqual } from 'node:crypto';
 import { accessSync, closeSync, constants, lstatSync, openSync, readFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
 import { promisify } from 'node:util';
 
 const scrypt = promisify(derive);
@@ -86,6 +85,8 @@ function open(directory, initializing = false) {
     if (!file.isFile() || file.nlink !== 1 || (process.platform !== 'win32' && (file.mode & 0o077))) {
       throw Error('Account database must be a private regular file');
     }
+    // Load native SQLite only when accounts mode opens private state.
+    const { DatabaseSync } = process.getBuiltinModule('node:sqlite');
     const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
     try {
       db.exec('PRAGMA busy_timeout = 2000');

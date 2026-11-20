@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -45,6 +45,17 @@ test('store fails closed, blocks common passwords and allows a long passphrase',
   await accounts.add(id, 'test.viewer', 'viewer', 'moss runes');
   assert.ok(await accounts.login('test.viewer', 'moss runes'));
   accounts.close();
+  const restore = await storage(t);
+  await copyFile(join(directory, 'accounts.sqlite'), join(restore, 'accounts.sqlite'));
+  const restored = openAccounts(restore);
+  try {
+    assert.ok(restored.identity(id));
+    restored.revokeAll();
+    assert.equal(restored.identity(id), undefined);
+    assert.ok(await restored.login(admin, longPassword));
+  } finally {
+    restored.close();
+  }
   await writeFile(join(directory, 'accounts.sqlite'), 'corrupt');
   assert.throws(() => openAccounts(directory));
 });

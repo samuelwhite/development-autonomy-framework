@@ -89,4 +89,10 @@ assert.equal((await request('/api/users', null, administrator)).status, 200);
 assert.equal((await request('/api/account', null, invalidated)).status, 401);
 const viewer = await login('ci.viewer', viewerPassword);
 assert.equal((await request('/api/users', null, viewer)).status, 403);
-console.log('Interactive bootstrap, account permissions and session persistence passed.');
+const rollback = spawnSync('docker', ['compose', '-f', 'compose.yaml', 'up', '--no-build',
+  '--wait', '--wait-timeout', '35'], { stdio: 'inherit', timeout: 60_000 });
+assert.equal(rollback.status, 0, 'Basic Auth rollback failed');
+const rolledBack = await request('/', null, administrator);
+assert.equal(rolledBack.status, 401);
+assert.match(rolledBack.headers.get('www-authenticate'), /^Basic /);
+console.log('Interactive bootstrap, permissions, restart persistence and Basic Auth rollback passed.');
