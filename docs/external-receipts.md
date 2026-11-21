@@ -3,7 +3,8 @@
 This completes the offline slice of [Issue #6](https://github.com/samuelwhite/development-autonomy-framework/issues/6).
 It exports a proposed task and compares supplied evidence. It does not launch
 Codex, access GitHub or HomeCI, discover credentials, mutate a repository, admit
-an attempt, reserve money, retry, merge, or enter the synthetic DAF engine/Store.
+an attempt, reserve money, retry, merge, or enter the synthetic DAF engine.
+The recording commands reuse the Store's immutable observation table.
 The runtime has no third-party dependencies. These contracts are not a sandbox.
 
 ## Evidence states and authority
@@ -20,7 +21,7 @@ unverified. Validator IDs and source labels are claims, not authenticated identi
 A digest proves neither who produced bytes nor whether their contents are true.
 `all_required_checks_claimed_passed` describes claims only; it cannot approve work.
 An exit code of zero means comparison succeeded, including consistent failed or
-pending checks. No result is written to the DAF journal.
+pending checks. Ordinary comparisons do not write results to the DAF journal.
 
 ## Run the synthetic walkthrough
 
@@ -40,6 +41,7 @@ a different mutation. Do not use a consumer repository or real credentials.
 
 After installing the package, `daf-receipts` exposes the same subcommands.
 Commands read only explicitly named local files and emit JSON on stdout.
+Only the interruption and recovery recording commands retain observations.
 Use an explicitly chosen, new file if redirecting output; the shell owns that
 write. The proposal includes the supplied instruction verbatim as JSON data:
 keep secrets and private material out of public examples and reports. There is
@@ -115,6 +117,39 @@ JSON and artifact files are limited to 2 MiB each; at most 32 checks/artifacts a
 files/directories and non-regular files are refused. Fixed refusal codes do not
 echo document contents or filenames. Filesystem checks are best-effort hygiene;
 same-user races or malicious changes to this Python process are outside the boundary.
+
+## Deadline interruption and later cleanup
+
+Use a dedicated, existing local journal directory. An interruption input has
+schema version 1, status `externally_supplied_unverified`, the exact
+`task_sha256`, `deadline_expired: true`, `parent_exited: true`,
+`worker_cleanup: "unconfirmed"`, and `evidence_sealing: "unconfirmed"`.
+Parent exit alone provides neither cleanup confirmation nor sealed evidence.
+
+```text
+daf-receipts record-interruption bundle.json interruption.json --journal LOCAL_DIR
+daf-receipts record-recovery bundle.json recovery.json cleanup.json --journal LOCAL_DIR
+```
+
+The first command retains an immutable observation and returns its
+`interruption_sha256`. For recovery, supply a separate schema-1 unverified
+observation with that digest, an independent reviewer's `observer_id`,
+`worker_cleanup: "confirmed"`, and `cleanup_evidence_sha256` matching the
+separately supplied bytes. The bridge verifies the digest and requires the
+original observation in the same journal. The observer identity and meaning
+of those bytes still require independent verification. The recovery record
+leaves the original attempt and its unconfirmed evidence sealing intact.
+
+Both commands report refused acceptance, disabled automatic retry and a
+fresh approval requirement. A zero exit code confirms that the observation
+was recorded. Pass the same `--journal LOCAL_DIR` to `reconcile` to refuse a
+recorded interruption even if the supplied PR and CI claims appear successful.
+Reconciliation opens the existing journal read-only and refuses missing
+observation history instead of initializing it.
+Legacy comparisons without a journal remain unverified and convey no approval
+or execution authority. A new attempt needs a new identity and separate owner
+approval outside this bridge. These commands do not request, clear or
+acknowledge a stop or create an execution job or approval.
 
 ## Assessment and next review gates
 
