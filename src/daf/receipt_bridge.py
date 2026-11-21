@@ -57,16 +57,40 @@ def read_document(path: Path):
     )
 
 
-def open_journal(path: Path, *, existing: bool) -> Store:
+def journal_directory(path: Path, *names: str) -> Path:
     directory = local_path(path)
     require(directory.is_dir(), "local_journal_directory_required")
-    for name in ("journal.sqlite", "stop-control.sqlite"):
+    for name in names:
         for suffix in ("", "-wal", "-shm", "-journal"):
             entry = local_path(directory / (name + suffix))
             require(not entry.exists() or entry.is_file(), "regular_journal_required")
+    return directory
+
+
+def open_journal(path: Path, *, existing: bool) -> Store:
+    directory = journal_directory(path, "journal.sqlite", "stop-control.sqlite")
     if existing:
         require((directory / "journal.sqlite").is_file(), "observation_journal_not_found")
     return Store(directory)
+
+
+def check_interruption(path: Path, fingerprint: str) -> None:
+    database = journal_directory(path, "journal.sqlite") / "journal.sqlite"
+    require(database.is_file(), "observation_journal_not_found")
+    with closing(sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)) as db:
+        db.execute("BEGIN")
+        require(
+            db.execute(
+                "SELECT 1 FROM main.sqlite_schema WHERE type='table' AND name='observations'"
+            ).fetchone()
+            is not None,
+            "observation_history_missing",
+        )
+        require(
+            db.execute("SELECT body FROM main.observations WHERE hash=?", (fingerprint,)).fetchone()
+            is None,
+            "attempt_incomplete",
+        )
 
 
 def main(argv=None):
@@ -106,9 +130,7 @@ def main(argv=None):
         elif args.command == "reconcile":
             bundle = read_document(args.bundle)
             if args.journal is not None:
-                fingerprint = digest(interrupted_attempt(bundle))
-                with closing(open_journal(args.journal, existing=True)) as journal:
-                    require(journal.observation(fingerprint) is None, "attempt_incomplete")
+                check_interruption(args.journal, digest(interrupted_attempt(bundle)))
             artifacts = {}
             for name, path in args.artifact:
                 require(name not in artifacts, "duplicate_artifact_input")

@@ -144,6 +144,8 @@ Both commands report refused acceptance, disabled automatic retry and a
 fresh approval requirement. A zero exit code confirms that the observation
 was recorded. Pass the same `--journal LOCAL_DIR` to `reconcile` to refuse a
 recorded interruption even if the supplied PR and CI claims appear successful.
+Reconciliation opens the existing journal read-only and refuses missing
+observation history instead of initializing it.
 Legacy comparisons without a journal remain unverified and convey no approval
 or execution authority. A new attempt needs a new identity and separate owner
 approval outside this bridge. These commands do not request, clear or

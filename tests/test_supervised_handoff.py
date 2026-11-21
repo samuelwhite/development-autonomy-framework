@@ -548,6 +548,28 @@ def recovery_inputs(tmp_path, bundle, fingerprint):
     return record, recovery, args
 
 
+@pytest.mark.parametrize("zero_byte", [True, False], ids=["empty-file", "missing-table"])
+def test_reconcile_refuses_missing_observation_history_without_initializing_journal(
+    interrupted_handoff, capsys, zero_byte
+):
+    journal, _, _, reconcile = interrupted_handoff
+    database = journal / "journal.sqlite"
+    if zero_byte:
+        database.touch()
+    else:
+        with closing(sqlite3.connect(database)) as db:
+            db.execute("CREATE TABLE unrelated(id INTEGER PRIMARY KEY)")
+    original = database.read_bytes()
+
+    assert main(reconcile) == 2
+    assert json.loads(capsys.readouterr().out) == {
+        "outcome": "refused",
+        "reason": "observation_history_missing",
+    }
+    assert database.read_bytes() == original
+    assert list(journal.iterdir()) == [database]
+
+
 def test_deadline_parent_exit_and_later_cleanup_never_allow_retry(interrupted_handoff, capsys):
     journal, paths, interruption, reconcile = interrupted_handoff
     assert main(interruption) == 0
