@@ -3,18 +3,22 @@
 import hashlib
 import json
 import socket
+import sqlite3
 import subprocess
+from contextlib import closing
 from copy import deepcopy
 from pathlib import Path
 
 import pytest
 
-from daf.contract import Refused, canonical
+from daf.contract import Refused, canonical, digest
 from daf.external_receipts import validate_external_receipt
 from daf.receipt_bridge import main, read_document
+from daf.store import Store
 from daf.supervised_handoff import (
     MAX_BYTES,
     SUPPLIED,
+    interrupted_attempt,
     prepare_task,
     reconcile_receipt,
     validate_bundle,
@@ -485,6 +489,192 @@ def test_cli_end_to_end(tmp_path, capsys):
         "receipt.json",
         "request.json",
     ]
+
+
+@pytest.fixture
+def interrupted_handoff(tmp_path):
+    bundle, receipt, evidence, artifacts = case()
+    observation = {
+        "schema_version": 1,
+        "status": SUPPLIED,
+        "task_sha256": bundle["task_sha256"],
+        "deadline_expired": True,
+        "parent_exited": True,
+        "worker_cleanup": "unconfirmed",
+        "evidence_sealing": "unconfirmed",
+    }
+    inputs = {}
+    for name, value in (
+        ("bundle", bundle),
+        ("receipt", receipt),
+        ("evidence", evidence),
+        ("interruption", observation),
+    ):
+        inputs[name] = tmp_path / f"{name}.json"
+        inputs[name].write_text(canonical(value), encoding="utf-8")
+    artifact = tmp_path / "artifact.json"
+    artifact.write_bytes(artifacts["homeci-result"])
+    journal = tmp_path / "journal"
+    journal.mkdir()
+    flag = ["--journal", str(journal)]
+    return (
+        journal,
+        inputs,
+        ["record-interruption", str(inputs["bundle"]), str(inputs["interruption"]), *flag],
+        [
+            "reconcile",
+            *(str(inputs[name]) for name in ("bundle", "receipt", "evidence")),
+            "--artifact",
+            "homeci-result",
+            str(artifact),
+            *flag,
+        ],
+    )
+
+
+def recovery_inputs(tmp_path, bundle, fingerprint):
+    cleanup = tmp_path / "cleanup.json"
+    content = b'{"synthetic":true,"observation":"worker absent during independent review"}'
+    cleanup.write_bytes(content)
+    record = {
+        "schema_version": 1,
+        "status": SUPPLIED,
+        "interruption_sha256": fingerprint,
+        "observer_id": "reviewer-2",
+        "worker_cleanup": "confirmed",
+        "cleanup_evidence_sha256": hashlib.sha256(content).hexdigest(),
+    }
+    recovery = tmp_path / "recovery.json"
+    args = ["record-recovery", str(bundle), str(recovery), str(cleanup)]
+    return record, recovery, args
+
+
+@pytest.mark.parametrize("zero_byte", [True, False], ids=["empty-file", "missing-table"])
+def test_recovery_and_reconciliation_refuse_missing_history_without_initializing_journal(
+    interrupted_handoff, capsys, zero_byte
+):
+    journal, paths, interruption, reconcile = interrupted_handoff
+    database = journal / "journal.sqlite"
+    if zero_byte:
+        database.touch()
+    else:
+        with closing(sqlite3.connect(database)) as db:
+            db.execute("CREATE TABLE unrelated(id INTEGER PRIMARY KEY)")
+    original = database.read_bytes()
+
+    fingerprint = digest(interrupted_attempt(read_document(paths["bundle"])))
+    record, path, recover = recovery_inputs(journal.parent, paths["bundle"], fingerprint)
+    path.write_text(canonical(record), encoding="utf-8")
+    outcomes = []
+    for command in (reconcile, recover + ["--journal", str(journal)], reconcile):
+        status = main(command)
+        outcomes.append((status, json.loads(capsys.readouterr().out)))
+    refused = {
+        "outcome": "refused",
+        "reason": "observation_history_missing",
+    }
+    assert outcomes == [(2, refused)] * 3
+    assert main(interruption) == 2
+    assert json.loads(capsys.readouterr().out) == refused
+    assert database.read_bytes() == original
+    assert list(journal.iterdir()) == [database]
+
+
+def test_deadline_parent_exit_and_later_cleanup_never_allow_retry(interrupted_handoff, capsys):
+    journal, paths, interruption, reconcile = interrupted_handoff
+    assert main(interruption) == 0
+    initial = json.loads(capsys.readouterr().out)
+    original = initial["attempt"]
+    fingerprint = initial["interruption_sha256"]
+    assert fingerprint == digest(original)
+    assert original["attempt_id"] == "attempt-1"
+    assert original["status"] == SUPPLIED
+    assert original["evidence_sealing"] == original["worker_cleanup"] == "unconfirmed"
+    assert main(interruption) == 0
+    assert json.loads(capsys.readouterr().out) == initial
+
+    # Even otherwise consistent success claims cannot reconcile this recorded attempt.
+    assert main(reconcile) == 2
+    assert json.loads(capsys.readouterr().out)["reason"] == "attempt_incomplete"
+
+    record, path, args = recovery_inputs(journal.parent, paths["bundle"], fingerprint)
+    path.write_text(canonical(record), encoding="utf-8")
+    stop_database = journal / "stop-control.sqlite"
+    stop_database.unlink(missing_ok=True)
+    assert main(args + ["--journal", str(journal)]) == 0
+    recovered = json.loads(capsys.readouterr().out)
+    assert not stop_database.exists()
+    assert recovered["attempt"] == original
+    assert recovered["recovery"]["worker_cleanup"] == "confirmed"
+    assert recovered["recovery"]["status"] == SUPPLIED
+    assert recovered["recovery_sha256"] != fingerprint
+    for outcome in (initial, recovered):
+        assert outcome["acceptance"] == "refused"
+        assert outcome["execution_authority"] is False
+        assert outcome["automatic_retry"] is False
+        assert outcome["fresh_approval_required"] is True
+    assert main(reconcile) == 2
+    assert json.loads(capsys.readouterr().out)["reason"] == "attempt_incomplete"
+    assert not stop_database.exists()
+
+    # A new attempt identity changes the task fingerprint and still only proposes work.
+    next_task = prepare_task({**request_fixture(), "attempt_id": "attempt-2"})
+    assert next_task["task_sha256"] != original["task_sha256"]
+    assert next_task["execution_authority"] is False
+    with closing(Store(journal)) as store:
+        assert store.observation(fingerprint) == original
+        assert store.observation(recovered["recovery_sha256"]) == recovered["recovery"]
+        assert store.db.execute("SELECT count(*) FROM observations").fetchone()[0] == 2
+        assert store.summary()["jobs"] == []
+        with pytest.raises(sqlite3.IntegrityError, match="immutable_audit_record"):
+            store.db.execute("DELETE FROM observations WHERE hash=?", (fingerprint,))
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "reason"),
+    [
+        ("interruption_sha256", "d" * 64, "recovery_attempt_mismatch"),
+        ("cleanup_evidence_sha256", "d" * 64, "cleanup_evidence_digest_mismatch"),
+        ("status", "verified", "external_evidence_cannot_self_verify"),
+        ("worker_cleanup", "unconfirmed", "worker_cleanup_unconfirmed"),
+        ("evidence_sealing", "confirmed", "invalid_contract_fields"),
+        ("execution_authority", True, "invalid_contract_fields"),
+    ],
+)
+def test_invalid_recovery_does_not_change_journal(
+    interrupted_handoff, capsys, field, value, reason
+):
+    journal, paths, interruption, _ = interrupted_handoff
+    assert main(interruption) == 0
+    fingerprint = json.loads(capsys.readouterr().out)["interruption_sha256"]
+    record, path, args = recovery_inputs(journal.parent, paths["bundle"], fingerprint)
+    path.write_text(canonical({**record, field: value}), encoding="utf-8")
+    assert main(args + ["--journal", str(journal)]) == 2
+    assert json.loads(capsys.readouterr().out)["reason"] == reason
+    with closing(Store(journal)) as store:
+        assert store.db.execute("SELECT count(*) FROM observations").fetchone()[0] == 1
+
+
+def test_recovery_requires_original_observation_in_same_journal(interrupted_handoff, capsys):
+    journal, paths, interruption, _ = interrupted_handoff
+    assert main(interruption) == 0
+    fingerprint = json.loads(capsys.readouterr().out)["interruption_sha256"]
+    record, path, args = recovery_inputs(journal.parent, paths["bundle"], fingerprint)
+    path.write_text(canonical(record), encoding="utf-8")
+    elsewhere = journal.parent / "other-journal"
+    with closing(Store(elsewhere)):
+        assert main(args + ["--journal", str(elsewhere)]) == 2
+    assert json.loads(capsys.readouterr().out)["reason"] == "interruption_not_recorded"
+
+
+def test_parent_exit_without_exact_deadline_state_is_refused(interrupted_handoff, capsys):
+    journal, paths, interruption, _ = interrupted_handoff
+    observation = read_document(paths["interruption"])
+    observation["deadline_expired"] = 1
+    paths["interruption"].write_text(canonical(observation), encoding="utf-8")
+    assert main(interruption) == 2
+    assert json.loads(capsys.readouterr().out)["reason"] == "interruption_observation_mismatch"
+    assert list(journal.iterdir()) == []
 
 
 @pytest.mark.parametrize(

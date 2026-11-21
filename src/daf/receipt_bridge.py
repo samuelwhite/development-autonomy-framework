@@ -1,16 +1,27 @@
-"""Offline receipt CLI: explicit local inputs and JSON stdout; no repository writes."""
+"""Offline receipt CLI with explicit local inputs and optional observation retention."""
 
 import argparse
 import json
+import sqlite3
 import stat
+from contextlib import closing, contextmanager
 from pathlib import Path
 
-from .contract import Refused, require
+from .contract import Refused, canonical, digest, require
 from .external_receipts import receipt_sha256, validate_external_receipt
-from .supervised_handoff import MAX_BYTES, SUPPLIED, prepare_task, reconcile_receipt
+from .store import Store
+from .supervised_handoff import (
+    MAX_BYTES,
+    SUPPLIED,
+    interrupted_attempt,
+    prepare_task,
+    reconcile_receipt,
+    recovery_observation,
+    validate_interruption,
+)
 
 
-def read_bytes(path: Path) -> bytes:
+def local_path(path: Path) -> Path:
     # Refuse explicit UNC/device paths before even stat/lstat can contact a share.
     require(not str(path).replace("\\", "/").startswith("//"), "network_or_device_input_refused")
     path = path.absolute()
@@ -18,6 +29,11 @@ def read_bytes(path: Path) -> bytes:
         not any(p.is_symlink() or p.is_junction() for p in (path, *path.parents)),
         "linked_input_refused",
     )
+    return path
+
+
+def read_bytes(path: Path) -> bytes:
+    path = local_path(path)
     require(stat.S_ISREG(path.stat().st_mode), "regular_input_required")
     with path.open("rb") as stream:
         content = stream.read(MAX_BYTES + 1)
@@ -41,6 +57,69 @@ def read_document(path: Path):
     )
 
 
+def journal_directory(path: Path, *names: str) -> Path:
+    directory = local_path(path)
+    require(directory.is_dir(), "local_journal_directory_required")
+    for name in names:
+        for suffix in ("", "-wal", "-shm", "-journal"):
+            entry = local_path(directory / (name + suffix))
+            require(not entry.exists() or entry.is_file(), "regular_journal_required")
+    return directory
+
+
+@contextmanager
+def observation_history(database: Path, *, writable: bool = False):
+    require(database.is_file(), "observation_journal_not_found")
+    mode = "rw" if writable else "ro"
+    with closing(sqlite3.connect(database.as_uri() + "?mode=" + mode, uri=True)) as db, db:
+        db.execute("BEGIN IMMEDIATE" if writable else "BEGIN")
+        require(
+            db.execute(
+                "SELECT 1 FROM main.sqlite_schema WHERE type='table' AND name='observations'"
+            ).fetchone()
+            is not None,
+            "observation_history_missing",
+        )
+        yield db
+
+
+def observation_row(db: sqlite3.Connection, fingerprint: str) -> tuple[str] | None:
+    return db.execute("SELECT body FROM main.observations WHERE hash=?", (fingerprint,)).fetchone()
+
+
+def check_interruption(path: Path, fingerprint: str) -> None:
+    database = journal_directory(path, "journal.sqlite") / "journal.sqlite"
+    with observation_history(database) as db:
+        require(observation_row(db, fingerprint) is None, "attempt_incomplete")
+
+
+def append_observation(path: Path, record: dict, *, interruption: dict | None = None) -> str:
+    database = journal_directory(path, "journal.sqlite") / "journal.sqlite"
+    if interruption is None and not database.exists():
+        directory = journal_directory(path, "stop-control.sqlite")
+        try:
+            database.touch(exist_ok=False)
+        except FileExistsError:
+            pass  # Another writer claimed the new file. Treat it as an existing journal.
+        else:
+            with closing(Store(directory)) as journal:
+                return journal.observe(record)
+
+    fingerprint, body = digest(record), canonical(record)
+    with observation_history(database, writable=True) as db:
+        if interruption is not None:
+            require(
+                observation_row(db, digest(interruption)) == (canonical(interruption),),
+                "interruption_not_recorded",
+            )
+        db.execute(
+            "INSERT INTO main.observations(hash,body) VALUES (?,?) ON CONFLICT(hash) DO NOTHING",
+            (fingerprint, body),
+        )
+        require(observation_row(db, fingerprint) == (body,), "observation_digest_mismatch")
+    return fingerprint
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -54,6 +133,16 @@ def main(argv=None):
     reconcile.add_argument(
         "--artifact", nargs=2, action="append", default=[], metavar=("NAME", "LOCAL_FILE")
     )
+    reconcile.add_argument("--journal", type=Path, help="Check retained interruptions first")
+    interruption = sub.add_parser("record-interruption", help="Retain an incomplete attempt")
+    interruption.add_argument("bundle", type=Path)
+    interruption.add_argument("observation", type=Path)
+    interruption.add_argument("--journal", type=Path, required=True)
+    recovery = sub.add_parser("record-recovery", help="Append a separate cleanup observation")
+    recovery.add_argument("bundle", type=Path)
+    recovery.add_argument("observation", type=Path)
+    recovery.add_argument("cleanup_evidence", type=Path)
+    recovery.add_argument("--journal", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
         if args.command == "prepare":
@@ -65,21 +154,55 @@ def main(argv=None):
                 "receipt_sha256": receipt_sha256(claim),
                 "execution_authority": False,
             }
-        else:
+        elif args.command == "reconcile":
+            bundle = read_document(args.bundle)
+            if args.journal is not None:
+                check_interruption(args.journal, digest(interrupted_attempt(bundle)))
             artifacts = {}
             for name, path in args.artifact:
                 require(name not in artifacts, "duplicate_artifact_input")
                 require(len(artifacts) < 32, "too_many_artifact_inputs")
                 artifacts[name] = read_bytes(Path(path))
             result = reconcile_receipt(
-                read_document(args.bundle),
+                bundle,
                 read_document(args.receipt),
                 read_document(args.evidence),
                 artifacts,
             )
+        else:
+            attempt = interrupted_attempt(read_document(args.bundle))
+            observation = read_document(args.observation)
+            fingerprint = digest(attempt)
+            result = {
+                "attempt": attempt,
+                "interruption_sha256": fingerprint,
+                "acceptance": "refused",
+                "automatic_retry": False,
+                "fresh_approval_required": True,
+                "execution_authority": False,
+            }
+            if args.command == "record-interruption":
+                validate_interruption(attempt, observation)
+                append_observation(args.journal, attempt)
+            else:
+                recorded = recovery_observation(
+                    fingerprint, observation, read_bytes(args.cleanup_evidence)
+                )
+                result["recovery_sha256"] = append_observation(
+                    args.journal, recorded, interruption=attempt
+                )
+                result["recovery"] = recorded
         print(json.dumps(result, sort_keys=True, indent=2))
         return 0
-    except (Refused, OSError, ValueError, TypeError, KeyError, RecursionError) as error:
+    except (
+        Refused,
+        OSError,
+        sqlite3.Error,
+        ValueError,
+        TypeError,
+        KeyError,
+        RecursionError,
+    ) as error:
         reason = str(error) if isinstance(error, Refused) else "invalid_or_unavailable_local_input"
         print(json.dumps({"outcome": "refused", "reason": reason}))
         return 2
