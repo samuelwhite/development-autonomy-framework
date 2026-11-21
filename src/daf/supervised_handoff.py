@@ -160,6 +160,67 @@ def validate_bundle(value: Any) -> dict[str, Any]:
     return expected
 
 
+def interrupted_attempt(bundle: Any) -> dict[str, Any]:
+    """Canonical record for this incomplete-attempt state, bound to the entire task."""
+    task = validate_bundle(bundle)
+    return {
+        "schema_version": 1,
+        "kind": "supervised_attempt_interrupted",
+        "status": SUPPLIED,
+        "task_sha256": task["task_sha256"],
+        "attempt_id": task["request"]["attempt_id"],
+        "deadline_expired": True,
+        "parent_exited": True,
+        "worker_cleanup": "unconfirmed",
+        "evidence_sealing": "unconfirmed",
+    }
+
+
+def validate_interruption(attempt: dict[str, Any], value: Any) -> None:
+    observation = keys(value, set(attempt) - {"kind", "attempt_id"})
+    _version(observation["schema_version"])
+    require(
+        observation["deadline_expired"] is True
+        and observation["parent_exited"] is True
+        and all(observation[field] == attempt[field] for field in observation),
+        "interruption_observation_mismatch",
+    )
+
+
+def recovery_observation(
+    attempt_sha256: str, value: Any, cleanup_evidence: bytes
+) -> dict[str, Any]:
+    record = keys(
+        value,
+        {
+            "schema_version",
+            "status",
+            "interruption_sha256",
+            "observer_id",
+            "worker_cleanup",
+            "cleanup_evidence_sha256",
+        },
+    )
+    _version(record["schema_version"])
+    require(record["status"] == SUPPLIED, "external_evidence_cannot_self_verify")
+    require(sha(record["interruption_sha256"]) == attempt_sha256, "recovery_attempt_mismatch")
+    observer = record["observer_id"]
+    require(
+        isinstance(observer, str) and re.fullmatch(r"[A-Za-z0-9_.-]{1,120}", observer) is not None,
+        "invalid_recovery_observer",
+    )
+    require(record["worker_cleanup"] == "confirmed", "worker_cleanup_unconfirmed")
+    require(
+        isinstance(cleanup_evidence, bytes) and 0 < len(cleanup_evidence) <= MAX_BYTES,
+        "missing_or_oversized_cleanup_evidence",
+    )
+    require(
+        sha(record["cleanup_evidence_sha256"]) == hashlib.sha256(cleanup_evidence).hexdigest(),
+        "cleanup_evidence_digest_mismatch",
+    )
+    return {"kind": "independent_cleanup_observation", **record}
+
+
 def _claimed_result(status: Any, conclusion: Any) -> str:
     require(
         isinstance(status, str) and status in {"queued", "in_progress", "completed"},

@@ -224,6 +224,16 @@ class Store:
             )
         return fingerprint
 
+    def observation(self, fingerprint: str) -> dict[str, Any] | None:
+        row = self.db.execute(
+            "SELECT body FROM observations WHERE hash=?", (fingerprint,)
+        ).fetchone()
+        if row is None:
+            return None
+        body = json.loads(row["body"])
+        require(digest(body) == fingerprint, "observation_digest_mismatch")
+        return body
+
     def summary(self) -> dict[str, Any]:
         run = self.db.execute("SELECT * FROM run").fetchone()
         summary = {
