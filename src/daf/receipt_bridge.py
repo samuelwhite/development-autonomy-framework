@@ -4,10 +4,10 @@ import argparse
 import json
 import sqlite3
 import stat
-from contextlib import closing
+from contextlib import closing, contextmanager
 from pathlib import Path
 
-from .contract import Refused, digest, require
+from .contract import Refused, canonical, digest, require
 from .external_receipts import receipt_sha256, validate_external_receipt
 from .store import Store
 from .supervised_handoff import (
@@ -67,18 +67,12 @@ def journal_directory(path: Path, *names: str) -> Path:
     return directory
 
 
-def open_journal(path: Path, *, existing: bool) -> Store:
-    directory = journal_directory(path, "journal.sqlite", "stop-control.sqlite")
-    if existing:
-        require((directory / "journal.sqlite").is_file(), "observation_journal_not_found")
-    return Store(directory)
-
-
-def check_interruption(path: Path, fingerprint: str) -> None:
-    database = journal_directory(path, "journal.sqlite") / "journal.sqlite"
+@contextmanager
+def observation_history(database: Path, *, writable: bool = False):
     require(database.is_file(), "observation_journal_not_found")
-    with closing(sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)) as db:
-        db.execute("BEGIN")
+    mode = "rw" if writable else "ro"
+    with closing(sqlite3.connect(database.as_uri() + "?mode=" + mode, uri=True)) as db, db:
+        db.execute("BEGIN IMMEDIATE" if writable else "BEGIN")
         require(
             db.execute(
                 "SELECT 1 FROM main.sqlite_schema WHERE type='table' AND name='observations'"
@@ -86,11 +80,44 @@ def check_interruption(path: Path, fingerprint: str) -> None:
             is not None,
             "observation_history_missing",
         )
-        require(
-            db.execute("SELECT body FROM main.observations WHERE hash=?", (fingerprint,)).fetchone()
-            is None,
-            "attempt_incomplete",
+        yield db
+
+
+def observation_row(db: sqlite3.Connection, fingerprint: str) -> tuple[str] | None:
+    return db.execute("SELECT body FROM main.observations WHERE hash=?", (fingerprint,)).fetchone()
+
+
+def check_interruption(path: Path, fingerprint: str) -> None:
+    database = journal_directory(path, "journal.sqlite") / "journal.sqlite"
+    with observation_history(database) as db:
+        require(observation_row(db, fingerprint) is None, "attempt_incomplete")
+
+
+def append_observation(path: Path, record: dict, *, interruption: dict | None = None) -> str:
+    database = journal_directory(path, "journal.sqlite") / "journal.sqlite"
+    if interruption is None and not database.exists():
+        directory = journal_directory(path, "stop-control.sqlite")
+        try:
+            database.touch(exist_ok=False)
+        except FileExistsError:
+            pass  # Another writer claimed the new file. Treat it as an existing journal.
+        else:
+            with closing(Store(directory)) as journal:
+                return journal.observe(record)
+
+    fingerprint, body = digest(record), canonical(record)
+    with observation_history(database, writable=True) as db:
+        if interruption is not None:
+            require(
+                observation_row(db, digest(interruption)) == (canonical(interruption),),
+                "interruption_not_recorded",
+            )
+        db.execute(
+            "INSERT INTO main.observations(hash,body) VALUES (?,?) ON CONFLICT(hash) DO NOTHING",
+            (fingerprint, body),
         )
+        require(observation_row(db, fingerprint) == (body,), "observation_digest_mismatch")
+    return fingerprint
 
 
 def main(argv=None):
@@ -156,17 +183,14 @@ def main(argv=None):
             }
             if args.command == "record-interruption":
                 validate_interruption(attempt, observation)
-                with closing(open_journal(args.journal, existing=False)) as journal:
-                    journal.observe(attempt)
+                append_observation(args.journal, attempt)
             else:
                 recorded = recovery_observation(
                     fingerprint, observation, read_bytes(args.cleanup_evidence)
                 )
-                with closing(open_journal(args.journal, existing=True)) as journal:
-                    require(
-                        journal.observation(fingerprint) == attempt, "interruption_not_recorded"
-                    )
-                    result["recovery_sha256"] = journal.observe(recorded)
+                result["recovery_sha256"] = append_observation(
+                    args.journal, recorded, interruption=attempt
+                )
                 result["recovery"] = recorded
         print(json.dumps(result, sort_keys=True, indent=2))
         return 0

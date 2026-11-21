@@ -18,6 +18,7 @@ from daf.store import Store
 from daf.supervised_handoff import (
     MAX_BYTES,
     SUPPLIED,
+    interrupted_attempt,
     prepare_task,
     reconcile_receipt,
     validate_bundle,
@@ -549,10 +550,10 @@ def recovery_inputs(tmp_path, bundle, fingerprint):
 
 
 @pytest.mark.parametrize("zero_byte", [True, False], ids=["empty-file", "missing-table"])
-def test_reconcile_refuses_missing_observation_history_without_initializing_journal(
+def test_recovery_and_reconciliation_refuse_missing_history_without_initializing_journal(
     interrupted_handoff, capsys, zero_byte
 ):
-    journal, _, _, reconcile = interrupted_handoff
+    journal, paths, interruption, reconcile = interrupted_handoff
     database = journal / "journal.sqlite"
     if zero_byte:
         database.touch()
@@ -561,11 +562,20 @@ def test_reconcile_refuses_missing_observation_history_without_initializing_jour
             db.execute("CREATE TABLE unrelated(id INTEGER PRIMARY KEY)")
     original = database.read_bytes()
 
-    assert main(reconcile) == 2
-    assert json.loads(capsys.readouterr().out) == {
+    fingerprint = digest(interrupted_attempt(read_document(paths["bundle"])))
+    record, path, recover = recovery_inputs(journal.parent, paths["bundle"], fingerprint)
+    path.write_text(canonical(record), encoding="utf-8")
+    outcomes = []
+    for command in (reconcile, recover + ["--journal", str(journal)], reconcile):
+        status = main(command)
+        outcomes.append((status, json.loads(capsys.readouterr().out)))
+    refused = {
         "outcome": "refused",
         "reason": "observation_history_missing",
     }
+    assert outcomes == [(2, refused)] * 3
+    assert main(interruption) == 2
+    assert json.loads(capsys.readouterr().out) == refused
     assert database.read_bytes() == original
     assert list(journal.iterdir()) == [database]
 
@@ -589,8 +599,11 @@ def test_deadline_parent_exit_and_later_cleanup_never_allow_retry(interrupted_ha
 
     record, path, args = recovery_inputs(journal.parent, paths["bundle"], fingerprint)
     path.write_text(canonical(record), encoding="utf-8")
+    stop_database = journal / "stop-control.sqlite"
+    stop_database.unlink(missing_ok=True)
     assert main(args + ["--journal", str(journal)]) == 0
     recovered = json.loads(capsys.readouterr().out)
+    assert not stop_database.exists()
     assert recovered["attempt"] == original
     assert recovered["recovery"]["worker_cleanup"] == "confirmed"
     assert recovered["recovery"]["status"] == SUPPLIED
@@ -602,6 +615,7 @@ def test_deadline_parent_exit_and_later_cleanup_never_allow_retry(interrupted_ha
         assert outcome["fresh_approval_required"] is True
     assert main(reconcile) == 2
     assert json.loads(capsys.readouterr().out)["reason"] == "attempt_incomplete"
+    assert not stop_database.exists()
 
     # A new attempt identity changes the task fingerprint and still only proposes work.
     next_task = prepare_task({**request_fixture(), "attempt_id": "attempt-2"})

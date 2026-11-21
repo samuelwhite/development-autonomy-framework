@@ -146,6 +146,9 @@ was recorded. Pass the same `--journal LOCAL_DIR` to `reconcile` to refuse a
 recorded interruption even if the supplied PR and CI claims appear successful.
 Reconciliation opens the existing journal read-only and refuses missing
 observation history instead of initializing it.
+Only first-interruption recording can initialize a new journal. Recording
+against an existing journal requires its observation history. Recovery appends
+to that history without initializing the journal or opening stop-control storage.
 Legacy comparisons without a journal remain unverified and convey no approval
 or execution authority. A new attempt needs a new identity and separate owner
 approval outside this bridge. These commands do not request, clear or
