@@ -28,6 +28,21 @@ from daf.supervised_handoff import (  # noqa: E402
 
 MAX_RESPONSE = 2 * 1024 * 1024
 PAGE = 100
+MAX_WORKFLOWS = 24
+# Initial PR and files reads plus the final PR read, and four reads per workflow.
+MAX_GETS = 3 + 4 * MAX_WORKFLOWS
+RUN_PENDING = ("queued", "in_progress", "requested", "waiting", "pending")
+CONCLUSIONS = (
+    "success",
+    "failure",
+    "cancelled",
+    "neutral",
+    "skipped",
+    "timed_out",
+    "action_required",
+    "stale",
+    "startup_failure",
+)
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -56,7 +71,7 @@ def _github_reader(repository, token):
     def get(path):
         nonlocal calls
         calls += 1
-        require(calls <= 96 and time.monotonic() < deadline, "observation_budget_exhausted")
+        require(calls <= MAX_GETS and time.monotonic() < deadline, "observation_budget_exhausted")
         request = Request(  # noqa: S310 - fixed HTTPS host and validated repository
             f"https://api.github.com/repos/{repository}{path}",
             method="GET",
@@ -157,7 +172,14 @@ def run_identity(raw, repository, selection, head, now):
     require(run.get("event") in ["push", "workflow_dispatch"], "unsupported_run_event")
     stamp = timestamp(run.get("updated_at"))
     require(now - timedelta(hours=24) <= stamp <= now + timedelta(minutes=1), "stale_run")
-    return run.get("status"), run.get("conclusion"), stamp
+    status, conclusion = run.get("status"), run.get("conclusion")
+    require(status == "completed" or status in RUN_PENDING, "unsupported_run_status")
+    require(
+        "conclusion" in run
+        and (conclusion in CONCLUSIONS if status == "completed" else conclusion is None),
+        "invalid_run_conclusion",
+    )
+    return status, conclusion, stamp
 
 
 def check_workflow(get, path, head, expected):
@@ -212,7 +234,8 @@ def _observe(bundle, receipt, selection, allowed, get, now, output):
         required.setdefault(check["workflow_path"], {})[check["name"]] = check
     sources = choice["runs"]
     require(
-        isinstance(sources, list) and len(sources) == len(required) <= 24, "invalid_run_selection"
+        isinstance(sources, list) and len(sources) == len(required) <= MAX_WORKFLOWS,
+        "invalid_run_selection",
     )
     paths, runs = set(), set()
     for raw in sources:
@@ -251,6 +274,8 @@ def _observe(bundle, receipt, selection, allowed, get, now, output):
         endpoint = f"/actions/runs/{run_id}"
         raw = obj(get(endpoint))
         observed = run_identity(raw, repository, pick, head, now)
+        run_status, run_conclusion, _ = observed
+        output["workflow_runs"].append({**pick, "status": run_status, "conclusion": run_conclusion})
         final_reads.append((endpoint, pick, observed))
         response = obj(get(f"{endpoint}/attempts/{attempt}/jobs?per_page={PAGE}"))
         jobs = complete(response.get("jobs"), response.get("total_count"))
@@ -275,21 +300,7 @@ def _observe(bundle, receipt, selection, allowed, get, now, output):
             require(status in ("queued", "in_progress", "completed"), "unsupported_job_status")
             require(
                 (status != "completed" and conclusion is None)
-                or (
-                    status == "completed"
-                    and conclusion
-                    in (
-                        "success",
-                        "failure",
-                        "cancelled",
-                        "neutral",
-                        "skipped",
-                        "timed_out",
-                        "action_required",
-                        "stale",
-                        "startup_failure",
-                    )
-                ),
+                or (status == "completed" and conclusion in CONCLUSIONS),
                 "invalid_job_conclusion",
             )
             snapshot = {
@@ -301,6 +312,10 @@ def _observe(bundle, receipt, selection, allowed, get, now, output):
                 "conclusion": conclusion,
             }
             output["checks"].append(snapshot)
+            require(
+                run_status != "completed" or status == "completed",
+                "completed_run_has_pending_job",
+            )
             check = checks[name]
             if (artifact := check["artifact_name"]) is not None:
                 artifacts_required = True
@@ -327,6 +342,10 @@ def _observe(bundle, receipt, selection, allowed, get, now, output):
         require(run_identity(get(endpoint), repository, pick, head, now) == observed, "run_changed")
     require(pr_identity(get(pr), repository, number, head, baseline) == before, "pr_changed")
     require(not artifacts_required, "artifact_job_provenance_unavailable")
+    require(
+        all(run["conclusion"] == "success" for run in output["workflow_runs"]),
+        "workflow_run_not_successful",
+    )
     output["comparison"] = reconcile_receipt(
         bundle,
         receipt,
@@ -349,6 +368,7 @@ def collect(bundle, receipt, selection, allowed, *, token=None, reader=None, now
     result = {
         "status": "refused",
         "execution_authority": False,
+        "workflow_runs": [],
         "checks": [],
         "provenance": "supplied_adapter_unverified" if reader is not None else "unobserved",
         "observed_at": observed_at.isoformat(),

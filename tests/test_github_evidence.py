@@ -125,6 +125,9 @@ def test_exact_head_comparison_cannot_upgrade_claims():
     assert result["provenance"] == "supplied_adapter_unverified"
     assert result["execution_authority"] is False
     assert result["checks"][0]["job_id"] == 34
+    assert result["workflow_runs"] == [
+        {**inputs[2]["runs"][0], "status": "completed", "conclusion": "success"}
+    ]
     assert result["comparison"]["status"] == SUPPLIED
     assert result["comparison"]["all_required_checks_claimed_passed"] is True
 
@@ -185,11 +188,88 @@ def test_preserves_pending_cancelled_and_failed_jobs(status, conclusion, claim):
     inputs, responses = fixture()
     inputs[1]["checks"][0]["result"] = claim
     responses[JOBS]["jobs"][0].update(status=status, conclusion=conclusion)
+    if claim == "pending":
+        responses[RUN].update(status=status, conclusion=None)
     result = observe(inputs, responses)
-    assert result["status"] == "compared"
     assert result["checks"][0]["status"] == status
     assert result["checks"][0]["conclusion"] == conclusion
-    assert result["comparison"]["all_required_checks_claimed_passed"] is False
+    if claim == "pending":
+        assert_refusal(result, "workflow_run_not_successful")
+    else:
+        assert result["status"] == "compared"
+        assert result["comparison"]["all_required_checks_claimed_passed"] is False
+
+
+@pytest.mark.parametrize(
+    ("status", "conclusion", "reason"),
+    [
+        (None, None, "unsupported_run_status"),
+        (["completed"], "success", "unsupported_run_status"),
+        ("unknown", None, "unsupported_run_status"),
+        ("completed", None, "invalid_run_conclusion"),
+        ("completed", ["success"], "invalid_run_conclusion"),
+        ("completed", "unknown", "invalid_run_conclusion"),
+        ("in_progress", "success", "invalid_run_conclusion"),
+        ("pending", "failure", "invalid_run_conclusion"),
+    ],
+)
+def test_malformed_workflow_outcomes_are_refused(status, conclusion, reason):
+    inputs, responses = fixture()
+    responses[RUN].update(status=status, conclusion=conclusion)
+    result = observe(inputs, responses)
+    assert_refusal(result, reason)
+    assert result["workflow_runs"] == []
+
+
+def test_absent_pending_conclusion_is_refused():
+    inputs, responses = fixture()
+    responses[RUN]["status"] = "waiting"
+    del responses[RUN]["conclusion"]
+    assert_refusal(observe(inputs, responses), "invalid_run_conclusion")
+
+
+@pytest.mark.parametrize(
+    ("status", "conclusion"),
+    [
+        ("queued", None),
+        ("in_progress", None),
+        ("requested", None),
+        ("waiting", None),
+        ("pending", None),
+        ("completed", "failure"),
+        ("completed", "cancelled"),
+        ("completed", "timed_out"),
+        ("completed", "skipped"),
+    ],
+)
+def test_successful_job_cannot_mask_workflow_outcome(status, conclusion):
+    inputs, responses = fixture()
+    responses[RUN].update(status=status, conclusion=conclusion)
+    result = observe(inputs, responses)
+    assert_refusal(result, "workflow_run_not_successful")
+    assert result["workflow_runs"][0]["status"] == status
+    assert result["workflow_runs"][0]["conclusion"] == conclusion
+    assert result["checks"][0]["conclusion"] == "success"
+
+
+def test_completed_workflow_with_pending_required_job_is_refused():
+    inputs, responses = fixture()
+    responses[JOBS]["jobs"][0].update(status="in_progress", conclusion=None)
+    result = observe(inputs, responses)
+    assert_refusal(result, "completed_run_has_pending_job")
+    assert result["workflow_runs"][0]["status"] == "completed"
+    assert result["checks"][0]["status"] == "in_progress"
+
+
+def test_changed_workflow_outcome_is_refused_on_reread():
+    inputs, responses = fixture()
+
+    def reader(path):
+        if path == JOBS:
+            responses[RUN]["conclusion"] = "cancelled"
+        return responses[path]
+
+    assert_refusal(observe(inputs, responses, reader=reader), "run_changed")
 
 
 def test_artifact_mismatch_and_missing_attempt_job_attribution_are_refused():
@@ -311,3 +391,83 @@ def test_partial_link_and_json_duplicate_are_refused(monkeypatch):
     response.data = iter([b'{"number":1,"number":2}', b""])
     with pytest.raises(Refused, match="duplicate_upstream_key"):
         get(PR)
+
+
+def multiple_workflows(count):
+    (bundle, receipt, selection), answers = fixture()
+    request = bundle["request"]
+    check = request["required_checks"][0].copy()
+    claim = receipt["checks"][0].copy()
+    request["required_checks"].clear()
+    receipt["checks"].clear()
+    selection["runs"].clear()
+    for index in range(count):
+        name = f"check-{index}"
+        path = f".github/workflows/check-{index}.yml"
+        run_id = 100 + index
+        run = f"/actions/runs/{run_id}"
+        pick = {"workflow_path": path, "run_id": run_id, "workflow_id": 200 + index, "attempt": 1}
+        selection["runs"].append(pick)
+        request["required_checks"].append({**check, "name": name, "workflow_path": path})
+        receipt["checks"].append({**claim, "name": name, "url": f"https://github.com/{REPO}{run}"})
+        answers[f"/contents/{path}?ref={HEAD}"] = {
+            **answers[f"/contents/{WORKFLOW}?ref={HEAD}"],
+            "path": path,
+        }
+        answers[run] = {
+            **answers[RUN],
+            "id": run_id,
+            "workflow_id": pick["workflow_id"],
+            "path": path,
+        }
+        job = {**answers[JOBS]["jobs"][0], "id": 300 + index, "run_id": run_id, "name": name}
+        answers[f"{run}/attempts/1/jobs?per_page=100"] = {"total_count": 1, "jobs": [job]}
+    bundle = prepare_task(request)
+    receipt["task_sha256"] = bundle["task_sha256"]
+    return (bundle, receipt, selection), answers
+
+
+def test_maximum_workflows_fit_transport_budget(monkeypatch):
+    inputs, answers = multiple_workflows(24)
+    calls = []
+
+    class Response:
+        status = 200
+        headers = Message()
+        headers["Content-Type"] = "application/json"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read1(self, _size):
+            return next(self.blocks)
+
+    class Opener:
+        def open(self, request, *, timeout):
+            calls.append(request.full_url)
+            path = request.full_url.removeprefix(f"https://api.github.com/repos/{REPO}")
+            response = Response()
+            response.blocks = iter([json.dumps(answers[path]).encode(), b""])
+            return response
+
+    monkeypatch.setattr(adapter, "build_opener", lambda *_args: Opener())
+    get = adapter._github_reader(REPO, "z" * 32)
+    monkeypatch.setattr(adapter, "_github_reader", lambda *_args: get)
+    result = adapter.collect(*inputs, REPO, token="z" * 32, now=NOW)
+    assert result["status"] == "compared"
+    assert result["execution_authority"] is False
+    assert result["provenance"] == "authenticated_github_get"
+    assert len(result["workflow_runs"]) == len(result["checks"]) == 24
+    assert len(calls) == 99
+    with pytest.raises(Refused, match="observation_budget_exhausted"):
+        get(PR)
+    assert len(calls) == 99
+
+
+def test_over_maximum_workflows_are_refused_before_any_get():
+    inputs, _ = multiple_workflows(25)
+    reader = lambda _: pytest.fail("unexpected GET")  # noqa: E731
+    assert_refusal(observe(inputs, {}, reader=reader), "invalid_run_selection")
