@@ -156,22 +156,26 @@ acknowledge a stop or create an execution job or approval.
 
 ## Assessment and next review gates
 
-The minimum useful next milestone is a **separate, read-only GitHub evidence
-collector**, after an explicit threat review and owner approval. Keep it outside
-this offline runtime. It should bind the expected repository and PR, fetch every
-page, capture the actual PR head/base and checkout revision, and independently
-resolve the workflow, run attempt, job IDs, required check names, status and
-conclusion. Detect head changes during collection. Record observation time,
-response digests and provider identity separately from supplied claims. Reconcile
-PR merge-ref runs separately from exact-head runs: a green check attached to a PR
-head does not prove that head was the checkout tested.
+The [bounded GitHub evidence collector](github-evidence-collector.md) is a
+separate read-only adapter for a source checkout. It checks the selected PR's
+repository, baseline, expected head and changed files against the task scope.
+For each selected same-repository push or manual run, it compares the workflow
+bytes at the expected head and checks the exact run, attempt and required jobs.
+It rereads PR and run metadata to detect changes and refuses partial listings and
+synthetic PR merge runs. Confirming what a job checked out requires evidence
+from the workflow itself.
 
-HomeCI verification should first consume already-produced, authorized artifacts
-through that read-only collector: verify immutable run/job/attempt membership,
-artifact identity, expiry, content digest and the producer's result schema.
-Runner trust and workflow policy require independent evidence. HomeCI dispatch,
-cancellation and private runner access are separate later approvals. This public
-repository must continue using only its existing GitHub-hosted CI matrix.
+For an artifact-backed check, GitHub's run-level metadata can identify the
+artifact, head revision and expiry. Establishing which job and attempt produced
+the artifact requires independent evidence. The collector therefore stops
+before comparing an artifact-backed receipt. The offline receipt bridge keeps
+its comparison results at `externally_supplied_unverified`, and owner approval
+remains a separate decision.
+
+HomeCI dispatch, cancellation and private runner access require separate
+approvals. Runner trust, workflow policy and artifact producer provenance
+require independent evidence. Public DAF CI continues to use its GitHub-hosted
+matrix.
 
 A real supervised Codex adapter requires a reviewed task/admission identity,
 isolated workspace/process and credential handling, explicit human supervision,
@@ -184,5 +188,5 @@ are installed here.
 
 Keep source-owned review and CI authority. The offline suite does not certify
 real execution, remote cancellation, billing limits, malicious-worker containment,
-or authenticated acceptance. Independent code review and owner authorization are
-still required before merging this PR; later adapters need their own review.
+or authenticated acceptance. Independent code review and owner authorization
+are required before integrating changes to the bridge or its adapters.
