@@ -1,4 +1,4 @@
-import { SHA } from './config.mjs';
+import { PUBLIC_DAF, SHA } from './config.mjs';
 
 const API = 'https://api.github.com';
 const PAGE = 12;
@@ -10,6 +10,16 @@ const positive = (value) => Number.isSafeInteger(value) && value > 0;
 const count = (value) => Number.isSafeInteger(value) && value >= 0;
 const validSha = (value) => typeof value === 'string' && SHA.test(value);
 const closedOrOpen = (value) => value === 'open' || value === 'closed';
+const candidateWorkflow = '.github/workflows/daf-documentation-candidate.yml';
+const candidateJob = 'DAF documentation candidate on HomeCI';
+const candidateSteps = [
+  ['Check dispatch inputs and runner identity', 'Runner identity check'],
+  ['Check out the reviewed DAF baseline', 'Baseline checkout'],
+  ['Verify one documentation change and exact checkout', 'Candidate scope or checkout'],
+  ['Run portable contracts on the candidate', 'Portable contracts'],
+  ['Run supervised handoff and receipt regressions', 'Supervised handoff and receipts'],
+  ['Record candidate verification outcome', 'Verification summary'],
+];
 
 class SourceError extends Error {
   constructor(code) { super(code); this.code = code; }
@@ -130,7 +140,27 @@ function outcome(item) {
   return { status, conclusion, state: Object.hasOwn(states, status) ? states[status] : 'unknown' };
 }
 
-function runs(value, base) {
+function candidateBinding(run, config) {
+  if (config.visibility !== 'private' || config.repository !== 'samuelwhite/forge-homeci' ||
+      run.path !== candidateWorkflow) return null;
+  const match = typeof run.display_title === 'string' &&
+    /^DAF docs ([a-f0-9]{64}) PR ([1-9][0-9]{0,15}) at ([a-f0-9]{40})$/.exec(run.display_title);
+  if (!match || !positive(Number(match[2]))) return { reason: 'Candidate identity missing from the run' };
+  const [, task, pr, commit] = match;
+  const binding = { task, pr, commit, prUrl: `https://github.com/${PUBLIC_DAF}/pull/${pr}` };
+  if (!config.homeciCandidate) binding.reason = 'Reviewed workflow revision is unconfigured';
+  else if (run.run_attempt !== 1) binding.reason = 'Only the original run attempt is eligible';
+  else if (run.workflow_id !== config.homeciCandidate.workflowId ||
+           run.head_sha !== config.homeciCandidate.workflowRevision) binding.reason = 'Workflow revision mismatch';
+  else if (run.event !== 'workflow_dispatch' || run.head_branch !== 'main' ||
+           String(run.repository?.full_name).toLowerCase() !== config.repository ||
+           String(run.head_repository?.full_name).toLowerCase() !== config.repository) {
+    binding.reason = 'Run is outside the reviewed dispatch route';
+  }
+  return binding;
+}
+
+function runs(value, base, config) {
   return page(value?.workflow_runs, RUNS).map((run) => {
     check(positive(run.id) && positive(run.run_attempt) && positive(run.workflow_id) && validSha(run.head_sha));
     const url = `${base}/actions/runs/${run.id}/attempts/${run.run_attempt}`;
@@ -142,11 +172,35 @@ function runs(value, base) {
         ? null : text(run.head_branch, 160),
       commitUrl: `${base}/commit/${run.head_sha}`, url, artifactsUrl: `${url}#artifacts`,
       workflowUrl: workflow ? `${base}/actions/workflows/${workflow[1]}` : null,
+      ...(run.path === candidateWorkflow && { candidate: candidateBinding(run, config) }),
     };
   });
 }
 
-function jobs(value, base, run) {
+function candidateJobEvidence(job, run, config) {
+  if (!run.candidate || run.candidate.reason) return null;
+  if (job.name !== candidateJob) return { reason: 'Unexpected verification job' };
+  if ((job.runner_name || job.conclusion === 'success') &&
+      (job.runner_name !== config.homeciCandidate.runner || !job.labels.includes('self-hosted'))) {
+    return { reason: 'Runner identity mismatch' };
+  }
+  if (job.status === 'completed' && !['failure', 'success'].includes(job.conclusion)) {
+    return { reason: `Job ${outcome(job).conclusion?.replaceAll('_', ' ') ?? 'outcome unavailable'}` };
+  }
+  const steps = Array.isArray(job.steps) && job.steps.length <= 100 ? job.steps : [];
+  for (const [name, label] of candidateSteps) {
+    const matches = steps.filter((step) => step?.name === name);
+    if (matches.length > 1) return { reason: `${label} reported more than once` };
+    const observed = matches[0];
+    if (observed?.status === 'completed' && observed.conclusion === 'failure') return { reason: `${label} failed` };
+    if (job.status === 'completed' && (observed?.status !== 'completed' || observed.conclusion !== 'success')) {
+      return { reason: `${label} result missing` };
+    }
+  }
+  return { passed: job.status === 'completed' && job.conclusion === 'success' };
+}
+
+function jobs(value, base, run, config) {
   check(count(value?.total_count));
   const items = page(value.jobs, JOBS).map((job) => {
     check(positive(job.id) && job.run_id === run.id && job.run_attempt === run.attempt &&
@@ -158,6 +212,7 @@ function jobs(value, base, run) {
       runner: job.runner_name == null || job.runner_name === '' ? null : text(job.runner_name, 160),
       runnerId: positive(job.runner_id) ? job.runner_id : null,
       selfHosted: job.labels.includes('self-hosted'), url: `${base}/actions/runs/${run.id}/job/${job.id}`,
+      ...(run.candidate && { candidate: candidateJobEvidence(job, run, config) }),
     };
   });
   return { items, total: value.total_count };
@@ -209,8 +264,8 @@ export function sources(config, token, fetcher, signal) {
     pulls: config.planning && (async () => pulls(await get(`/pulls?${listing}&sort=updated&direction=desc`), base)),
     proposal: config.plan && (async () => proposal(
       await get(`/contents/${config.plan.path}?ref=${config.plan.commit}`), config, base)),
-    runs: async () => runs(await get(`/actions/runs?per_page=${RUNS}`), base),
+    runs: async () => runs(await get(`/actions/runs?per_page=${RUNS}`), base, config),
     jobs: (run) => async () => jobs(await get(
-      `/actions/runs/${run.id}/attempts/${run.attempt}/jobs?per_page=${JOBS}`), base, run),
+      `/actions/runs/${run.id}/attempts/${run.attempt}/jobs?per_page=${JOBS}`), base, run, config),
   };
 }

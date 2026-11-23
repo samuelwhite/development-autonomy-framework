@@ -51,3 +51,38 @@ operator run approved HomeCI verification and retain exact PR/commit/run/attempt
 Qualify independent artifact producer binding before requiring artifact-backed acceptance.
 End at Product review without merge or deployment. PR #16 and its native qualification gate
 are outside this collector.
+
+## Artifact-free documentation candidate verification
+
+`scripts/homeci_candidate.py` is a separate operator command for a one-file Markdown
+candidate. It uses the supervised bundle and a private approval record for the exact
+draft PR, head, reviewed validator workflow and runner. The existing same-repository
+collector remains read-only and artifact-backed receipt rules still apply.
+
+After task approval and separate workflow activation, prepare a private JSON record
+with `task_sha256`, `candidate_pr`, `candidate_sha`, `validator_repository`,
+`workflow_id`, `workflow_revision`, `workflow_sha256`, and `runner`. The operator
+must verify the approval against those values. The file and command cannot establish
+the approver's identity. Use a single persistent private journal for the attempt.
+
+```text
+python scripts/homeci_candidate.py bundle.json approval.json --allow-validator OWNER/REPO --journal LOCAL_DIR --dispatch --wait-seconds 900
+```
+
+The supervised operator uses their existing authenticated GitHub CLI session. The
+command reads the draft PR and its complete file list, then reserves the task in
+the journal before requesting the private workflow. Repeating the command observes
+the original run. If dispatch may have succeeded and GitHub has no matching run,
+the result stays unknown. Preserve the journal and investigate the original request
+before considering a new approval. Omit `--dispatch` for a read-only inspection.
+The pilot does not install a service credential or change Mission Control's access.
+
+The observation compares the workflow bytes, revisions, run, original attempt,
+job, runner and required step results. It reports the checkout based on GitHub's
+result for the pinned workflow's exact-checkout step. This is a GitHub observation
+of the runner's assertion. Independent producer provenance remains unavailable.
+The operator command retains observations in the journal, including failures and
+incomplete attempts. Mission Control's optional private `homeciCandidate` setting
+binds the HomeCI display to a reviewed `workflowId`, `workflowRevision` and
+`runner`. It displays GitHub's job evidence for that workflow. Approval and the
+interruption journal are checked by the operator command.

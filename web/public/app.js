@@ -110,14 +110,14 @@ function runBadge(run) {
   return badge(run.state, status ? `${labels[run.state]} · ${status}` : labels[run.state]);
 }
 
-function runRow(run, repo, feed, details) {
+function runRow(run, repo, feed, details, candidate) {
   return row(link(run.title, run.url), runBadge(run),
     meta(short(repo), run.branch, details ? null : `Attempt ${run.attempt}`, timestamp(run.updated)),
     details && element('p', 'meta', element('code', '', `Run ${run.id} · Attempt ${run.attempt}`)),
     links(run.workflowUrl && link('Workflow', run.workflowUrl),
       link(element('span', '', 'Commit ', element('code', '', details ? run.commit : run.commit.slice(0, 8))),
-        run.commitUrl), link('Artifacts', run.artifactsUrl)),
-    freshness(feed) === 'stale' && meta(`Stale result · observed ${timestamp(feed.observed)}`), details);
+        run.commitUrl), !run.candidate && link('Artifacts', run.artifactsUrl)),
+    freshness(feed) === 'stale' && meta(`Stale result · observed ${timestamp(feed.observed)}`), candidate, details);
 }
 
 function dashboard(projects) {
@@ -254,6 +254,32 @@ function jobDetails(feed, key) {
   return details;
 }
 
+function candidateDetails(run, feed, duplicate) {
+  const candidate = run.candidate;
+  if (!candidate) return null;
+  const jobs = feed?.data;
+  let reason = candidate.reason;
+  if (duplicate) reason = 'More than one run is linked to this task';
+  else if (!reason && (run.state === 'queued' || run.state === 'blocked')) {
+    reason = 'Waiting for GitHub to assign the job';
+  } else if (!reason && run.state === 'running') reason = 'Verification in progress';
+  else if (!reason && run.conclusion && run.conclusion !== 'success' && run.conclusion !== 'failure') {
+    reason = `Workflow ${run.conclusion.replaceAll('_', ' ')}`;
+  } else if (!reason && feed && freshness(feed) === 'stale') reason = 'Job evidence is stale';
+  else if (!reason && (!jobs || jobs.total !== 1 || jobs.items.length !== 1)) {
+    reason = 'Expected verification job unavailable';
+  } else if (!reason) {
+    const job = jobs.items[0].candidate;
+    reason = job?.reason ?? (job?.passed && run.conclusion === 'success'
+      ? 'GitHub reports the exact checkout and both suites passed. Approval and journal checks run separately.'
+      : 'Successful workflow and job evidence was not observed');
+  }
+  return element('div', 'job-list',
+    candidate.pr && element('p', 'meta', link(`DAF PR #${candidate.pr}`, candidate.prUrl)),
+    candidate.commit && element('p', 'meta', 'DAF candidate ', element('code', '', candidate.commit)),
+    note(reason));
+}
+
 function homeci(projects) {
   const forgeConfigured = projects.some(({ repository, visibility }) =>
     repository === 'samuelwhite/forge-homeci' && visibility === 'private');
@@ -275,7 +301,10 @@ function homeci(projects) {
       }
       const jobRows = (runs) => runs.map((run) => {
         const feed = project.runJobs.find((entry) => entry.runId === run.id && entry.attempt === run.attempt)?.jobs;
-        return runRow(run, project.repository, project.runs, jobDetails(feed, run.url));
+        const duplicate = run.candidate?.task &&
+          runs.some((other) => other.id !== run.id && other.candidate?.task === run.candidate.task);
+        return runRow(run, project.repository, project.runs, jobDetails(feed, run.url),
+          candidateDetails(run, feed, duplicate));
       });
       const runnerRows = [...runners.values()].map(({ job, feed }) => {
         const stale = freshness(feed) === 'stale';
