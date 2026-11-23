@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { missionControl } from '../server.mjs';
-import { commit, entry, githubFixture, listen, password, title, token } from './fixtures.mjs';
+import { commit, entry, githubFixture, job, listen, password, run, title, token } from './fixtures.mjs';
 
 const { chromium } = createRequire(new URL('../../desktop/package.json', import.meta.url))('playwright');
 const channel = process.env.DAF_WEB_BROWSER_CHANNEL;
@@ -158,6 +158,58 @@ test('authenticated Actions-only HomeCI displays exact evidence and keeps the to
   await page.getByText('Health unknown', { exact: true }).waitFor();
   assert.deepEqual(calls, [`/repos/${repository}/actions/runs`,
     `/repos/${repository}/actions/runs/123/attempts/2/jobs`]);
+});
+
+test('HomeCI shows the candidate PR, queued state and exact verification result', { timeout: 30_000 }, async (t) => {
+  const repository = 'samuelwhite/forge-homeci';
+  const candidate = 'b'.repeat(40);
+  const runner = 'fixture-runner';
+  const privateRepo = { full_name: repository };
+  const makeRun = (id, status, conclusion, attempt = 1) => ({
+    ...run, id, run_attempt: attempt, status, conclusion,
+    path: '.github/workflows/daf-documentation-candidate.yml',
+    name: 'DAF documentation candidate on HomeCI', event: 'workflow_dispatch',
+    display_title: `DAF docs ${String(id).repeat(64).slice(0, 64)} PR ${id} at ${candidate}`,
+    repository: privateRepo, head_repository: privateRepo,
+  });
+  const runs = [makeRun(3, 'completed', 'success'), makeRun(4, 'queued', null),
+    makeRun(5, 'completed', 'cancelled'), makeRun(6, 'completed', 'success', 2)];
+  const steps = [
+    'Check dispatch inputs and runner identity', 'Check out the reviewed DAF baseline',
+    'Verify one documentation change and exact checkout', 'Run portable contracts on the candidate',
+    'Run supervised handoff and receipt regressions', 'Record candidate verification outcome',
+  ].map((name) => ({ name, status: 'completed', conclusion: 'success' }));
+  const app = missionControl({
+    repositories: [{ repository, visibility: 'private', planning: false,
+      homeciCandidate: { workflowId: run.workflow_id, workflowRevision: commit, runner } }],
+    password, token,
+  }, { fetcher: async (url) => {
+    const parts = new URL(url).pathname.split('/');
+    if (parts.at(-1) === 'runs') return Response.json({ workflow_runs: runs });
+    const selected = runs.find(({ id }) => String(id) === parts.at(-4));
+    if (selected?.id !== 3) return Response.json({ total_count: 0, jobs: [] });
+    return Response.json({ total_count: 1, jobs: [{
+      ...job, run_id: selected.id, run_attempt: selected.run_attempt, name: selected.name,
+      conclusion: 'success', runner_name: runner, steps,
+    }] });
+  } });
+  let browser;
+  t.after(async () => { try { await browser?.close(); } finally { await app.stop(); } });
+  const origin = await listen(app);
+  browser = await launch();
+  const page = await browser.newPage({ httpCredentials: { username: 'daf', password } });
+  await page.goto(origin + '/#homeci');
+  const pr = page.getByRole('link', { name: 'DAF PR #3', exact: true });
+  assert.equal(await pr.getAttribute('href'), 'https://github.com/samuelwhite/development-autonomy-framework/pull/3');
+  await page.getByText('GitHub reports the exact checkout and both suites passed.', { exact: false }).waitFor();
+  await page.getByText('Waiting for GitHub to assign the job', { exact: true }).waitFor();
+  await page.getByText('Workflow cancelled', { exact: true }).waitFor();
+  await page.getByText('Only the original run attempt is eligible', { exact: true }).waitFor();
+  await page.getByText('1 of 1 jobs shown').click();
+  await page.getByText(`Runner observed on this job: ${runner}`, { exact: false }).waitFor();
+  assert.equal(await page.getByRole('link', { name: 'Job log' }).getAttribute('href'),
+    `https://github.com/${repository}/actions/runs/3/job/${job.id}`);
+  await noHorizontalOverflow(page);
 });
 
 test('browser shows initial connection failure, stale data after disconnect, and clears it on 401', { timeout: 30_000 }, async (t) => {

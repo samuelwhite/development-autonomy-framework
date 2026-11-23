@@ -31,9 +31,19 @@ export function validateRepositories(entries) {
     if (plan !== undefined && (!entry.planning || !plan || typeof plan.commit !== 'string' ||
         !SHA.test(plan.commit) || typeof plan.path !== 'string' || plan.path.length > 240 ||
         !PLAN_PATH.test(plan.path))) throw Error('Invalid pinned proposal');
+    const pilot = entry.homeciCandidate;
+    if (pilot !== undefined && (entry.visibility !== 'private' || repository !== 'samuelwhite/forge-homeci' ||
+        !pilot || !Number.isSafeInteger(pilot.workflowId) || pilot.workflowId < 1 ||
+        typeof pilot.workflowRevision !== 'string' || !SHA.test(pilot.workflowRevision) ||
+        typeof pilot.runner !== 'string' || !/^[a-z\d][a-z\d_.-]{0,159}$/i.test(pilot.runner))) {
+      throw Error('Invalid HomeCI candidate workflow');
+    }
     return {
       repository, visibility: entry.visibility, planning: entry.planning === true,
       plan: plan && { commit: plan.commit, path: plan.path },
+      ...(pilot && { homeciCandidate: {
+        workflowId: pilot.workflowId, workflowRevision: pilot.workflowRevision, runner: pilot.runner,
+      } }),
     };
   });
 }
