@@ -50,6 +50,17 @@ hash, and returns the full candidate text and its file hash for review. Original
 and candidate documents are limited to 64 KiB of UTF-8. The preview uses local
 inputs, so the caller must establish the baseline file's Git provenance and any
 separate approval before applying the candidate.
+
+For the local Git rehearsal, run `python scripts/materialize_document_candidate.py
+REPOSITORY bundle.json edit.json record.json` from a DAF source checkout.
+`record.json` supplies `preview_sha256` (the canonical JSON hash of the complete
+preview), `author_name`, `author_email`, and `created_at` in UTC
+`YYYY-MM-DDTHH:MM:SSZ` form. The script verifies the preview against the pinned
+Git blob and returns one commit SHA whose sole parent is the task baseline.
+Keep the same record to reproduce the commit after a restart. Git objects are
+created locally. The worktree, index, branches, and remote repository are
+untouched. The existing HomeCI verifier requires its separate approval and a
+published draft PR.
 Commands read only explicitly named local files and emit JSON on stdout.
 Only the interruption and recovery recording commands retain observations.
 Use an explicitly chosen, new file if redirecting output; the shell owns that
