@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import os
 import sys
 from copy import deepcopy
 from datetime import UTC, datetime
@@ -21,18 +22,31 @@ BASE = "a" * 40
 CANDIDATE = "b" * 40
 FORGE_SHA = "c" * 40
 DOCUMENT = "docs/one.md"
-WORKFLOW_BYTES = b"reviewed verifier"
 RUN = 100
 WORKFLOW_ID = 42
 JOB_ID = 200
+WORKFLOW_CONTENTS = f"/repos/{FORGE}/contents/{WORKFLOW}?ref={FORGE_SHA}"
+DAF_MAIN = f"/repos/{DAF}/git/ref/heads/main"
 LISTING = (
     f"/repos/{FORGE}/actions/workflows/{WORKFLOW_ID}/runs?event=workflow_dispatch&per_page=100"
 )
 
 
 @pytest.fixture
-def github():
+def workflow_bytes():
+    blob = os.environ.get("DAF_TEST_FORGE_WORKFLOW_BLOB")
+    if blob:
+        content = Path(blob).read_bytes()
+        assert hashlib.sha256(content).hexdigest() == os.environ["DAF_TEST_FORGE_WORKFLOW_SHA256"]
+        return content
+    # The public suite supplies canonical LF bytes without copying a private workflow.
+    return f"name: {JOB}\non: workflow_dispatch\n".encode()
+
+
+@pytest.fixture
+def github(workflow_bytes):
     stamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    workflow_digest = hashlib.sha256(workflow_bytes).hexdigest()
     bundle = prepare_task(
         {
             "schema_version": 1,
@@ -45,11 +59,11 @@ def github():
             "allowed_paths": [DOCUMENT],
             "required_checks": [
                 {
-                    "name": "offline",
-                    "validator_id": "hosted",
+                    "name": JOB,
+                    "validator_id": FORGE,
                     "source": "github_actions",
-                    "workflow_path": ".github/workflows/ci.yml",
-                    "workflow_sha256": "c" * 64,
+                    "workflow_path": WORKFLOW,
+                    "workflow_sha256": workflow_digest,
                     "artifact_name": None,
                 }
             ],
@@ -62,7 +76,8 @@ def github():
         "validator_repository": FORGE,
         "workflow_id": WORKFLOW_ID,
         "workflow_revision": FORGE_SHA,
-        "workflow_sha256": hashlib.sha256(WORKFLOW_BYTES).hexdigest(),
+        "workflow_path": WORKFLOW,
+        "workflow_sha256": workflow_digest,
         "runner": "fixture-runner",
     }
     repo = {"full_name": FORGE, "private": True}
@@ -107,6 +122,7 @@ def github():
     responses = {
         f"/repos/{DAF}/pulls/26": pr,
         f"/repos/{DAF}/pulls/26/files?per_page=100": [{"filename": DOCUMENT, "status": "modified"}],
+        DAF_MAIN: {"ref": "refs/heads/main", "object": {"sha": BASE}},
         f"/repos/{FORGE}": repo,
         f"/repos/{FORGE}/git/ref/heads/main": {
             "ref": "refs/heads/main",
@@ -117,11 +133,11 @@ def github():
             "path": WORKFLOW,
             "state": "active",
         },
-        f"/repos/{FORGE}/contents/{WORKFLOW}?ref={FORGE_SHA}": {
+        WORKFLOW_CONTENTS: {
             "type": "file",
             "path": WORKFLOW,
             "encoding": "base64",
-            "content": base64.b64encode(WORKFLOW_BYTES).decode(),
+            "content": base64.b64encode(workflow_bytes).decode(),
         },
         LISTING: {
             "workflow_runs": [],
@@ -136,8 +152,12 @@ def github():
     return bundle, approval, responses, run, job
 
 
-def test_success_retained_and_restart_never_dispatches_twice(tmp_path, github):
+def test_success_retained_and_restart_never_dispatches_twice(tmp_path, github, workflow_bytes):
     bundle, approval, responses, _, _ = github
+    check = bundle["request"]["required_checks"][0]
+    assert check["workflow_path"] == approval["workflow_path"] == WORKFLOW
+    assert check["workflow_sha256"] == approval["workflow_sha256"]
+    assert check["workflow_sha256"] == hashlib.sha256(workflow_bytes).hexdigest()
     calls = []
 
     def post(value):
@@ -183,6 +203,65 @@ def test_ambiguous_dispatch_reconciles_without_retry(tmp_path, github):
 
 
 @pytest.mark.parametrize(
+    "change",
+    [
+        {"workflow_path": ".github/workflows/ci.yml"},
+        {"workflow_sha256": "0" * 64},
+        {"validator_id": "example/other-validator"},
+        {"name": "A different required job"},
+        {"source": "homeci", "artifact_name": "result.zip"},
+    ],
+)
+def test_valid_task_with_different_requirement_refused_before_reservation(tmp_path, github, change):
+    bundle, approval, _, _, _ = github
+    request = deepcopy(bundle["request"])
+    request["required_checks"][0].update(change)
+    new_bundle = prepare_task(request)
+    # The approval names the new valid task and valid Forge workflow. Only the binding differs.
+    approval["task_sha256"] = new_bundle["task_sha256"]
+    result = verify(
+        new_bundle,
+        approval,
+        FORGE,
+        tmp_path,
+        lambda _: pytest.fail("GitHub lookup"),
+        lambda _: pytest.fail("dispatch"),
+    )
+    assert result["reason"] == "task_workflow_requirement_mismatch"
+    assert result["verification"] == "incomplete"
+    assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "reason"),
+    [
+        ("workflow_path", ".github/workflows/other.yml", "wrong_approved_workflow_path"),
+        ("workflow_sha256", "0" * 64, "task_workflow_requirement_mismatch"),
+    ],
+)
+def test_valid_approval_with_different_workflow_refused_before_reservation(
+    tmp_path,
+    github,
+    field,
+    value,
+    reason,
+):
+    bundle, approval, _, _, _ = github
+    approval[field] = value
+    result = verify(
+        bundle,
+        approval,
+        FORGE,
+        tmp_path,
+        lambda _: pytest.fail("GitHub lookup"),
+        lambda _: pytest.fail("dispatch"),
+    )
+    assert result["reason"] == reason
+    assert result["verification"] == "incomplete"
+    assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize(
     ("field", "value", "reason"),
     [
         ("id", RUN + 1, "wrong_run_attempt"),
@@ -206,15 +285,22 @@ def test_wrong_run_identity_is_incomplete(tmp_path, github, field, value, reason
     ("target", "reason"),
     [
         ("candidate_sha", "wrong_pr_revision"),
-        ("workflow_sha256", "wrong_workflow_digest"),
+        ("workflow_bytes", "wrong_workflow_digest"),
         ("workflow_id", "wrong_validator_workflow"),
         ("changed_file", "candidate_scope_mismatch"),
+        ("main_advanced", "candidate_main_revision_changed"),
     ],
 )
 def test_invalid_candidate_never_reserves_or_posts(tmp_path, github, target, reason):
     bundle, approval, responses, _, _ = github
     if target == "changed_file":
         responses[f"/repos/{DAF}/pulls/26/files?per_page=100"][0]["filename"] = "docs/other.md"
+    elif target == "main_advanced":
+        responses[DAF_MAIN]["object"]["sha"] = "0" * 40
+    elif target == "workflow_bytes":
+        responses[WORKFLOW_CONTENTS]["content"] = base64.b64encode(
+            b"changed workflow bytes"
+        ).decode()
     elif target == "workflow_id":
         approval[target] += 1
     else:
@@ -224,6 +310,18 @@ def test_invalid_candidate_never_reserves_or_posts(tmp_path, github, target, rea
     )
     assert result["reason"] == reason
     assert not (tmp_path / "homeci.sqlite").exists()
+
+
+def test_daf_main_advance_during_verification_refuses_green_job(tmp_path, github):
+    bundle, approval, responses, _, _ = github
+
+    def post(_):
+        responses[DAF_MAIN]["object"]["sha"] = "0" * 40
+        return {"workflow_run_id": RUN}
+
+    result = verify(bundle, approval, FORGE, tmp_path, responses.__getitem__, post)
+    assert result["reason"] == "candidate_main_revision_changed"
+    assert result["job_id"] == JOB_ID and result["verification"] == "incomplete"
 
 
 @pytest.mark.parametrize(

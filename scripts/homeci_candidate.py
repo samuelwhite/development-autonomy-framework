@@ -61,6 +61,7 @@ def validate_approval(bundle, value, allowed_validator):
             "validator_repository",
             "workflow_id",
             "workflow_revision",
+            "workflow_path",
             "workflow_sha256",
             "runner",
         },
@@ -77,11 +78,31 @@ def validate_approval(bundle, value, allowed_validator):
     )
     sha(approval["candidate_sha"], 40)
     sha(approval["workflow_revision"], 40)
-    sha(approval["workflow_sha256"])
+    require(approval["workflow_path"] == WORKFLOW, "wrong_approved_workflow_path")
+    required_check = {
+        "name": JOB,
+        "validator_id": repository,
+        "source": "github_actions",
+        "workflow_path": approval["workflow_path"],
+        "workflow_sha256": sha(approval["workflow_sha256"]),
+        "artifact_name": None,
+    }
+    require(
+        task["request"]["required_checks"] == [required_check],
+        "task_workflow_requirement_mismatch",
+    )
     positive_id(approval["candidate_pr"])
     positive_id(approval["workflow_id"])
     text_field(approval["runner"])
     return task, approval
+
+
+def check_main(get, root, revision, reason):
+    main = obj(get(root + "/git/ref/heads/main"))
+    require(
+        main.get("ref") == "refs/heads/main" and obj(main.get("object")).get("sha") == revision,
+        reason,
+    )
 
 
 def check_candidate(task, approval, get):
@@ -90,7 +111,8 @@ def check_candidate(task, approval, get):
     number = approval["candidate_pr"]
     head = approval["candidate_sha"]
     base = request["baseline_sha"]
-    path = f"/repos/{repository}/pulls/{number}"
+    root = f"/repos/{repository}"
+    path = f"{root}/pulls/{number}"
 
     def identity(pr):
         count, _, state = pr_identity(pr, repository, number, head, base)
@@ -108,6 +130,7 @@ def check_candidate(task, approval, get):
         "candidate_scope_mismatch",
     )
     require(stamp == identity(get(path)), "candidate_changed_during_observation")
+    check_main(get, root, base, "candidate_main_revision_changed")
 
 
 def title(approval):
@@ -191,12 +214,7 @@ def run_or_resume(database, approval, get, post):
         require(run_id is not None, "run_not_observed")
         return run_id
     if run_id is None and new:
-        main = obj(get("/git/ref/heads/main"))
-        require(
-            main.get("ref") == "refs/heads/main"
-            and obj(main.get("object")).get("sha") == approval["workflow_revision"],
-            "validator_main_revision_changed",
-        )
+        check_main(get, "", approval["workflow_revision"], "validator_main_revision_changed")
         try:
             run_id = positive_id(obj(post(approval)).get("workflow_run_id"))
         except Refused:
@@ -213,7 +231,7 @@ def run_or_resume(database, approval, get, post):
 
 def observe_run(approval, run_id, get, result):
     selection = {
-        "workflow_path": WORKFLOW,
+        "workflow_path": approval["workflow_path"],
         "workflow_id": approval["workflow_id"],
         "run_id": run_id,
         "attempt": 1,
@@ -331,7 +349,12 @@ def verify(bundle, value, allowed_validator, journal, get, post=None):
         if (journal / "journal.sqlite").exists():
             check_interruption(journal, digest(interrupted_attempt(task)))
         read = validator_api(approval, get)
-        check_workflow(read, WORKFLOW, approval["workflow_revision"], approval["workflow_sha256"])
+        check_workflow(
+            read,
+            approval["workflow_path"],
+            approval["workflow_revision"],
+            approval["workflow_sha256"],
+        )
         check_candidate(task, approval, get)
         run_id = run_or_resume(database, approval, read, post)
         result["run_id"] = run_id
