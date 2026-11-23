@@ -10,6 +10,7 @@ from .external_receipts import receipt_sha256, validate_external_receipt, valida
 
 SUPPLIED = "externally_supplied_unverified"
 MAX_BYTES = 2 * 1024 * 1024
+MAX_DOCUMENT_BYTES = 64 * 1024
 
 
 def text_field(value: Any, limit: int = 120) -> str:
@@ -158,6 +159,55 @@ def validate_bundle(value: Any) -> dict[str, Any]:
     expected = prepare_task(bundle["request"])
     require(bundle == expected, "task_bundle_mismatch")
     return expected
+
+
+def preview_document_edit(bundle: Any, value: Any, baseline: bytes) -> dict[str, Any]:
+    """Produce reviewable bytes for one literal Markdown edit from supplied inputs."""
+    task = validate_bundle(bundle)
+    edit = keys(
+        value,
+        {"task_sha256", "path", "baseline_file_sha256", "original", "replacement"},
+    )
+    require(sha(edit["task_sha256"]) == task["task_sha256"], "wrong_edit_task")
+    path = file_path(edit["path"])
+    require(
+        task["request"]["allowed_paths"] == [path]
+        and path.startswith("docs/")
+        and path.endswith(".md"),
+        "one_document_edit_required",
+    )
+    baseline_hash = hashlib.sha256(baseline).hexdigest()
+    require(len(baseline) <= MAX_DOCUMENT_BYTES, "baseline_document_too_large")
+    require(sha(edit["baseline_file_sha256"]) == baseline_hash, "wrong_baseline_document")
+    original, replacement = edit["original"], edit["replacement"]
+    require(
+        isinstance(original, str)
+        and bool(original)
+        and isinstance(replacement, str)
+        and original != replacement
+        and "\0" not in original
+        and "\0" not in replacement,
+        "invalid_literal_document_edit",
+    )
+    require(b"\0" not in baseline, "invalid_baseline_document")
+    baseline.decode("utf-8")
+    old_bytes, new_bytes = original.encode("utf-8"), replacement.encode("utf-8")
+    start = baseline.find(old_bytes)
+    require(start >= 0, "literal_edit_target_missing")
+    require(baseline.find(old_bytes, start + 1) < 0, "literal_edit_target_ambiguous")
+    candidate = baseline[:start] + new_bytes + baseline[start + len(old_bytes) :]
+    require(len(candidate) <= MAX_DOCUMENT_BYTES, "candidate_document_too_large")
+    return {
+        "status": "proposed_documentation_candidate",
+        "execution_authority": False,
+        "task_sha256": task["task_sha256"],
+        "edit_sha256": digest(edit),
+        "baseline_sha": task["request"]["baseline_sha"],
+        "baseline_file_sha256": baseline_hash,
+        "path": path,
+        "candidate_file_sha256": hashlib.sha256(candidate).hexdigest(),
+        "candidate_text": candidate.decode("utf-8"),
+    }
 
 
 def interrupted_attempt(bundle: Any) -> dict[str, Any]:

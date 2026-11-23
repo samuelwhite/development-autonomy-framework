@@ -20,6 +20,7 @@ from daf.supervised_handoff import (
     SUPPLIED,
     interrupted_attempt,
     prepare_task,
+    preview_document_edit,
     reconcile_receipt,
     validate_bundle,
 )
@@ -46,6 +47,65 @@ def request_fixture():
             }
         ],
     }
+
+
+@pytest.fixture
+def document_edit():
+    bundle = prepare_task({**request_fixture(), "allowed_paths": ["docs/example.md"]})
+    baseline = "# Café\r\n\r\nOld wording.\r\n".encode()
+    edit = {
+        "task_sha256": bundle["task_sha256"],
+        "path": "docs/example.md",
+        "baseline_file_sha256": hashlib.sha256(baseline).hexdigest(),
+        "original": "Old wording.",
+        "replacement": "New wording.",
+    }
+    return bundle, edit, baseline
+
+
+def test_document_preview_cli_preserves_exact_bytes(document_edit, tmp_path, capsys):
+    bundle, edit, baseline = document_edit
+    inputs = {
+        "bundle.json": canonical(bundle).encode(),
+        "edit.json": canonical(edit).encode(),
+        "baseline.md": baseline,
+    }
+    for name, content in inputs.items():
+        (tmp_path / name).write_bytes(content)
+    assert main(["preview-document", *(str(tmp_path / name) for name in inputs)]) == 0
+    preview = json.loads(capsys.readouterr().out)
+    expected = "# Café\r\n\r\nNew wording.\r\n".encode()
+    assert preview["candidate_text"].encode() == expected
+    assert preview["candidate_file_sha256"] == hashlib.sha256(expected).hexdigest()
+    assert preview["edit_sha256"] == digest(edit)
+    assert preview["baseline_sha"] == bundle["request"]["baseline_sha"]
+    assert preview["execution_authority"] is False
+    assert {path.name: path.read_bytes() for path in tmp_path.iterdir()} == inputs
+
+
+@pytest.mark.parametrize(
+    ("override", "reason"),
+    [
+        ({"task_sha256": "0" * 64}, "wrong_edit_task"),
+        ({"path": "docs/unapproved.md"}, "one_document_edit_required"),
+        ({"baseline_file_sha256": "0" * 64}, "wrong_baseline_document"),
+        ({"original": "absent"}, "literal_edit_target_missing"),
+        ({"replacement": "Old wording."}, "invalid_literal_document_edit"),
+        ({"replacement": "a" * (64 * 1024)}, "candidate_document_too_large"),
+    ],
+)
+def test_document_preview_refuses_mismatched_edit(document_edit, override, reason):
+    bundle, edit, baseline = document_edit
+    with pytest.raises(Refused, match=f"^{reason}$"):
+        preview_document_edit(bundle, {**edit, **override}, baseline)
+
+
+def test_document_preview_refuses_overlapping_matches(document_edit):
+    bundle, edit, _ = document_edit
+    baseline = b"aaaa"
+    edit.update(baseline_file_sha256=hashlib.sha256(baseline).hexdigest(), original="aaa")
+    with pytest.raises(Refused, match="^literal_edit_target_ambiguous$"):
+        preview_document_edit(bundle, edit, baseline)
 
 
 def case():

@@ -40,6 +40,16 @@ the CLI returns exit 2 and a fixed reason code. Restore the fixture before tryin
 a different mutation. Do not use a consumer repository or real credentials.
 
 After installing the package, `daf-receipts` exposes the same subcommands.
+
+To preview one literal Markdown edit in the task's sole `docs/` path, run
+`daf-receipts preview-document bundle.json edit.json baseline.md`. The edit
+record contains `task_sha256`, `path`, `baseline_file_sha256`, `original` and
+`replacement`. Supply the exact baseline Git file bytes, including line endings.
+The command replaces exactly one occurrence, checks the supplied baseline file
+hash, and returns the full candidate text and its file hash for review. Original
+and candidate documents are limited to 64 KiB of UTF-8. The preview uses local
+inputs, so the caller must establish the baseline file's Git provenance and any
+separate approval before applying the candidate.
 Commands read only explicitly named local files and emit JSON on stdout.
 Only the interruption and recovery recording commands retain observations.
 Use an explicitly chosen, new file if redirecting output; the shell owns that

@@ -15,6 +15,7 @@ from .supervised_handoff import (
     SUPPLIED,
     interrupted_attempt,
     prepare_task,
+    preview_document_edit,
     reconcile_receipt,
     recovery_observation,
     validate_interruption,
@@ -125,6 +126,9 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="command", required=True)
     prepare = sub.add_parser("prepare", help="Export a proposed task, never an approval")
     prepare.add_argument("request", type=Path)
+    preview = sub.add_parser("preview-document", help="Preview one literal Markdown edit")
+    for name in ("bundle", "edit", "baseline"):
+        preview.add_argument(name, type=Path)
     validate = sub.add_parser("validate", help="Check a schema-1 unverified receipt")
     validate.add_argument("receipt", type=Path)
     reconcile = sub.add_parser("reconcile", help="Compare supplied PR/CI claims and artifact bytes")
@@ -147,6 +151,10 @@ def main(argv=None):
     try:
         if args.command == "prepare":
             result = prepare_task(read_document(args.request))
+        elif args.command == "preview-document":
+            result = preview_document_edit(
+                read_document(args.bundle), read_document(args.edit), read_bytes(args.baseline)
+            )
         elif args.command == "validate":
             claim = validate_external_receipt(read_document(args.receipt))
             result = {
