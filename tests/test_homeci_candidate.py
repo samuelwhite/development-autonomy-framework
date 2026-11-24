@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import os
+import subprocess
 import sys
 from copy import deepcopy
 from datetime import UTC, datetime
@@ -10,11 +11,12 @@ import pytest
 
 from daf.contract import Refused, digest
 from daf.receipt_bridge import append_observation, observation_history, observation_row
-from daf.supervised_handoff import interrupted_attempt, prepare_task
+from daf.supervised_handoff import interrupted_attempt, prepare_task, preview_document_edit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from homeci_candidate import JOB, STEPS, WORKFLOW, WORKFLOW_FILE, title, verify  # noqa: E402
+from materialize_document_candidate import materialize_candidate  # noqa: E402
 
 DAF = "example/daf"
 FORGE = "example/private-validation"
@@ -175,6 +177,79 @@ def test_success_retained_and_restart_never_dispatches_twice(tmp_path, github, w
     assert first["independent_producer_provenance"] is False
     with observation_history(tmp_path / "journal.sqlite") as db:
         assert observation_row(db, digest(first)) is not None
+
+
+def test_real_local_candidate_reuses_one_homeci_dispatch(tmp_path, github):
+    bundle, approval, responses, run, _ = github
+    repository = tmp_path / "repo"
+    repository.mkdir()
+
+    def git(*arguments):
+        return subprocess.check_output(["git", "-C", str(repository), *arguments])
+
+    git("init", "--quiet", "-b", "main")
+    document = repository / DOCUMENT
+    document.parent.mkdir()
+    baseline = b"# Guide\n\nOriginal content.\n"
+    document.write_bytes(baseline)
+    git("add", DOCUMENT)
+    git("-c", "user.name=Pilot", "-c", "user.email=pilot@example.org", "commit", "-qm", "Baseline")
+    base_sha = git("rev-parse", "HEAD").decode().strip()
+    bundle = prepare_task({**bundle["request"], "baseline_sha": base_sha})
+    edit = {
+        "task_sha256": bundle["task_sha256"],
+        "path": DOCUMENT,
+        "baseline_file_sha256": hashlib.sha256(baseline).hexdigest(),
+        "original": "Original content.",
+        "replacement": "Proposed content.",
+    }
+    preview = preview_document_edit(bundle, edit, baseline)
+    record = {
+        "preview_sha256": digest(preview),
+        "author_name": "Pilot",
+        "author_email": "pilot@example.org",
+        "created_at": "2026-11-23T13:00:00Z",
+    }
+    document.write_bytes(b"Unrelated operator working change\n")
+    with pytest.raises(Refused, match="^candidate_preview_changed$"):
+        materialize_candidate(repository, bundle, edit, {**record, "preview_sha256": "0" * 64})
+    before = git("status", "--porcelain=v1")
+    result = materialize_candidate(repository, bundle, edit, record)
+    assert materialize_candidate(repository, bundle, edit, record) == result
+    candidate = result["candidate_sha"]
+    assert result["execution_authority"] is False
+    assert git("rev-list", "--parents", "-n", "1", candidate).decode().split() == [
+        candidate,
+        base_sha,
+    ]
+    assert git(
+        "diff-tree", "--no-commit-id", "--name-status", "-r", candidate
+    ).decode().splitlines() == [f"M\t{DOCUMENT}"]
+    assert git("show", f"{candidate}:{DOCUMENT}") == preview["candidate_text"].encode()
+    assert git("rev-parse", "HEAD").decode().strip() == base_sha
+    assert git("status", "--porcelain=v1") == before
+    assert document.read_bytes() == b"Unrelated operator working change\n"
+
+    approval.update(task_sha256=bundle["task_sha256"], candidate_sha=candidate)
+    pr = responses[f"/repos/{DAF}/pulls/26"]
+    pr["head"]["sha"] = candidate
+    pr["base"]["sha"] = base_sha
+    responses[DAF_MAIN]["object"]["sha"] = base_sha
+    run["display_title"] = title(approval)
+    calls = []
+
+    def post(value):
+        calls.append(value)
+        duplicate = verify(bundle, approval, FORGE, tmp_path, responses.__getitem__, post)
+        assert duplicate["reason"] == "dispatch_outcome_unknown"
+        return {"workflow_run_id": RUN}
+
+    first = verify(bundle, approval, FORGE, tmp_path, responses.__getitem__, post)
+    restarted = verify(bundle, approval, FORGE, tmp_path, responses.__getitem__, post)
+    assert first == restarted
+    assert calls == [approval]
+    assert first["verification"] == "passed"
+    assert first["observed_checkout"] == candidate
 
 
 def test_ambiguous_dispatch_reconciles_without_retry(tmp_path, github):
