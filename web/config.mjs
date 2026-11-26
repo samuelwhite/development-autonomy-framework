@@ -52,7 +52,7 @@ function readSecret(path) {
   return path ? readFileSync(path, 'utf8').trim() : '';
 }
 
-export function assertViewerAuthentication({ repositories, host, password, authMode, authDirectory, publicOrigin }) {
+export function assertViewerAuthentication({ repositories, host, password, authMode, authDirectory, publicOrigin, pilotFile }) {
   if (authMode === 'accounts') {
     const origin = typeof publicOrigin === 'string' && URL.parse(publicOrigin);
     if (!authDirectory || !origin || origin.origin !== publicOrigin ||
@@ -62,7 +62,7 @@ export function assertViewerAuthentication({ repositories, host, password, authM
     }
     return;
   }
-  if (!password && (host === '0.0.0.0' || repositories.some((entry) => entry.visibility === 'private'))) {
+  if (!password && (pilotFile || host === '0.0.0.0' || repositories.some((entry) => entry.visibility === 'private'))) {
     throw Error('External listeners and private sources require viewer authentication');
   }
 }
@@ -83,7 +83,8 @@ export function loadConfig(env = process.env) {
     throw Error('Invalid listener configuration');
   }
   const config = { repositories, token, password, host, port, authMode,
-    authDirectory: env.DAF_AUTH_STATE_DIR, publicOrigin: env.DAF_PUBLIC_ORIGIN };
+    authDirectory: env.DAF_AUTH_STATE_DIR, publicOrigin: env.DAF_PUBLIC_ORIGIN,
+    pilotFile: env.DAF_DOCUMENT_PILOT_FILE };
   assertViewerAuthentication(config);
   return config;
 }

@@ -67,6 +67,13 @@ def validate_approval(bundle, value, allowed_validator):
         },
     )
     require(sha(approval["task_sha256"]) == task["task_sha256"], "wrong_approved_task")
+    sha(approval["candidate_sha"], 40)
+    positive_id(approval["candidate_pr"])
+    validate_policy(task, approval, allowed_validator)
+    return task, approval
+
+
+def validate_policy(task, approval, allowed_validator):
     require(len(task["request"]["allowed_paths"]) == 1, "one_document_required")
     path = file_path(task["request"]["allowed_paths"][0])
     require(path.startswith("docs/") and path.endswith(".md"), "one_document_required")
@@ -76,7 +83,6 @@ def validate_approval(bundle, value, allowed_validator):
         and repository != task["request"]["repository"].lower(),
         "validator_repository_not_allowed",
     )
-    sha(approval["candidate_sha"], 40)
     sha(approval["workflow_revision"], 40)
     require(approval["workflow_path"] == WORKFLOW, "wrong_approved_workflow_path")
     required_check = {
@@ -91,10 +97,8 @@ def validate_approval(bundle, value, allowed_validator):
         task["request"]["required_checks"] == [required_check],
         "task_workflow_requirement_mismatch",
     )
-    positive_id(approval["candidate_pr"])
     positive_id(approval["workflow_id"])
     text_field(approval["runner"])
-    return task, approval
 
 
 def check_main(get, root, revision, reason):
@@ -330,7 +334,7 @@ def observe_run(approval, run_id, get, result):
     result["verification"] = "passed"
 
 
-def verify(bundle, value, allowed_validator, journal, get, post=None):
+def verify(bundle, value, allowed_validator, journal, get, post=None, *, inspect_interrupted=False):
     result = {
         "status": "github_api_observation",
         "execution_authority": False,
@@ -347,7 +351,16 @@ def verify(bundle, value, allowed_validator, journal, get, post=None):
         )
         database = journal_directory(journal, "homeci.sqlite") / "homeci.sqlite"
         if (journal / "journal.sqlite").exists():
-            check_interruption(journal, digest(interrupted_attempt(task)))
+            try:
+                check_interruption(journal, digest(interrupted_attempt(task)))
+            except Refused as error:
+                # Evidence may be read after interruption. Acceptance still checks the journal.
+                if (
+                    not inspect_interrupted
+                    or post is not None
+                    or str(error) != "attempt_incomplete"
+                ):
+                    raise
         read = validator_api(approval, get)
         check_workflow(
             read,
