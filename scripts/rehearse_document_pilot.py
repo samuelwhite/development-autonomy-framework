@@ -30,7 +30,7 @@ PILOT_TITLE = "Review the operator guide"
 BASELINE_TEXT = b"# Operator guide\n\nCheck the old status.\n"
 
 
-def git(directory, *args):
+def git(directory, *args, raw=False):
     env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
     env.update(
         GIT_CONFIG_NOSYSTEM="1",
@@ -60,7 +60,7 @@ def git(directory, *args):
     )
     if result.returncode:
         raise Refused("rehearsal_git_failed")
-    return result.stdout.decode().strip()
+    return result.stdout if raw else result.stdout.decode().strip()
 
 
 def setup(directory):

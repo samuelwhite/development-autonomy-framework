@@ -97,6 +97,32 @@ the result stays unknown. Preserve the journal and investigate the original requ
 before considering a new approval. Omit `--dispatch` for a read-only inspection.
 The pilot does not install a service credential or change Mission Control's access.
 
+### Recover a known HomeCI run
+
+Use the same private journal and the exact approval for the draft. When the
+draft was assigned by the publisher, get its `draft_pr` from the retained
+`document-pilot.json`. Use that value as `candidate_pr` in the verifier approval
+alongside the approved candidate SHA, task digest and Forge policy.
+
+```text
+python scripts/homeci_candidate.py bundle.json observe-approval.json --allow-validator OWNER/REPO --journal LOCAL_DIR
+```
+
+This form sends GitHub GETs only. It cannot publish a branch, create a pull
+request or dispatch a workflow. For a reserved run, its `run_id` stays the
+same across observations. Exit code 1 with `state: queued` or `state: running`
+means the run is pending. Add `--wait-seconds 900` to wait while its metadata
+is readable. A refusal returns exit code 2 and a `reason`, such as
+`wrong_workflow_dispatch`. The command pauses on that refusal. Run the same
+read-only command later with the existing journal. A result of
+`verification: passed` and exit code 0 identifies the accepted original run,
+attempt, job, runner and checkout. Retain the output with the operator
+evidence. The read-only command leaves the original observation history intact.
+
+The documentation pilot for PR #32 retained a first refusal and a later
+accepted observation of the same run. The first response body was unavailable,
+so the field that caused the rejection remains unknown.
+
 The observation compares the workflow bytes, revisions, run, original attempt,
 job, runner and required step results. It reports the checkout based on GitHub's
 result for the pinned workflow's exact-checkout step. This is a GitHub observation
@@ -173,3 +199,41 @@ evidence. A new journal would lose the local intent history. Keep the DAF
 default branch pinned until candidate verification finishes. The command
 pauses at draft review and writes the same Mission Control snapshot as the
 rehearsal.
+
+## Supervised Python code rehearsal
+
+From a source checkout with Python 3.12+ and Git, choose a disposable directory.
+
+```text
+python scripts/rehearse_code_pilot.py ../daf-code-demo
+python scripts/rehearse_code_pilot.py ../daf-code-demo
+```
+
+The fixture proposes one edit to `src/label.py`. Its trusted focused test
+already exists in the fixture baseline. Inspect `proposal.json`, `candidate.diff`,
+and `approval.json` for the exact edit, baseline, candidate and simulated decision.
+`validation.log` contains the local test result. The real Git branch lives in
+the disposable bare remote. The draft and Forge request are simulated and
+persisted beside the journal. Both commands report one branch publication,
+one draft and one validation request for the same candidate.
+
+Use a fresh directory for each scenario. First run `--scenario lost-response`
+or `--scenario incomplete-metadata`, then run without the option against the
+same directory to observe the original request. `changed-baseline` and
+`extra-file` refuse publication. `wrong-run` refuses job evidence. `failed`
+gives the trusted test harness a deliberately wrong expectation and retains
+the resulting failed test. A blocked or failed rehearsal exits with code 1.
+
+To see the transition in an isolated Mission Control instance, mount the
+rehearsal's journal directory read-only and point `DAF_DOCUMENT_PILOT_FILE`
+at `document-pilot.json`. Use the fixture repositories in the web README
+and refresh Development or HomeCI after resuming the attempt.
+
+Live production rules still require a single Markdown path under `docs/`.
+The code rehearsal uses the task fingerprint, exact Git scope, durable write
+intents, dispatch reservation and run identity checks within its disposable
+fixture. A live code pilot needs a reviewed code-edit policy that binds
+the exact source path, baseline, candidate bytes and focused test identity,
+and a private Forge workflow that enforces that scope and runs the trusted
+test under the approved execution boundary. Activate that policy and workflow
+only after validating their exact digests against the reviewed candidate.
