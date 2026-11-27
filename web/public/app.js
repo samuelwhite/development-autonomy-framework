@@ -329,7 +329,8 @@ function documentPilot(item) {
     finished: ['failed', 'Needs attention'],
   };
   const [state, label] = states[item.state] ?? [item.state, labels[item.state]];
-  const evidence = item.run && `${repoUrl(item.validator)}/actions/runs/${item.run}`;
+  const simulated = item.kind === 'code-rehearsal';
+  const evidence = !simulated && item.run && `${repoUrl(item.validator)}/actions/runs/${item.run}`;
   const reason = {
     branch_publish_outcome_unknown: 'Branch publication is uncertain. Resume the same attempt to check GitHub.',
     draft_create_outcome_unknown: 'Draft creation is uncertain. Resume the same attempt to check GitHub.',
@@ -338,16 +339,18 @@ function documentPilot(item) {
     focused_test_failed: 'The focused Python test failed.',
     attempt_incomplete: 'This attempt was interrupted. Review the retained evidence before proceeding.',
   };
-  return panel(item.kind === 'code-rehearsal' ? 'Code rehearsal' : 'Documentation pilot', [
+  return panel(simulated ? 'Code rehearsal' : 'Documentation pilot', [
     element('div', 'row', element('strong', '', item.task), badge(state, label)),
     meta(`Attempt ${item.attempt}`, item.file),
     element('p', 'meta', 'Candidate ', element('code', '', item.candidate)),
     item.runAttempt
-      ? meta(`Run ${item.run}`, `Attempt ${item.runAttempt}`, item.job && `Job ${item.job}`,
+      ? meta(`${simulated ? 'Simulated run' : 'Run'} ${item.run}`, `Attempt ${item.runAttempt}`,
+        item.job && `${simulated ? 'Simulated job' : 'Job'} ${item.job}`,
         item.runner, item.conclusion && item.conclusion.replaceAll('_', ' '))
-      : evidence && meta(`Reserved run ${item.run}`),
+      : item.run && meta(`${simulated ? 'Reserved simulated run' : 'Reserved run'} ${item.run}`),
     item.reason && note(reason[item.reason] ?? item.reason.replaceAll('_', ' ')),
-    links(item.pr && link(`PR #${item.pr}`, `${repoUrl(item.repository)}/pull/${item.pr}`),
+    simulated && item.pr && meta(`Simulated PR #${item.pr}`),
+    !simulated && links(item.pr && link(`PR #${item.pr}`, `${repoUrl(item.repository)}/pull/${item.pr}`),
       evidence && (item.runAttempt
         ? link('HomeCI attempt', `${evidence}/attempts/${item.runAttempt}`)
         : link('HomeCI run', evidence)),

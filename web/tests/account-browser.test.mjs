@@ -179,7 +179,7 @@ test('code rehearsal shows the same reserved run through recovery, and retains f
   page.setDefaultTimeout(6000);
   await page.goto(origin);
 
-  const checkViews = async (observation, status, metadata, state, linkName, runPath) => {
+  const checkViews = async (observation, status, metadata, state) => {
     for (const view of ['Development', 'HomeCI']) {
       await page.getByRole('link', { name: view, exact: true }).click();
       const pilot = page.getByRole('heading', { name: 'Code rehearsal' }).locator('..').locator('..');
@@ -187,8 +187,8 @@ test('code rehearsal shows the same reserved run through recovery, and retains f
       await pilot.getByText(observation.candidate_sha, { exact: true }).waitFor();
       await pilot.getByText('Attempt normalize-label-1 · src/label.py', { exact: true }).waitFor();
       await pilot.getByText(metadata, { exact: true }).waitFor();
-      assert.equal(await pilot.getByRole('link', { name: linkName }).getAttribute('href'),
-        'https://github.com/example/validator/actions/runs/' + runPath);
+      await pilot.getByText('Simulated PR #28', { exact: true }).waitFor();
+      assert.equal(await pilot.getByRole('link').count(), 0);
       assert.equal(await pilot.getByRole('button').count(), 0);
       if (output) {
         await mkdir(output, { recursive: true });
@@ -196,18 +196,18 @@ test('code rehearsal shows the same reserved run through recovery, and retains f
       }
     }
   };
-  await checkViews(incomplete, 'Blocked', 'Reserved run 1401', 'incomplete', 'HomeCI run', '1401');
+  await checkViews(incomplete, 'Blocked', 'Reserved simulated run 1401', 'incomplete');
   assert.equal(await page.getByRole('link', { name: 'Job log', exact: true }).count(), 0);
   const recovered = await run(work, 0);
   assert.equal(recovered.candidate_sha, incomplete.candidate_sha);
   assert.equal(recovered.run_id, incomplete.run_id);
   await page.getByRole('button', { name: 'Refresh view' }).click();
-  await checkViews(recovered, 'Ready for review', 'Run 1401 · Attempt 1 · Job 1601 · demo-runner · success',
-    'accepted', 'HomeCI attempt', '1401/attempts/1');
+  await checkViews(recovered, 'Ready for review',
+    'Simulated run 1401 · Attempt 1 · Simulated job 1601 · demo-runner · success', 'accepted');
   const failed = await run(join(directory, 'failed-rehearsal'), 1, '--scenario', 'failed');
   await page.getByRole('button', { name: 'Refresh view' }).click();
-  await checkViews(failed, 'Needs attention', 'Run 1401 · Attempt 1 · Job 1601 · demo-runner · failure',
-    'failed', 'HomeCI attempt', '1401/attempts/1');
+  await checkViews(failed, 'Needs attention',
+    'Simulated run 1401 · Attempt 1 · Simulated job 1601 · demo-runner · failure', 'failed');
   await page.getByText('The focused Python test failed.', { exact: true }).waitFor();
   assert.equal((await page.request.post(origin + '/api/mission-control')).status(), 405);
 });
