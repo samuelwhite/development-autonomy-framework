@@ -59,8 +59,9 @@ preview), `author_name`, `author_email`, and `created_at` in UTC
 Git blob and returns one commit SHA whose sole parent is the task baseline.
 Keep the same record to reproduce the commit after a restart. Git objects are
 created locally. The worktree, index, branches, and remote repository are
-untouched. The existing HomeCI verifier requires its separate approval and a
-published draft PR.
+untouched. The HomeCI verifier uses a published draft PR and the exact reviewed
+workflow policy. See the [evidence collector guide](github-evidence-collector.md)
+for the dispatch and observation steps.
 Commands read only explicitly named local files and emit JSON on stdout.
 Only the interruption and recovery recording commands retain observations.
 Use an explicitly chosen, new file if redirecting output; the shell owns that
