@@ -250,12 +250,15 @@ def observe_run(approval, run_id, get, result):
             approval["workflow_revision"],
             datetime.now(UTC),
         )
-        require(
-            run.get("head_branch") == "main"
-            and run.get("event") == "workflow_dispatch"
-            and run.get("display_title") == title(approval),
-            "wrong_workflow_dispatch",
-        )
+        expected = {
+            "head_branch": "main",
+            "event": "workflow_dispatch",
+            "display_title": title(approval),
+        }
+        mismatches = [field for field, value in expected.items() if run.get(field) != value]
+        if mismatches:
+            result["dispatch_identity_mismatches"] = mismatches
+            raise Refused("wrong_workflow_dispatch")
         return status
 
     run = obj(get(path))
