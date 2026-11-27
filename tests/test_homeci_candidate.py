@@ -277,6 +277,41 @@ def test_ambiguous_dispatch_reconciles_without_retry(tmp_path, github):
     assert calls == ["post"]
 
 
+def test_incomplete_attempt_metadata_recovers_from_the_same_reservation(tmp_path, github):
+    bundle, approval, responses, run, job = github
+    attempt_path = f"/repos/{FORGE}/actions/runs/{RUN}/attempts/1"
+    reads = []
+    dispatches = []
+    exact_title = run.pop("display_title")
+
+    def get(path):
+        reads.append(path)
+        return responses[path]
+
+    def post(binding):
+        dispatches.append(binding)
+        return {"workflow_run_id": RUN}
+
+    first = verify(bundle, approval, FORGE, tmp_path, get, post)
+    assert first["state"] == "blocked" and first["verification"] == "incomplete"
+    assert first["reason"] == "wrong_workflow_dispatch" and first["run_id"] == RUN
+    assert first["dispatch_identity_mismatches"] == ["display_title"]
+    assert not {"attempt", "job_id", "observed_checkout"}.intersection(first)
+    assert reads.count(attempt_path) == 1
+    assert attempt_path + "/jobs?per_page=100" not in reads
+
+    run["display_title"] = exact_title
+    assert responses[LISTING]["total_count"] == 0
+    recovered = verify(bundle, approval, FORGE, tmp_path, get)
+    assert recovered["verification"] == "passed"
+    assert (recovered["run_id"], recovered["attempt"], recovered["job_id"]) == (RUN, 1, job["id"])
+    assert recovered["observed_checkout"] == CANDIDATE
+    assert recovered["runner"] == approval["runner"]
+    with observation_history(tmp_path / "journal.sqlite") as db:
+        assert observation_row(db, digest(first)) is not None
+    assert dispatches == [approval]
+
+
 @pytest.mark.parametrize(
     "change",
     [
