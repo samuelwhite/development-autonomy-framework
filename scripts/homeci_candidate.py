@@ -426,8 +426,8 @@ def gh_api(path, payload=None):
         raise Refused("malformed_github_response") from None
 
 
-def dispatch(approval):
-    return gh_api(
+def dispatch(approval, *, api=gh_api):
+    return api(
         f"/repos/{approval['validator_repository']}/actions/workflows/{WORKFLOW_FILE}/dispatches",
         {
             "ref": "main",
