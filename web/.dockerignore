@@ -4,6 +4,7 @@
 !github.mjs
 !feed.mjs
 !server.mjs
+!document-pilot.mjs
 !accounts.mjs
 !account-http.mjs
 !bootstrap.mjs

@@ -106,3 +106,33 @@ incomplete attempts. Mission Control's optional private `homeciCandidate` settin
 binds the HomeCI display to a reviewed `workflowId`, `workflowRevision` and
 `runner`. It displays GitHub's job evidence for that workflow. Approval and the
 interruption journal are checked by the operator command.
+
+## Documentation pilot rehearsal
+
+Run from the DAF source checkout with Python 3.12 or newer and Git.
+
+```text
+python scripts/rehearse_document_pilot.py PILOT_DIR
+python scripts/rehearse_document_pilot.py PILOT_DIR
+```
+
+Choose a new local directory. The first invocation creates a Git source
+repository and a disposable bare remote, checks the reviewed preview against
+the exact commit bytes, publishes one task branch and uses simulated GitHub
+responses for one draft and one HomeCI dispatch. On restart, the second
+invocation returns the same candidate and observation. The JSON reports the
+total writes in the simulated transport. GitHub and Alfred receive no requests.
+
+To test an ambiguous response, add `--lose uncertain-draft` on the first
+invocation in a new directory. Run again without the option to reconcile the
+same draft. Use `uncertain-branch` or `uncertain-dispatch` at the other write
+boundaries. The SQLite journal preserves intent and prior observations.
+The latest read-only snapshot is in `PILOT_DIR/journal/document-pilot.json`.
+Keep the directory intact after an interruption or an unknown outcome.
+
+The orchestration function accepts a trusted transport with complete branch
+and draft queries, create-only branch publication, draft creation, GitHub GETs
+and one HomeCI dispatch. It binds the approval to the task, preview, author and
+timestamp record, exact candidate, and verification policy. The rehearsal
+command supplies only the local transport. Live publication and dispatch need
+separate review and authority for those exact bindings.

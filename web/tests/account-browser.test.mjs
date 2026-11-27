@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { bootstrapAccounts } from '../accounts.mjs';
 import { missionControl } from '../server.mjs';
 
@@ -17,7 +19,7 @@ const changedPassword = 'river stones keep the memory of rain';
 const resetPassword = 'orchard paths circle back through sunlight';
 const viewer = 'first.last+development@engineering.example.test';
 
-test('administrator and viewer use local accounts in the browser', { timeout: 45_000 }, async (t) => {
+test('administrator and viewer use local accounts in the browser', { timeout: 60_000 }, async (t) => {
   const directory = await mkdtemp(join(tmpdir(), 'daf-account-browser-'));
   let app;
   let browser;
@@ -27,13 +29,22 @@ test('administrator and viewer use local accounts in the browser', { timeout: 45
     }
   });
   await bootstrapAccounts(directory, 'demo.admin', adminPassword);
+  const rehearsal = join(directory, 'pilot');
+  const script = fileURLToPath(new URL('../../scripts/rehearse_document_pilot.py', import.meta.url));
+  const report = JSON.parse(execFileSync(process.env.PYTHON || 'python', [script, rehearsal],
+    { encoding: 'utf8', timeout: 20000 }));
+  assert.deepEqual(report.external_writes, { branch: 1, draft: 1, dispatch: 1 });
   const reserved = createServer();
   await new Promise((resolve) => reserved.listen(0, '127.0.0.1', resolve));
   const { port } = reserved.address();
   await new Promise((resolve) => reserved.close(resolve));
   const origin = `http://127.0.0.1:${port}`;
-  app = missionControl({ repositories: [], host: '127.0.0.1', authMode: 'accounts',
-    authDirectory: directory, publicOrigin: origin });
+  app = missionControl({ repositories: [
+    { repository: 'example/daf', visibility: 'public', planning: false },
+    { repository: 'example/validator', visibility: 'private', planning: false },
+  ], host: '127.0.0.1', authMode: 'accounts', token: 'fixture-only',
+  authDirectory: directory, publicOrigin: origin, pilotFile: join(rehearsal, 'journal', 'document-pilot.json'),
+  }, { fetcher: async () => Response.json({ workflow_runs: [] }) });
   await new Promise((resolve, reject) => {
     app.http.once('error', reject);
     app.http.listen(port, '127.0.0.1', resolve);
@@ -94,6 +105,21 @@ test('administrator and viewer use local accounts in the browser', { timeout: 45
   await signIn(phone, viewer.toUpperCase(), viewerPassword);
   assert.equal(await phone.getByRole('link', { name: 'Settings / Users' }).count(), 0);
   assert.equal((await phone.request.get(origin + '/settings/users')).status(), 403);
+  for (const view of ['Development', 'HomeCI']) {
+    await phone.getByRole('link', { name: view, exact: true }).click();
+    const pilot = phone.getByRole('heading', { name: 'Documentation pilot' }).locator('..').locator('..');
+    await pilot.getByText('Ready for review', { exact: true }).waitFor();
+    await pilot.getByText(report.observation.candidate_sha, { exact: true }).waitFor();
+    await pilot.getByText('Attempt operator-guide-1 · docs/guide.md', { exact: true }).waitFor();
+    await pilot.getByText('Run 1401 · Attempt 1 · Job 1601 · demo-runner · success', { exact: true }).waitFor();
+    assert.equal(await pilot.getByRole('link', { name: 'PR #28' }).getAttribute('href'),
+      'https://github.com/example/daf/pull/28');
+    assert.equal(await pilot.getByRole('link', { name: 'Job log' }).getAttribute('href'),
+      'https://github.com/example/validator/actions/runs/1401/job/1601');
+    assert.equal(await pilot.getByRole('button').count(), 0);
+    await capture(phone, `phone-pilot-${view.toLowerCase()}`);
+  }
+  assert.equal((await phone.request.post(origin + '/api/mission-control')).status(), 405);
   await phone.getByRole('link', { name: 'My account' }).click();
   await phone.getByRole('heading', { name: 'Change password' }).waitFor();
   await phone.locator('#account-identity').filter({ hasText: viewer }).waitFor();
