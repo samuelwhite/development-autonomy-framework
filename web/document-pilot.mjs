@@ -4,6 +4,7 @@ import { SHA } from './config.mjs';
 const limit = 8192;
 const atom = /^[a-zA-Z0-9_.-]{1,120}$/;
 const document = /^docs\/(?:[a-zA-Z0-9_-][a-zA-Z0-9_.-]*\/)*[a-zA-Z0-9_-][a-zA-Z0-9_.-]*\.md$/;
+const python = /^src\/(?:[a-zA-Z0-9_-][a-zA-Z0-9_.-]*\/)*[a-zA-Z0-9_-][a-zA-Z0-9_.-]*\.py$/;
 const states = ['publishing', 'verifying', 'running', 'queued', 'blocked', 'finished', 'review'];
 const conclusions = ['success', 'failure', 'cancelled', 'skipped', 'timed_out', 'neutral',
   'action_required', 'stale', 'startup_failure'];
@@ -20,9 +21,11 @@ export function readDocumentPilot(path, repositories) {
     const size = readSync(descriptor, bytes);
     if (!size || size > limit) return null;
     const item = JSON.parse(bytes.subarray(0, size).toString('utf8'));
+    const codeRehearsal = item?.kind === 'code-rehearsal';
     if (item?.schema_version !== 1 || !repositories.some(r => r.repository === item.repository) ||
+        (item.kind !== undefined && !codeRehearsal) ||
         !matches(atom, item.task) || !matches(atom, item.attempt) ||
-        !matches(document, item.file) || item.file.length > 240 ||
+        !matches(codeRehearsal ? python : document, item.file) || item.file.length > 240 ||
         !matches(SHA, item.candidate_sha) || !states.includes(item.state)) return null;
     const validator = repositories.find(r => r.visibility === 'private' &&
       r.repository === item.validator_repository)?.repository;
@@ -30,6 +33,7 @@ export function readDocumentPilot(path, repositories) {
     const attempt = run && item.run_attempt === 1 ? 1 : null;
     return {
       task: item.task, attempt: item.attempt, file: item.file, candidate: item.candidate_sha,
+      ...(codeRehearsal && { kind: item.kind }),
       state: item.state, reason: matches(/^[a-z_]{1,80}$/, item.reason) ? item.reason : null,
       pr: integer(item.draft_pr) ? item.draft_pr : null,
       repository: item.repository, validator, run, runAttempt: attempt,

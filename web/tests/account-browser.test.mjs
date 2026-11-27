@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -9,6 +9,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bootstrapAccounts } from '../accounts.mjs';
 import { missionControl } from '../server.mjs';
+import { listen, password } from './fixtures.mjs';
 
 const { chromium } = createRequire(new URL('../../desktop/package.json', import.meta.url))('playwright');
 const output = process.env.DAF_ACCOUNTS_SCREENSHOTS;
@@ -140,4 +141,73 @@ test('administrator and viewer use local accounts in the browser', { timeout: 60
   await desktop.getByRole('button', { name: 'Sign out' }).click();
   await desktop.getByRole('heading', { name: 'Sign in to Mission Control' }).waitFor();
   assert.equal((await desktop.request.get(origin + '/api/mission-control')).status(), 401);
+});
+
+test('code rehearsal shows the same reserved run through recovery, and retains failure', { timeout: 60_000 }, async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), 'daf-code-browser-'));
+  const pilotFile = join(directory, 'document-pilot.json');
+  let app;
+  let browser;
+  t.after(async () => {
+    try { await browser?.close(); } finally {
+      try { await app?.stop(); } finally { await rm(directory, { recursive: true, force: true }); }
+    }
+  });
+  const script = fileURLToPath(new URL('../../scripts/rehearse_code_pilot.py', import.meta.url));
+  const work = join(directory, 'rehearsal');
+  const run = async (workspace, expected, ...options) => {
+    const result = spawnSync(process.env.PYTHON || 'python', [script, workspace, ...options],
+      { encoding: 'utf8', timeout: 20000 });
+    assert.equal(result.status, expected, result.stderr || result.error?.message);
+    const report = JSON.parse(result.stdout);
+    assert.deepEqual(report.external_writes, { branch: 1, draft: 1, dispatch: 1 });
+    await copyFile(join(workspace, 'journal', 'document-pilot.json'), pilotFile);
+    return report.observation;
+  };
+  const incomplete = await run(work, 1, '--scenario', 'incomplete-metadata');
+  app = missionControl({
+    repositories: [
+      { repository: 'example/daf', visibility: 'public', planning: false },
+      { repository: 'example/validator', visibility: 'private', planning: false },
+    ], host: '127.0.0.1', password, token: 'fixture-only', pilotFile,
+  }, { fetcher: async () => Response.json({ workflow_runs: [] }) });
+  const origin = await listen(app);
+  assert.equal((await fetch(origin + '/api/mission-control')).status, 401);
+  browser = await chromium.launch(channel ? { channel } : {});
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 },
+    httpCredentials: { username: 'daf', password } });
+  page.setDefaultTimeout(6000);
+  await page.goto(origin);
+
+  const checkViews = async (observation, status, metadata, state, linkName, runPath) => {
+    for (const view of ['Development', 'HomeCI']) {
+      await page.getByRole('link', { name: view, exact: true }).click();
+      const pilot = page.getByRole('heading', { name: 'Code rehearsal' }).locator('..').locator('..');
+      await pilot.getByText(status, { exact: true }).waitFor();
+      await pilot.getByText(observation.candidate_sha, { exact: true }).waitFor();
+      await pilot.getByText('Attempt normalize-label-1 · src/label.py', { exact: true }).waitFor();
+      await pilot.getByText(metadata, { exact: true }).waitFor();
+      assert.equal(await pilot.getByRole('link', { name: linkName }).getAttribute('href'),
+        'https://github.com/example/validator/actions/runs/' + runPath);
+      assert.equal(await pilot.getByRole('button').count(), 0);
+      if (output) {
+        await mkdir(output, { recursive: true });
+        await page.screenshot({ path: join(output, 'code-' + view.toLowerCase() + '-' + state + '.png') });
+      }
+    }
+  };
+  await checkViews(incomplete, 'Blocked', 'Reserved run 1401', 'incomplete', 'HomeCI run', '1401');
+  assert.equal(await page.getByRole('link', { name: 'Job log', exact: true }).count(), 0);
+  const recovered = await run(work, 0);
+  assert.equal(recovered.candidate_sha, incomplete.candidate_sha);
+  assert.equal(recovered.run_id, incomplete.run_id);
+  await page.getByRole('button', { name: 'Refresh view' }).click();
+  await checkViews(recovered, 'Ready for review', 'Run 1401 · Attempt 1 · Job 1601 · demo-runner · success',
+    'accepted', 'HomeCI attempt', '1401/attempts/1');
+  const failed = await run(join(directory, 'failed-rehearsal'), 1, '--scenario', 'failed');
+  await page.getByRole('button', { name: 'Refresh view' }).click();
+  await checkViews(failed, 'Needs attention', 'Run 1401 · Attempt 1 · Job 1601 · demo-runner · failure',
+    'failed', 'HomeCI attempt', '1401/attempts/1');
+  await page.getByText('The focused Python test failed.', { exact: true }).waitFor();
+  assert.equal((await page.request.post(origin + '/api/mission-control')).status(), 405);
 });

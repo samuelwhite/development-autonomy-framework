@@ -329,22 +329,28 @@ function documentPilot(item) {
     finished: ['failed', 'Needs attention'],
   };
   const [state, label] = states[item.state] ?? [item.state, labels[item.state]];
-  const evidence = item.runAttempt && `${repoUrl(item.validator)}/actions/runs/${item.run}`;
+  const evidence = item.run && `${repoUrl(item.validator)}/actions/runs/${item.run}`;
   const reason = {
     branch_publish_outcome_unknown: 'Branch publication is uncertain. Resume the same attempt to check GitHub.',
     draft_create_outcome_unknown: 'Draft creation is uncertain. Resume the same attempt to check GitHub.',
     dispatch_outcome_unknown: 'Dispatch is uncertain. Resume the same attempt to look for the original run.',
+    wrong_workflow_dispatch: 'Run metadata is incomplete or differs from the approved dispatch.',
+    focused_test_failed: 'The focused Python test failed.',
     attempt_incomplete: 'This attempt was interrupted. Review the retained evidence before proceeding.',
   };
-  return panel('Documentation pilot', [
+  return panel(item.kind === 'code-rehearsal' ? 'Code rehearsal' : 'Documentation pilot', [
     element('div', 'row', element('strong', '', item.task), badge(state, label)),
     meta(`Attempt ${item.attempt}`, item.file),
     element('p', 'meta', 'Candidate ', element('code', '', item.candidate)),
-    evidence && meta(`Run ${item.run}`, `Attempt ${item.runAttempt}`, item.job && `Job ${item.job}`,
-      item.runner, item.conclusion && item.conclusion.replaceAll('_', ' ')),
+    item.runAttempt
+      ? meta(`Run ${item.run}`, `Attempt ${item.runAttempt}`, item.job && `Job ${item.job}`,
+        item.runner, item.conclusion && item.conclusion.replaceAll('_', ' '))
+      : evidence && meta(`Reserved run ${item.run}`),
     item.reason && note(reason[item.reason] ?? item.reason.replaceAll('_', ' ')),
     links(item.pr && link(`PR #${item.pr}`, `${repoUrl(item.repository)}/pull/${item.pr}`),
-      evidence && link('HomeCI attempt', `${evidence}/attempts/${item.runAttempt}`),
+      evidence && (item.runAttempt
+        ? link('HomeCI attempt', `${evidence}/attempts/${item.runAttempt}`)
+        : link('HomeCI run', evidence)),
       evidence && item.job && link('Job log', `${evidence}/job/${item.job}`)),
   ]);
 }
