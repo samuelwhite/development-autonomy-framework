@@ -18,6 +18,7 @@ from homeci_candidate import JOB, STEPS, WORKFLOW, WORKFLOW_FILE, title  # noqa:
 from materialize_document_candidate import materialize_candidate  # noqa: E402
 
 from daf.contract import Refused, canonical, digest  # noqa: E402
+from daf.receipt_bridge import local_path  # noqa: E402
 from daf.supervised_handoff import prepare_task, preview_document_edit  # noqa: E402
 
 DAF = "example/daf"
@@ -63,14 +64,16 @@ def git(directory, *args, raw=False):
     return result.stdout if raw else result.stdout.decode().strip()
 
 
-def setup(directory):
-    repo, remote, journal = (directory / part for part in ("source", "remote.git", "journal"))
+def setup(directory, *, bind_plan=False):
+    repo, remote, journal = (
+        local_path(directory / part) for part in ("source", "remote.git", "journal")
+    )
     config = directory / "request.json"
     if not config.exists():
         for path in (repo, remote, journal):
             path.mkdir()
-        git(repo, "init", "-q", "-b", "main")
-        git(remote, "init", "-q", "--bare")
+        git(repo, "init", "-q", "--object-format=sha1", "-b", "main")
+        git(remote, "init", "-q", "--object-format=sha1", "--bare")
         (repo / "docs").mkdir()
         (repo / DOCUMENT).write_bytes(BASELINE_TEXT)
         git(repo, "add", "--", DOCUMENT)
@@ -96,10 +99,20 @@ def setup(directory):
             "workflow_sha256": hashlib.sha256(WORKFLOW_BYTES).hexdigest(),
             "runner": "demo-runner",
         }
+        plan = {
+            "repository": DAF,
+            "baseline_sha": base,
+            "path": DOCUMENT,
+            "instruction": PILOT_TITLE,
+            "original": "Check the old status.",
+            "replacement": "Check Mission Control.",
+        }
+        if bind_plan:
+            (directory / "plan.json").write_text(canonical(plan), encoding="utf-8")
         bundle = prepare_task(
             {
                 "schema_version": 1,
-                "plan_sha256": "a" * 64,
+                "plan_sha256": digest(plan) if bind_plan else "a" * 64,
                 "milestone_id": "operator-guide",
                 "attempt_id": "operator-guide-1",
                 "repository": DAF,
@@ -147,6 +160,8 @@ def setup(directory):
 class RehearsalTransport:
     """A local-only Git remote and persisted simulated API responses."""
 
+    pr, run, job = PR, RUN, JOB_ID
+
     def __init__(self, repo, remote, state, *, loss=None, outcome="success"):
         self.repo, self.remote, self.state = repo, remote, state
         self.loss, self.outcome = loss, outcome
@@ -193,7 +208,7 @@ class RehearsalTransport:
     def pulls(self, repository, branch):
         assert repository == DAF
         return (
-            [{"number": PR}]
+            [{"number": self.pr}]
             if self.data.get("branch") == branch and "draft" not in self.hidden
             else []
         )
@@ -206,7 +221,7 @@ class RehearsalTransport:
     def dispatch(self, binding):
         self.before_write("dispatch")
         self.save("dispatch", binding=binding)
-        return {"workflow_run_id": RUN}
+        return {"workflow_run_id": self.run}
 
     def get(self, path):
         daf, forge = f"/repos/{DAF}", f"/repos/{FORGE}"
@@ -214,11 +229,11 @@ class RehearsalTransport:
         base = self.base
         private = {"full_name": FORGE, "private": True}
         binding = self.data.get("binding")
-        run_path = f"{forge}/actions/runs/{RUN}/attempts/1"
+        run_path = f"{forge}/actions/runs/{self.run}/attempts/1"
         status = "queued" if self.outcome == "queued" else "completed"
         conclusion = None if status == "queued" else self.outcome
         run = {
-            "id": RUN,
+            "id": self.run,
             "run_attempt": 1,
             "workflow_id": WORKFLOW_ID,
             "head_sha": REVISION,
@@ -234,8 +249,8 @@ class RehearsalTransport:
         }
         listed = [run] if binding and "dispatch" not in self.hidden else []
         job = {
-            "id": JOB_ID,
-            "run_id": RUN,
+            "id": self.job,
+            "run_id": self.run,
             "run_attempt": 1,
             "head_sha": REVISION,
             "name": JOB,
@@ -274,8 +289,8 @@ class RehearsalTransport:
         }
         if "branch" in self.data:
             branch = self.data["branch"]
-            responses[f"{daf}/pulls/{PR}"] = {
-                "number": PR,
+            responses[f"{daf}/pulls/{self.pr}"] = {
+                "number": self.pr,
                 "draft": True,
                 "state": "open",
                 "changed_files": 1,
@@ -287,7 +302,7 @@ class RehearsalTransport:
                 "base": {"sha": base, "repo": {"full_name": DAF}, "ref": "main"},
                 "updated_at": stamp,
             }
-            responses[f"{daf}/pulls/{PR}/files?per_page=100"] = [
+            responses[f"{daf}/pulls/{self.pr}/files?per_page=100"] = [
                 {"filename": DOCUMENT, "status": "modified"},
             ]
         return responses[path]
@@ -299,7 +314,13 @@ def rehearse(directory, *, loss=None, outcome="success"):
         repo, remote, directory / "simulated-github.json", loss=loss, outcome=outcome
     )
     result = run_pilot(
-        repo, *inputs, journal, transport, allowed_repository=DAF, allowed_validator=FORGE
+        repo,
+        *inputs,
+        journal,
+        transport,
+        allowed_repository=DAF,
+        allowed_validator=FORGE,
+        rehearsal=True,
     )
     return {"observation": result, "external_writes": transport.data["writes"]}
 

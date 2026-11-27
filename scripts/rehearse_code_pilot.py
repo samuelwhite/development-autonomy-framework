@@ -18,9 +18,9 @@ from document_pilot import pilot_branch, reconcile, snapshot  # noqa: E402
 from github_evidence import check_workflow, complete, obj, run_identity  # noqa: E402
 from homeci_candidate import (  # noqa: E402
     check_candidate,
+    check_dispatch_identity,
     check_main,
     run_or_resume,
-    title,
     validator_api,
 )
 from rehearse_document_pilot import (  # noqa: E402
@@ -73,10 +73,9 @@ SCENARIOS = (
     "wrong-run",
     "incomplete-metadata",
     "failed",
+    "queued",
 )
 FORGE_ROOT = f"/repos/{FORGE}"
-ATTEMPT = f"/actions/runs/{RUN}/attempts/1"
-JOBS = ATTEMPT + "/jobs?per_page=100"
 POLICY = {
     "validator_repository": FORGE,
     "workflow_id": WORKFLOW_ID,
@@ -139,6 +138,8 @@ def setup(directory, scenario):
     candidate = commit(repo, "Trim spaces when normalizing a label")
     diff = object_diff(repo, base, candidate)
     plan = {
+        "repository": DAF,
+        "baseline_sha": base,
         "change": "Trim surrounding spaces before lowercasing a display label.",
         "file": CODE,
         "focused_test": TEST,
@@ -231,12 +232,15 @@ def check_scope(repo, directory, base, candidate, proposal):
 class CodeTransport(RehearsalTransport):
     """Retain the simulated writes and run only the two trusted fixture blobs."""
 
-    def __init__(self, repo, remote, directory, scenario):
-        loss = "uncertain-dispatch" if scenario == "lost-response" else None
+    def __init__(self, repo, remote, directory, scenario, *, loss=None, distinct_ids=False):
+        if distinct_ids:
+            self.pr, self.run, self.job = PR + 1, RUN + 1, JOB_ID + 1
+        if scenario == "lost-response":
+            loss = "uncertain-dispatch"
         super().__init__(repo, remote, directory / "simulated-github.json", loss=loss)
         self.directory = directory
         self.scenario = scenario
-        self.outcome = self.data.get("conclusion", "success")
+        self.outcome = "queued" if scenario == "queued" else self.data.get("conclusion", "success")
 
     def dispatch(self, binding):
         candidate = binding["candidate_sha"]
@@ -257,20 +261,23 @@ class CodeTransport(RehearsalTransport):
                 check=False,
             )
             (self.directory / "validation.log").write_bytes(result.stdout + result.stderr)
-        self.outcome = "success" if result.returncode == 0 else "failure"
-        self.save("dispatch", binding=binding, conclusion=self.outcome)
-        return {"workflow_run_id": RUN}
+        conclusion = "success" if result.returncode == 0 else "failure"
+        if self.scenario != "queued":
+            self.outcome = conclusion
+        self.save("dispatch", binding=binding, conclusion=conclusion)
+        return {"workflow_run_id": self.run}
 
     def get(self, path):
         response = super().get(path)
-        if path == f"/repos/{DAF}/pulls/{PR}/files?per_page=100":
+        attempt = f"{FORGE_ROOT}/actions/runs/{self.run}/attempts/1"
+        if path == f"/repos/{DAF}/pulls/{self.pr}/files?per_page=100":
             return [{"filename": CODE, "status": "modified"}]
-        if path == FORGE_ROOT + ATTEMPT:
+        if path == attempt:
             if self.scenario == "wrong-run":
-                return {**response, "id": RUN + 1}
+                return {**response, "id": self.run + 1}
             if self.scenario == "incomplete-metadata":
                 return {key: value for key, value in response.items() if key != "display_title"}
-        if path == FORGE_ROOT + JOBS:
+        if path == attempt + "/jobs?per_page=100" and response["jobs"]:
             (job,) = response["jobs"]
             return {
                 "total_count": 1,
@@ -287,22 +294,21 @@ class CodeTransport(RehearsalTransport):
         return response
 
 
-def observe(binding, read, result):
+def observe(binding, read, result, expected_job):
     run_id = result["run_id"]
     choice = {**binding, "run_id": run_id, "attempt": 1}
-    run = obj(read(ATTEMPT))
+    attempt = f"/actions/runs/{run_id}/attempts/1"
+    run = obj(read(attempt))
     status, conclusion, _ = run_identity(run, FORGE, choice, REVISION, datetime.now(UTC))
-    require(
-        run["event"] == "workflow_dispatch"
-        and run.get("head_branch") == "main"
-        and run.get("display_title") == title(binding),
-        "wrong_workflow_dispatch",
-    )
-    jobs = obj(read(JOBS))
+    check_dispatch_identity(run, binding, result)
+    if status == "queued":
+        result.update(state="queued", run_attempt=1)
+        return
+    jobs = obj(read(attempt + "/jobs?per_page=100"))
     (job,) = complete(jobs.get("jobs"), 1)
     require(
         jobs["total_count"] == 1
-        and job.get("id") == JOB_ID
+        and job.get("id") == expected_job
         and job.get("run_id") == run_id
         and job.get("run_attempt") == 1
         and job.get("head_sha") == REVISION
@@ -320,7 +326,7 @@ def observe(binding, read, result):
     )
     result.update(
         run_attempt=1,
-        job_id=JOB_ID,
+        job_id=expected_job,
         runner=POLICY["runner"],
         conclusion=conclusion,
         state="review" if conclusion == "success" else "finished",
@@ -329,7 +335,7 @@ def observe(binding, read, result):
         result["reason"] = "focused_test_failed"
 
 
-def rehearse(directory, scenario="success"):
+def rehearse(directory, scenario="success", *, loss=None, distinct_ids=False, observe_only=False):
     directory = local_path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     repo, remote, journal, proposed, approval = setup(directory, scenario)
@@ -369,15 +375,19 @@ def rehearse(directory, scenario="success"):
         "state": "publishing",
         "independent_producer_provenance": False,
         "validator_repository": FORGE,
+        "workflow_revision": REVISION,
+        "workflow_id": POLICY["workflow_id"],
     }
     with closing(sqlite3.connect(journal / "code-rehearsal-lock.sqlite")) as lock:
         lock.execute("BEGIN IMMEDIATE")
-        transport = CodeTransport(repo, remote, directory, scenario)
+        transport = CodeTransport(
+            repo, remote, directory, scenario, loss=loss, distinct_ids=distinct_ids
+        )
         binding = {
             **POLICY,
             "task_sha256": task["task_sha256"],
             "candidate_sha": candidate,
-            "candidate_pr": PR,
+            "candidate_pr": transport.pr,
         }
         read = validator_api(binding, transport.get)
 
@@ -395,13 +405,20 @@ def rehearse(directory, scenario="success"):
             pulls = transport.pulls(DAF, branch)
             if not pulls:
                 return None
-            require(pulls == [{"number": PR}], "multiple_candidate_pulls")
+            require(pulls == [{"number": transport.pr}], "multiple_candidate_pulls")
             check_candidate(task, binding, transport.get)
-            return PR
+            return transport.pr
 
-        try:
-            check_scope(repo, directory, base, candidate, proposed)
+        def dispatch(approved):
             admit()
+            check_scope(repo, directory, base, candidate, proposed)
+            require(
+                read_branch() == candidate and read_draft() == transport.pr,
+                "candidate_changed_before_dispatch",
+            )
+            return transport.dispatch(approved)
+
+        def write_draft():
             with closing(sqlite3.connect(journal / "code-rehearsal.sqlite")) as db:
                 with db:
                     db.execute("CREATE TABLE IF NOT EXISTS intents (action TEXT PRIMARY KEY)")
@@ -422,17 +439,30 @@ def rehearse(directory, scenario="success"):
                     lambda: transport.publish(DAF, branch, candidate),
                     admit,
                 )
-                initial["draft_pr"] = reconcile(
+                return reconcile(
                     db,
                     "draft_create",
                     read_draft,
                     lambda: transport.create_draft(DAF, branch),
                     admit,
                 )
+
+        try:
+            check_scope(repo, directory, base, candidate, proposed)
+            admit()
+            if observe_only:
+                require(read_branch() == candidate, "branch_publish_outcome_unknown")
+                initial["draft_pr"] = read_draft()
+                require(initial["draft_pr"] is not None, "draft_create_outcome_unknown")
+            else:
+                initial["draft_pr"] = write_draft()
             initial["run_id"] = run_or_resume(
-                journal / "homeci.sqlite", binding, read, transport.dispatch
+                journal / "homeci.sqlite",
+                binding,
+                read,
+                None if observe_only else dispatch,
             )
-            observe(binding, read, initial)
+            observe(binding, read, initial, transport.job)
             check_candidate(task, binding, transport.get)
         except Refused as error:
             initial.update(state="blocked", reason=str(error))

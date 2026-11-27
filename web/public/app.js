@@ -329,7 +329,8 @@ function documentPilot(item) {
     finished: ['failed', 'Needs attention'],
   };
   const [state, label] = states[item.state] ?? [item.state, labels[item.state]];
-  const simulated = item.kind === 'code-rehearsal';
+  const codeRehearsal = item.kind === 'code-rehearsal';
+  const simulated = codeRehearsal || item.kind === 'document-rehearsal';
   const evidence = !simulated && item.run && `${repoUrl(item.validator)}/actions/runs/${item.run}`;
   const reason = {
     branch_publish_outcome_unknown: 'Branch publication is uncertain. Resume the same attempt to check GitHub.',
@@ -339,10 +340,13 @@ function documentPilot(item) {
     focused_test_failed: 'The focused Python test failed.',
     attempt_incomplete: 'This attempt was interrupted. Review the retained evidence before proceeding.',
   };
-  return panel(simulated ? 'Code rehearsal' : 'Documentation pilot', [
+  return panel(codeRehearsal ? 'Code rehearsal' : simulated ? 'Documentation rehearsal' : 'Documentation pilot', [
     element('div', 'row', element('strong', '', item.task), badge(state, label)),
     meta(`Attempt ${item.attempt}`, item.file),
     element('p', 'meta', 'Candidate ', element('code', '', item.candidate)),
+    item.taskSha && element('p', 'meta', 'Task SHA-256 ', element('code', '', item.taskSha)),
+    item.validator && meta(item.validator, item.workflowId && `Workflow ${item.workflowId}`,
+      item.workflowRevision && `Revision ${item.workflowRevision}`),
     item.runAttempt
       ? meta(`${simulated ? 'Simulated run' : 'Run'} ${item.run}`, `Attempt ${item.runAttempt}`,
         item.job && `${simulated ? 'Simulated job' : 'Job'} ${item.job}`,
