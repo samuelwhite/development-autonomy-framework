@@ -1,5 +1,14 @@
 # DAF web Mission Control
 
+An isolated viewer instance can read the documentation pilot's latest retained
+observation via `DAF_DOCUMENT_PILOT_FILE`. Mount the private journal directory
+read-only so atomic snapshot replacements are visible. Set the variable to its
+`document-pilot.json` file and configure the repositories named in that
+snapshot. The rehearsal uses `example/daf` and `example/validator`. Show
+private validator evidence only with the validator listed as a private source.
+Viewer authentication is required. Development and HomeCI show the attempt and
+its links. The web application provides no execution controls.
+
 Mission Control brings GitHub planning and HomeCI validation into one read-only browser workspace. It runs separately from the Python preview and Electron desktop application.
 
 ## Run locally

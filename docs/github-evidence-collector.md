@@ -106,3 +106,70 @@ incomplete attempts. Mission Control's optional private `homeciCandidate` settin
 binds the HomeCI display to a reviewed `workflowId`, `workflowRevision` and
 `runner`. It displays GitHub's job evidence for that workflow. Approval and the
 interruption journal are checked by the operator command.
+
+## Documentation pilot rehearsal
+
+Run from the DAF source checkout with Python 3.12 or newer and Git.
+
+```text
+python scripts/rehearse_document_pilot.py PILOT_DIR
+python scripts/rehearse_document_pilot.py PILOT_DIR
+```
+
+Choose a new local directory. The first invocation creates a Git source
+repository and a disposable bare remote, checks the reviewed preview against
+the exact commit bytes, publishes one task branch and uses simulated GitHub
+responses for one draft and one HomeCI dispatch. On restart, the second
+invocation returns the same candidate and observation. The JSON reports the
+total writes in the simulated transport. GitHub and Alfred receive no requests.
+
+To test an ambiguous response, add `--lose uncertain-draft` on the first
+invocation in a new directory. Run again without the option to reconcile the
+same draft. Use `uncertain-branch` or `uncertain-dispatch` at the other write
+boundaries. The SQLite journal preserves intent and prior observations.
+The latest read-only snapshot is in `PILOT_DIR/journal/document-pilot.json`.
+Keep the directory intact after an interruption or an unknown outcome.
+
+The orchestration function accepts a trusted transport with complete branch
+and draft queries, create-only branch publication, draft creation, GitHub GETs
+and one HomeCI dispatch. It binds the approval to the task, preview, author and
+timestamp record, exact candidate, and verification policy. The rehearsal
+command supplies only the local transport. Live publication and dispatch need
+separate review and authority for those exact bindings.
+
+## Approved live documentation pilot
+
+After the transport is reviewed and the exact live pilot is authorised, run
+the operator CLI from that reviewed source checkout. The repository argument
+points to the local Git checkout containing the approved baseline. Git and the
+existing authenticated GitHub CLI session handle publication and verification.
+
+```text
+python scripts/live_document_pilot.py REPOSITORY BUNDLE EDIT REVIEW APPROVAL --approval-sha256 APPROVED_DIGEST
+```
+
+Obtain `APPROVED_DIGEST` as part of the private approval decision. It is the
+canonical DAF JSON SHA-256 of the complete approval record. That record has
+`schema_version` set to 1, the explicit DAF `repository`, the absolute path
+to the existing private `journal` directory, and `pilot` with these fields:
+
+- `task_sha256`, `preview_sha256`, `review_sha256` and `candidate_sha`
+- `verification` with `validator_repository`, `workflow_id`,
+  `workflow_revision`, `workflow_path`, `workflow_sha256` and `runner`
+
+The operator supplies the task bundle, literal edit and author/timestamp
+review record from the approval decision. The command checks the same
+pinned DAF and Forge revisions before writes and retains the original
+interruption and dispatch journals. Git publishes only the exact task branch,
+with a lease requiring an absent ref. The PR lookup includes closed PRs. A
+closed, mismatched or ambiguous PR blocks progress. When GitHub assigns the
+draft number, the verifier reads back its exact identity and scope before
+reserving one dispatch on the approved workflow.
+
+Use the same command and private journal to observe a queued run or recover an
+ambiguous response. A recorded write intent is never sent again. If the
+original result stays unknown, retain the same journal and investigate its
+evidence. A new journal would lose the local intent history. Keep the DAF
+default branch pinned until candidate verification finishes. The command
+pauses at draft review and writes the same Mission Control snapshot as the
+rehearsal.

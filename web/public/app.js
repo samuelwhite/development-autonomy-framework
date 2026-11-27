@@ -320,6 +320,35 @@ function homeci(projects) {
     }));
 }
 
+function documentPilot(item) {
+  if (item === undefined) return null;
+  if (item === null) return panel('Documentation pilot', [note('Attempt evidence is unavailable.')]);
+  const states = {
+    publishing: ['running', 'Publishing draft'], verifying: ['running', 'Checking HomeCI'],
+    queued: ['queued', 'Queued for HomeCI'], review: ['completed', 'Ready for review'],
+    finished: ['failed', 'Needs attention'],
+  };
+  const [state, label] = states[item.state] ?? [item.state, labels[item.state]];
+  const evidence = item.runAttempt && `${repoUrl(item.validator)}/actions/runs/${item.run}`;
+  const reason = {
+    branch_publish_outcome_unknown: 'Branch publication is uncertain. Resume the same attempt to check GitHub.',
+    draft_create_outcome_unknown: 'Draft creation is uncertain. Resume the same attempt to check GitHub.',
+    dispatch_outcome_unknown: 'Dispatch is uncertain. Resume the same attempt to look for the original run.',
+    attempt_incomplete: 'This attempt was interrupted. Review the retained evidence before proceeding.',
+  };
+  return panel('Documentation pilot', [
+    element('div', 'row', element('strong', '', item.task), badge(state, label)),
+    meta(`Attempt ${item.attempt}`, item.file),
+    element('p', 'meta', 'Candidate ', element('code', '', item.candidate)),
+    evidence && meta(`Run ${item.run}`, `Attempt ${item.runAttempt}`, item.job && `Job ${item.job}`,
+      item.runner, item.conclusion && item.conclusion.replaceAll('_', ' ')),
+    item.reason && note(reason[item.reason] ?? item.reason.replaceAll('_', ' ')),
+    links(item.pr && link(`PR #${item.pr}`, `${repoUrl(item.repository)}/pull/${item.pr}`),
+      evidence && link('HomeCI attempt', `${evidence}/attempts/${item.runAttempt}`),
+      evidence && item.job && link('Job log', `${evidence}/job/${item.job}`)),
+  ]);
+}
+
 function render() {
   connection.dataset.alert = Boolean(connectionError);
   const count = snapshot?.projects.length;
@@ -337,7 +366,12 @@ function render() {
   const targets = focused ? [...content.querySelectorAll('a, summary')] : [];
   const focusKey = (item) => item.href || item.parentElement.dataset.run;
   const occurrence = focused && targets.filter((item) => focusKey(item) === focusKey(focused)).indexOf(focused);
-  content.replaceChildren(({ dashboard, development, homeci })[active](snapshot.projects));
+  const view = ({ dashboard, development, homeci })[active](snapshot.projects);
+  if (active !== 'dashboard') {
+    const pilot = documentPilot(snapshot.documentPilot);
+    if (pilot) view.prepend(pilot);
+  }
+  content.replaceChildren(view);
   for (const details of content.querySelectorAll('details')) details.open = expanded.has(details.dataset.run);
   if (occurrence >= 0 && focused) {
     [...content.querySelectorAll('a, summary')].filter((item) => focusKey(item) === focusKey(focused))[occurrence]

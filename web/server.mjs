@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { accountHttp } from './account-http.mjs';
 import { assertViewerAuthentication, loadConfig } from './config.mjs';
+import { readDocumentPilot } from './document-pilot.mjs';
 import { createFeed } from './feed.mjs';
 
 const assets = new Map([
@@ -80,7 +81,10 @@ export function missionControl(config, options = {}) {
       }
       if (request.url === '/api/mission-control') {
         try {
-          const json = request.method === 'HEAD' ? '' : JSON.stringify(await feed());
+          const json = request.method === 'HEAD' ? '' : JSON.stringify({
+            ...await feed(),
+            documentPilot: readDocumentPilot(config.pilotFile, config.repositories),
+          });
           return send(200, 'application/json; charset=utf-8', json);
         } catch {
           return send(503, plain, 'Mission Control data unavailable');
