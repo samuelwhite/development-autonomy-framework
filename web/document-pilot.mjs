@@ -22,8 +22,9 @@ export function readDocumentPilot(path, repositories) {
     if (!size || size > limit) return null;
     const item = JSON.parse(bytes.subarray(0, size).toString('utf8'));
     const codeRehearsal = item?.kind === 'code-rehearsal';
+    const simulated = codeRehearsal || item?.kind === 'document-rehearsal';
     if (item?.schema_version !== 1 || !repositories.some(r => r.repository === item.repository) ||
-        (item.kind !== undefined && !codeRehearsal) ||
+        (item.kind !== undefined && !simulated) ||
         !matches(atom, item.task) || !matches(atom, item.attempt) ||
         !matches(codeRehearsal ? python : document, item.file) || item.file.length > 240 ||
         !matches(SHA, item.candidate_sha) || !states.includes(item.state)) return null;
@@ -33,7 +34,10 @@ export function readDocumentPilot(path, repositories) {
     const attempt = run && item.run_attempt === 1 ? 1 : null;
     return {
       task: item.task, attempt: item.attempt, file: item.file, candidate: item.candidate_sha,
-      ...(codeRehearsal && { kind: item.kind }),
+      ...(simulated && { kind: item.kind }),
+      taskSha: matches(/^[a-f0-9]{64}$/, item.task_sha256) ? item.task_sha256 : null,
+      workflowRevision: validator && matches(SHA, item.workflow_revision) ? item.workflow_revision : null,
+      workflowId: validator && integer(item.workflow_id) ? item.workflow_id : null,
       state: item.state, reason: matches(/^[a-z_]{1,80}$/, item.reason) ? item.reason : null,
       pr: integer(item.draft_pr) ? item.draft_pr : null,
       repository: item.repository, validator, run, runAttempt: attempt,

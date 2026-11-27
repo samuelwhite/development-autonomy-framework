@@ -229,7 +229,7 @@ rehearsal's journal directory read-only and point `DAF_DOCUMENT_PILOT_FILE`
 at `document-pilot.json`. Use the fixture repositories in the web README
 and refresh Development or HomeCI after resuming the attempt.
 
-Live production rules still require a single Markdown path under `docs/`.
+The live documentation verifier requires a single Markdown path under `docs/`.
 The code rehearsal uses the task fingerprint, exact Git scope, durable write
 intents, dispatch reservation and run identity checks within its disposable
 fixture. A live code pilot needs a reviewed code-edit policy that binds
@@ -237,3 +237,53 @@ the exact source path, baseline, candidate bytes and focused test identity,
 and a private Forge workflow that enforces that scope and runs the trusted
 test under the approved execution boundary. Activate that policy and workflow
 only after validating their exact digests against the reviewed candidate.
+
+## Two-task operator rehearsal
+
+From a clean source checkout, use Python 3.12+ and Git. Choose a new disposable
+workspace. No GitHub session or validator credential is needed.
+
+```text
+python scripts/rehearse_operator.py preview ../daf-operator-demo
+python scripts/rehearse_operator.py run ../daf-operator-demo --approve docs=DOCS_SHA256 --approve python=PYTHON_SHA256
+python scripts/rehearse_operator.py history ../daf-operator-demo
+```
+
+Review the exact diff and scope from `preview`. Substitute each task's own
+`approval_sha256` into the `run` command. `preview` prepares local Git objects
+and the disposable baseline. Candidate publication starts after explicit
+admission. The fingerprint covers the plan, task, baseline, candidate, diff
+and validator policy. Each simulated task has its own approval, simulator ledger
+and receipt history. The Markdown task uses the documentation policy. The
+Python fixture runs the existing trusted test against checked fixture bytes.
+Success reports `review`, the snapshot path and one branch, draft and dispatch
+write per task. Repeating `run` with the same workspace and approvals observes
+the same branch, draft and run.
+
+For example, use a fresh workspace to rehearse a lost Python dispatch response.
+
+```text
+python scripts/rehearse_operator.py preview ../daf-recovery --task python
+python scripts/rehearse_operator.py run ../daf-recovery --task python --approve python=PYTHON_SHA256 --lose dispatch
+python scripts/rehearse_operator.py observe ../daf-recovery --task python
+python scripts/rehearse_operator.py history ../daf-recovery --task python
+```
+
+The initial call reports `dispatch_outcome_unknown`. `observe` reads the same
+simulated run without a publisher or dispatch callback and leaves the original
+refusal in the history. Substitute `--lose branch` or `--lose draft` to exercise
+publication recovery. After observation, use `run` with the original approval
+if the next approved operation still needs to start. The journal prevents a
+second write for any action already reserved. An unobservable action stays
+pending.
+
+For Python, use `--scenario queued`, `incomplete-metadata`, `wrong-run` or
+`failed` with an approved `run` in a fresh workspace. A queued run can be
+observed again. Incomplete metadata reports the bounded identity fields that
+failed. A contradictory run is blocked pending inspection. Terminal failure
+stays in the journal for review. Use `history` to inspect accepted receipts
+after a baseline moves. The acceptance is attached to the tested candidate.
+For a real draft that has merged, compare the Git tree of the merge commit
+with the tested candidate tree as a separate read-only observation. Tree
+equality cannot change the run's recorded candidate. A different tree needs
+its own validation evidence.

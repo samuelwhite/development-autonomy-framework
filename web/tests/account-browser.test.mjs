@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -35,6 +35,13 @@ test('administrator and viewer use local accounts in the browser', { timeout: 60
   const report = JSON.parse(execFileSync(process.env.PYTHON || 'python', [script, rehearsal],
     { encoding: 'utf8', timeout: 20000 }));
   assert.deepEqual(report.external_writes, { branch: 1, draft: 1, dispatch: 1 });
+  // Model an older observation with no rehearsal kind to exercise real evidence links.
+  const observed = { ...report.observation };
+  delete observed.kind;
+  delete observed.workflow_id;
+  delete observed.workflow_revision;
+  const liveShapedFile = join(directory, 'observed-pilot.json');
+  await writeFile(liveShapedFile, JSON.stringify(observed));
   const reserved = createServer();
   await new Promise((resolve) => reserved.listen(0, '127.0.0.1', resolve));
   const { port } = reserved.address();
@@ -44,7 +51,7 @@ test('administrator and viewer use local accounts in the browser', { timeout: 60
     { repository: 'example/daf', visibility: 'public', planning: false },
     { repository: 'example/validator', visibility: 'private', planning: false },
   ], host: '127.0.0.1', authMode: 'accounts', token: 'fixture-only',
-  authDirectory: directory, publicOrigin: origin, pilotFile: join(rehearsal, 'journal', 'document-pilot.json'),
+  authDirectory: directory, publicOrigin: origin, pilotFile: liveShapedFile,
   }, { fetcher: async () => Response.json({ workflow_runs: [] }) });
   await new Promise((resolve, reject) => {
     app.http.once('error', reject);
@@ -153,18 +160,24 @@ test('code rehearsal shows the same reserved run through recovery, and retains f
       try { await app?.stop(); } finally { await rm(directory, { recursive: true, force: true }); }
     }
   });
-  const script = fileURLToPath(new URL('../../scripts/rehearse_code_pilot.py', import.meta.url));
+  const script = fileURLToPath(new URL('../../scripts/rehearse_operator.py', import.meta.url));
   const work = join(directory, 'rehearsal');
-  const run = async (workspace, expected, ...options) => {
-    const result = spawnSync(process.env.PYTHON || 'python', [script, workspace, ...options],
+  const invoke = (mode, workspace, task, expected, ...options) => {
+    const result = spawnSync(process.env.PYTHON || 'python',
+      [script, mode, workspace, '--task', task, ...options],
       { encoding: 'utf8', timeout: 20000 });
     assert.equal(result.status, expected, result.stderr || result.error?.message);
-    const report = JSON.parse(result.stdout);
+    return JSON.parse(result.stdout).tasks[0];
+  };
+  const load = async (mode, workspace, task, expected, ...options) => {
+    const report = invoke(mode, workspace, task, expected, ...options);
     assert.deepEqual(report.external_writes, { branch: 1, draft: 1, dispatch: 1 });
-    await copyFile(join(workspace, 'journal', 'document-pilot.json'), pilotFile);
+    await copyFile(report.evidence, pilotFile);
     return report.observation;
   };
-  const incomplete = await run(work, 1, '--scenario', 'incomplete-metadata');
+  const grant = (workspace, task) => `${task}=${invoke('preview', workspace, task, 0).approval_sha256}`;
+  const incomplete = await load('run', work, 'python', 1,
+    '--approve', grant(work, 'python'), '--scenario', 'incomplete-metadata');
   app = missionControl({
     repositories: [
       { repository: 'example/daf', visibility: 'public', planning: false },
@@ -187,7 +200,9 @@ test('code rehearsal shows the same reserved run through recovery, and retains f
       await pilot.getByText(observation.candidate_sha, { exact: true }).waitFor();
       await pilot.getByText('Attempt normalize-label-1 · src/label.py', { exact: true }).waitFor();
       await pilot.getByText(metadata, { exact: true }).waitFor();
-      await pilot.getByText('Simulated PR #28', { exact: true }).waitFor();
+      await pilot.getByText(observation.task_sha256, { exact: true }).waitFor();
+      await pilot.getByText(`example/validator · Workflow ${observation.workflow_id} · Revision ${observation.workflow_revision}`, { exact: true }).waitFor();
+      await pilot.getByText('Simulated PR #29', { exact: true }).waitFor();
       assert.equal(await pilot.getByRole('link').count(), 0);
       assert.equal(await pilot.getByRole('button').count(), 0);
       if (output) {
@@ -196,18 +211,28 @@ test('code rehearsal shows the same reserved run through recovery, and retains f
       }
     }
   };
-  await checkViews(incomplete, 'Blocked', 'Reserved simulated run 1401', 'incomplete');
+  await checkViews(incomplete, 'Blocked', 'Reserved simulated run 1402', 'incomplete');
   assert.equal(await page.getByRole('link', { name: 'Job log', exact: true }).count(), 0);
-  const recovered = await run(work, 0);
+  const recovered = await load('observe', work, 'python', 0);
   assert.equal(recovered.candidate_sha, incomplete.candidate_sha);
   assert.equal(recovered.run_id, incomplete.run_id);
   await page.getByRole('button', { name: 'Refresh view' }).click();
   await checkViews(recovered, 'Ready for review',
-    'Simulated run 1401 · Attempt 1 · Simulated job 1601 · demo-runner · success', 'accepted');
-  const failed = await run(join(directory, 'failed-rehearsal'), 1, '--scenario', 'failed');
+    'Simulated run 1402 · Attempt 1 · Simulated job 1602 · demo-runner · success', 'accepted');
+  const failedWork = join(directory, 'failed-rehearsal');
+  const failed = await load('run', failedWork, 'python', 1,
+    '--approve', grant(failedWork, 'python'), '--scenario', 'failed');
   await page.getByRole('button', { name: 'Refresh view' }).click();
   await checkViews(failed, 'Needs attention',
-    'Simulated run 1401 · Attempt 1 · Simulated job 1601 · demo-runner · failure', 'failed');
+    'Simulated run 1402 · Attempt 1 · Simulated job 1602 · demo-runner · failure', 'failed');
   await page.getByText('The focused Python test failed.', { exact: true }).waitFor();
+  await load('run', work, 'docs', 0, '--approve', grant(work, 'docs'));
+  await page.getByRole('button', { name: 'Refresh view' }).click();
+  for (const view of ['Development', 'HomeCI']) {
+    await page.getByRole('link', { name: view, exact: true }).click();
+    const panel = page.getByRole('heading', { name: 'Documentation rehearsal' }).locator('..').locator('..');
+    await panel.getByText('Simulated PR #28', { exact: true }).waitFor();
+    assert.equal(await panel.getByRole('link').count(), 0);
+  }
   assert.equal((await page.request.post(origin + '/api/mission-control')).status(), 405);
 });

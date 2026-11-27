@@ -233,6 +233,18 @@ def run_or_resume(database, approval, get, post):
     return run_id
 
 
+def check_dispatch_identity(run, approval, result):
+    expected = {
+        "head_branch": "main",
+        "event": "workflow_dispatch",
+        "display_title": title(approval),
+    }
+    mismatches = [field for field, value in expected.items() if run.get(field) != value]
+    if mismatches:
+        result["dispatch_identity_mismatches"] = mismatches
+        raise Refused("wrong_workflow_dispatch")
+
+
 def observe_run(approval, run_id, get, result):
     selection = {
         "workflow_path": approval["workflow_path"],
@@ -250,15 +262,7 @@ def observe_run(approval, run_id, get, result):
             approval["workflow_revision"],
             datetime.now(UTC),
         )
-        expected = {
-            "head_branch": "main",
-            "event": "workflow_dispatch",
-            "display_title": title(approval),
-        }
-        mismatches = [field for field, value in expected.items() if run.get(field) != value]
-        if mismatches:
-            result["dispatch_identity_mismatches"] = mismatches
-            raise Refused("wrong_workflow_dispatch")
+        check_dispatch_identity(run, approval, result)
         return status
 
     run = obj(get(path))

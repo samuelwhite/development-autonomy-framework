@@ -141,6 +141,7 @@ def run_pilot(
     *,
     allowed_repository,
     allowed_validator,
+    rehearsal=False,
 ):
     """Run one attempt per private journal. Writes require a separately admitted transport."""
     task = validate_bundle(bundle)
@@ -171,7 +172,11 @@ def run_pilot(
         "branch": branch,
         "state": "publishing",
         "independent_producer_provenance": False,
+        "workflow_revision": policy["workflow_revision"],
+        "workflow_id": policy["workflow_id"],
     }
+    if rehearsal:
+        initial["kind"] = "document-rehearsal"
     root = f"/repos/{repo}"
     get = transport.get
 
@@ -276,6 +281,16 @@ def run_pilot(
                             "pilot_snapshot_not_retained",
                         )
                     if prior["state"] == "review":
+                        if rehearsal and prior.get("kind") is None:
+                            return snapshot(
+                                journal,
+                                {
+                                    **prior,
+                                    "kind": initial["kind"],
+                                    "workflow_revision": policy["workflow_revision"],
+                                    "workflow_id": policy["workflow_id"],
+                                },
+                            )
                         return prior
                     current.update(
                         {

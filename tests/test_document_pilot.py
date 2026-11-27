@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from daf.contract import Refused
-from daf.receipt_bridge import append_observation
+from daf.contract import Refused, digest
+from daf.receipt_bridge import append_observation, observation_history, observation_row
 from daf.supervised_handoff import interrupted_attempt
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -42,7 +42,14 @@ def test_concurrent_call_and_restart_share_one_candidate(tmp_path):
     assert first["file"] == "docs/guide.md"
     assert first["candidate_sha"] == inputs[-1]["candidate_sha"]
     assert first["conclusion"] == "success"
-    assert rehearse(tmp_path) == {"observation": first, "external_writes": ONCE}
+    recovered = rehearse(tmp_path)
+    assert recovered == {
+        "observation": {**first, "kind": "document-rehearsal"},
+        "external_writes": ONCE,
+    }
+    assert rehearse(tmp_path) == recovered
+    with observation_history(journal / "journal.sqlite") as history:
+        assert observation_row(history, digest(first)) is not None
 
 
 @pytest.mark.parametrize("phase", ["branch", "draft", "dispatch"])
