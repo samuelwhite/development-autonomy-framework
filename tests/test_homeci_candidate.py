@@ -295,6 +295,7 @@ def test_incomplete_attempt_metadata_recovers_from_the_same_reservation(tmp_path
     first = verify(bundle, approval, FORGE, tmp_path, get, post)
     assert first["state"] == "blocked" and first["verification"] == "incomplete"
     assert first["reason"] == "wrong_workflow_dispatch" and first["run_id"] == RUN
+    assert first["dispatch_identity_mismatches"] == ["display_title"]
     assert not {"attempt", "job_id", "observed_checkout"}.intersection(first)
     assert reads.count(attempt_path) == 1
     assert attempt_path + "/jobs?per_page=100" not in reads
