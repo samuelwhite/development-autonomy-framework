@@ -38,6 +38,11 @@ POLICY_FIELDS = {
     "workflow_sha256",
     "runner",
 }
+PILOT_FIELDS = {"task_sha256", "preview_sha256", "review_sha256", "candidate_sha", "verification"}
+
+
+def pilot_branch(repository, attempt):
+    return "codex/document-pilot/" + digest([repository, attempt])
 
 
 def checked_candidate(repository, task, edit, review, expected):
@@ -142,10 +147,7 @@ def run_pilot(
     request = task["request"]
     repo = validate_repository(allowed_repository).lower()
     require(request["repository"] == repo, "pilot_repository_not_allowed")
-    approval = keys(
-        approved,
-        {"task_sha256", "preview_sha256", "review_sha256", "candidate_sha", "verification"},
-    )
+    approval = keys(approved, PILOT_FIELDS)
     require(approval["task_sha256"] == task["task_sha256"], "wrong_approved_task")
     require(
         approval["review_sha256"] == digest(review)
@@ -156,7 +158,7 @@ def run_pilot(
     validate_policy(task, policy, allowed_validator)
     candidate = checked_candidate(repository, task, edit, review, approval["candidate_sha"])
     head, base, path = candidate["candidate_sha"], candidate["baseline_sha"], candidate["path"]
-    branch = "codex/document-pilot/" + digest([repo, request["attempt_id"]])
+    branch = pilot_branch(repo, request["attempt_id"])
     journal = journal_directory(journal, "document-pilot-lock.sqlite", "document-pilot.sqlite")
     initial = {
         "schema_version": 1,
